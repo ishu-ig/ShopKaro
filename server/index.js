@@ -25,5 +25,13 @@ app.use("/public", express.static("public"))//used to server public files like u
 app.use("/api",Router)
 
 
-let port = process.env.PORT || 8000
-app.listen(port, console.log(`Server is Running at http://localhost:8000`))
+// Serve client build at root "/"
+app.use("", express.static(path.join(__dirname, "client/build")));
+app.get("/*", (req, res) => {
+  res.sendFile(path.join(__dirname, "client/build", "index.html"));
+});
+
+const port = process.env.PORT || 8000;
+app.listen(port, () => {
+  console.log(`Server is running on port Server is Running at http://localhost:${port}`);
+});
