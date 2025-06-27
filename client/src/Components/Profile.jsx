@@ -108,6 +108,7 @@ export default function Profile({ title }) {
               )}
             </div>
           </div>
+          <div className="mb-3"></div>
         </div>
       </div>
     </>
