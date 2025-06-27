@@ -1,5 +1,6 @@
 const express = require("express")
 const cors = require("cors")
+const path = require('path')
 require("dotenv").config()
 
 require("./db_connect")
@@ -20,15 +21,17 @@ var corsOptions = {
 }
 app.use(cors(corsOptions))
 
+
+
+app.use(express.json())                     //used to parse incomming json data
+app.use("/public", express.static("public"))//used to server public files like uploaded images
+app.use("/api",Router)
+
 // Serve React frontend
 app.use("", express.static(path.join(__dirname, "client/build")));
 app.get("/*", (req, res) => {
     res.sendFile(path.join(__dirname, "client/build", "index.html"));
 });
-
-app.use(express.json())                     //used to parse incomming json data
-app.use("/public", express.static("public"))//used to server public files like uploaded images
-app.use("/api",Router)
 
 
 let port = process.env.PORT || 8000
