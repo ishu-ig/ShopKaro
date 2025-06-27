@@ -127,9 +127,6 @@ export default function Navbar() {
                 <li className="nav-item">
                   <NavLink to="/contactus" className="nav-link">Contact</NavLink>
                 </li>
-                <li className="nav-item">
-                  <NavLink to="/admin" className="nav-link">Admin</NavLink>
-                </li>
               </ul>
 
               {/* 🔹 Icons & Profile Dropdown */}

@@ -870,6 +870,8 @@
       width: 100%;
     }
   }
-
+#mobileFilters {
+  transition: all 0.3s ease-in-out;
+}
   
   
