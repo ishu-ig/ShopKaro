@@ -4,7 +4,7 @@ export default function Fact() {
   return (
     <>
          {/* Fact Start */}
-        <div className="container-fluid bg-secondary py-5 d-lg-block d-sm-none">
+        <div className="container-fluid bg-secondary py-5 d-lg-block d-none ">
             <div className="container">
                 <div className="row">
                     <div className="col-lg-3 wow fadeIn" data-wow-delay=".1s">

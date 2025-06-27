@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 export default function Profile({ title }) {
   const [data, setData] = useState({});
-  let navigate = useNavigate()
+  const navigate = useNavigate();
 
   useEffect(() => {
     (async () => {
@@ -13,17 +13,14 @@ export default function Profile({ title }) {
           {
             method: "GET",
             headers: {
-              "content-Type": "application/json",
-              "authorization": localStorage.getItem("token")
+              "Content-Type": "application/json",
+              "authorization": localStorage.getItem("token"),
             },
           }
         );
         response = await response.json();
-        console.log(response)
-        if (response.result === "Done")
-          setData(response.data)
-        else
-          navigate("/login")
+        if (response.result === "Done") setData(response.data);
+        else navigate("/login");
       } catch (error) {
         console.error("Error fetching user data:", error);
       }
@@ -33,15 +30,19 @@ export default function Profile({ title }) {
   return (
     <>
       {/* 🔹 Profile Header */}
-      <h5 className={`bg-primary text-light text-center p-3 rounded shadow-sm mt-4 ${title !== "Checkout" ? "container" : "container-fluid"}`}>
+      <h5
+        className={`bg-primary text-light text-center p-3 rounded shadow-sm mt-4 ${title !== "Checkout" ? "container" : "container-fluid"
+          }`}
+      >
         {title === "Checkout" ? "Billing Address" : `${title} Profile`}
       </h5>
 
-      <div className="container my-4">
-        <div className={`row g-4  ${title !== "Checkout" ? "mx-5" : null}`}>
-          {/* 🔹 Profile Image */}
+      <div className={`${title !== "Checkout" ? "container" : "container-fluid"} my-4`}>
+        <div className="row g-4 justify-content-center">
+
+          {/* 🔹 Profile Image (Hidden in Checkout Mode) */}
           {title !== "Checkout" && (
-            <div className="col-md-5 text-center">
+            <div className="col-12 col-md-5 text-center">
               <img
                 src={
                   data.pic
@@ -50,15 +51,19 @@ export default function Profile({ title }) {
                 }
                 className="img-fluid rounded shadow"
                 alt="Profile"
-                style={{ maxHeight: "400px", objectFit: "cover", marginBottom: "20" }}
+                style={{
+                  maxHeight: "400px",
+                  objectFit: "cover",
+                  width: "100%",
+                }}
               />
             </div>
           )}
 
-          {/* 🔹 User Information */}
-          <div className={title === "Checkout" ? "col-12" : "col-md-7"}>
+          {/* 🔹 User Info Card */}
+          <div className={title === "Checkout" ? "col-12 col-md-8" : "col-12 col-md-6"}>
             <div className="card shadow-lg p-3">
-              <table className="table table-bordered table-striped">
+              <table className="table table-bordered table-striped mb-3">
                 <tbody>
                   <tr>
                     <th>Name:</th>
@@ -76,9 +81,6 @@ export default function Profile({ title }) {
                     <th>Phone:</th>
                     <td>{data.phone || "N/A"}</td>
                   </tr>
-
-                  {/* 🔹 Address Fields (Only if Available) */}
-
                   <tr>
                     <th>Address:</th>
                     <td>{data.address || "N/A"}</td>
@@ -95,21 +97,19 @@ export default function Profile({ title }) {
                     <th>State:</th>
                     <td>{data.state || "N/A"}</td>
                   </tr>
-
                 </tbody>
               </table>
 
-              {/* 🔹 Update Profile Button */}
-              <Link to="/updateProfile" className="btn btn-primary w-100">
-                Update Profile
-              </Link>
+              {/* 🔹 Update Button (Hide in Checkout if needed) */}
+              {title !== "Checkout" && (
+                <Link to="/updateProfile" className="btn btn-primary w-100">
+                  Update Profile
+                </Link>
+              )}
             </div>
           </div>
         </div>
-        <div style={{ marginBottom: 100 }}></div>
       </div>
-
     </>
-
   );
 }

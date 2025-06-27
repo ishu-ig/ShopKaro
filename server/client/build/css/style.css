@@ -874,4 +874,24 @@
   transition: all 0.3s ease-in-out;
 }
   
-  
+  .category-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 15px;
+}
+
+.category-card img {
+  height: 250px;
+  object-fit: cover;
+}
+
+.category-card .overlay {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+.category-card:hover .overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+}
