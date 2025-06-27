@@ -33,8 +33,6 @@ app.get("/*", (req, res) => {
     res.sendFile(path.join(__dirname, "client/build", "index.html"));
 });
 
-const path = require('path');
-
 // Serve admin panel
 app.use('/admin', express.static(path.join(__dirname, 'admin/build')));
 
