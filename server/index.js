@@ -33,6 +33,15 @@ app.get("/*", (req, res) => {
     res.sendFile(path.join(__dirname, "client/build", "index.html"));
 });
 
+const path = require('path');
+
+// Serve admin panel
+app.use('/admin', express.static(path.join(__dirname, 'admin/build')));
+
+app.get('/admin/*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin/build', 'index.html'));
+});
+
 
 let port = process.env.PORT || 8000
 app.listen(port, console.log(`Server is Running at http://localhost:8000`))
