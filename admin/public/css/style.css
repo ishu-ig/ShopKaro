@@ -1,0 +1,245 @@
+/* ========== General Styles ========== */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', sans-serif;
+    background: #F5F7FA;
+}
+
+/* ========== Sidebar Styles ========== */
+#sidebar {
+    width: 250px;
+    height: 100vh;
+    background: #1F2A40; /* Dark Blue Shade */
+    color: white;
+    position: fixed;
+    top: 0;
+    left: 0;
+    transition: all 0.3s ease-in-out;
+    overflow: hidden;
+    padding-top: 60px;
+    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.2);
+}
+.sidebar-toggle{
+    display: none;
+}
+/* Sidebar collapsed for small screens */
+@media (max-width: 992px) {
+    #sidebar {
+        width: 80px;
+    }
+    .sidebar-toggle{
+        display: block;
+    }
+    .sidebar-header{
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+}
+
+/* Expanded Sidebar */
+#sidebar.expanded {
+    width: 250px;
+}
+
+/* Sidebar Header (Profile Section) */
+.sidebar-header {
+    text-align: center;
+    padding: 15px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.admin-avatar {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    box-shadow: 0 4px 8px rgba(255, 255, 255, 0.2);
+    margin-bottom: 8px;
+    transition: all 0.3s ease-in-out;
+    display: none;
+}
+
+.admin-name {
+    font-size: 16px;
+    font-weight: bold;
+    display: none;
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* Show Profile & Name Only When Sidebar Expands */
+#sidebar.expanded .admin-avatar {
+    width: 80px;
+    height: 80px;
+    display: block;
+}
+
+#sidebar.expanded .admin-name {
+    display: block;
+}
+
+/* Navigation Links */
+
+
+.nav-link {
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    font-size: 15px;
+    transition: all 0.3s ease-in-out;
+}
+.nav-link i {
+    margin-right: 12px;
+    font-size: 18px;
+    transition: all 0.3s ease-in-out;
+}
+
+.nav-link:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+    padding-left: 25px;
+}
+
+/* Hide text when collapsed */
+#sidebar:not(.expanded) .nav-link span {
+    display: none;
+}
+
+/* Sidebar Collapse Animation */
+#sidebar {
+    transition: width 0.4s ease-in-out;
+}
+
+/* ========== Navbar Styles ========== */
+.navbar {
+    background: #FFFFFF;
+    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.1);
+    padding: 12px 20px;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+}
+
+/* Sidebar Toggle Button */
+
+.navbar .sidebar-toggle {
+    background: none;
+    border: none;
+    font-size: 22px;
+    color: #1F2A40;
+    cursor: pointer;
+    transition: transform 0.3s ease-in-out;
+}
+
+.navbar .sidebar-toggle:hover {
+    transform: scale(1.1);
+}
+
+/* Navbar Items */
+.navbar .nav-link {
+    color: #1F2A40;
+    font-weight: 500;
+    font-size: 16px;
+    margin-right: 15px;
+    transition: all 0.3s ease-in-out;
+}
+
+.navbar .nav-link i {
+    font-size: 18px;
+    margin-right: 5px;
+}
+
+.navbar .nav-link:hover {
+    color: #3498DB;
+    transform: translateY(-2px);
+}
+
+/* Mobile Menu */
+.dropdown .btn-outline-dark {
+    border: none;
+    font-size: 20px;
+    background: none;
+}
+
+.dropdown-menu {
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* ========== Content Area Shift ========== */
+.content {
+    margin-left: 250px; /* Default margin for expanded sidebar */
+    transition: margin-left 0.3s ease-in-out;
+    padding: 20px;
+}
+
+.sidebar-collapsed .content {
+    margin-left: 80px; /* Margin for collapsed sidebar */
+}
+
+@media (max-width: 992px) {
+    .sidebar-collapsed .content {
+        margin-left: 80px; /* Ensure margin is consistent on small screens */
+    }
+}
+
+/* ========== Footer Styles ========== */
+.footer {
+    background: #1F2A40;
+    color: white;
+    text-align: center;
+    padding: 12px 0;
+    font-size: 14px;
+    position: fixed;
+    width: 100%;
+    margin-top: auto;
+}
+
+.footer a {
+    color: #F1C40F;
+    text-decoration: none;
+}
+
+.footer a:hover {
+    text-decoration: underline;
+}
+
+.testimonial-message {
+    width: 650px;
+    height: 200px;
+    overflow: auto;
+    text-align: justify;
+    padding-left: 0;
+}
+
+.testimonial-message::-webkit-scrollbar {
+    display: none;
+}
+
+.contactus-message {
+    width: 550px;
+    height: 150px;
+    overflow: auto;
+    text-align: justify;
+    padding-left: 0;
+}
+
+.contactus-message::-webkit-scrollbar {
+    display: none;
+}
+
+.product-images {
+    width: 360px;
+    overflow: auto;
+    text-align: justify;
+
+}
+
+.product-images::-webkit-scrollbar {
+    display: none;
+}
