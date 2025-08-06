@@ -17,22 +17,22 @@ export default function AdminCheckout() {
         }
     };
 
-    const getAPIData = () => {
-        dispatch(getCheckout());
-    };
+    function getAPIData() {
+        dispatch(getCheckout())
+        let time = setTimeout(() => {
+            $('#DataTable').DataTable()
+        }, 500)
+        return time
+    }
+    useEffect(() => {
+        let time = getAPIData()
+        return () => clearTimeout(time)
+    }, [CheckoutStateData.length])
 
     useEffect(() => {
         getAPIData();
     }, []);
 
-    useEffect(() => {
-        if ($.fn.DataTable.isDataTable('#DataTable')) {
-            $('#DataTable').DataTable().destroy();
-        }
-        if (CheckoutStateData.length > 0) {
-            $('#DataTable').DataTable();
-        }
-    }, [CheckoutStateData]); // Run when data is updated
 
     return (
         <div className="container-fluid">

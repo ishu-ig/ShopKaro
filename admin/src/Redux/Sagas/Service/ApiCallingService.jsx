@@ -29,11 +29,11 @@ export async function createMultipartRecord(collection, payload) {
 }
 export async function getRecord(collection) {
     try {
-        let url = `${process.env.REACT_APP_BACKEND_SERVER}/api/${collection}`
+        let url = `${process.env.REACT_APP_BACKEND_SERVER}/api/${collection}`;
         if (collection === "cart" || collection === "wishlist")
-            url = `${process.env.REACT_APP_BACKEND_SERVER}/api/${collection}/${localStorage.getItem("userid")}`
+            url = `${process.env.REACT_APP_BACKEND_SERVER}/api/${collection}/${localStorage.getItem("userid")}`;
         else if (collection === "checkout" && localStorage.getItem("role") === "Buyer")
-            url = `${process.env.REACT_APP_BACKEND_SERVER}/api/${collection}/user/${localStorage.getItem("userid")}`
+            url = `${process.env.REACT_APP_BACKEND_SERVER}/api/${collection}/user/${localStorage.getItem("userid")}`;
 
         let response = await fetch(url, {
             method: "GET",
@@ -41,12 +41,14 @@ export async function getRecord(collection) {
                 "content-type": "application/json",
                 "authorization": localStorage.getItem("token")
             }
-        })
-        return await response.json()
+        });
+
+        return await response.json();
     } catch (error) {
-        console.log(error)
+        console.log(error);
     }
 }
+
 
 export async function updateRecord(collection, payload) {
     try {
