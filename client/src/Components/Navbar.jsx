@@ -148,7 +148,7 @@ export default function Navbar() {
                     className="nav-link dropdown-toggle d-flex align-items-center"
                     data-bs-toggle="dropdown"
                   >
-                    <i className="fa fa-user text-white fs-5 me-2"></i>
+                    <i className="fa fa-user text-white fs-5 me-2"><span className="ms-3">Profile</span></i>
                   </a>
                   <ul className="dropdown-menu dropdown-menu-end rounded">
                     {data.pic && localStorage.getItem("login") ? (
@@ -175,14 +175,52 @@ export default function Navbar() {
                       </li>
                     )}
 
-                    <Link to="/profile"><li className="dropdown-header text-center fw-boldpt-0 bg-primary mx-3 text-light">{localStorage.getItem("name") ? localStorage.getItem("name") : "User Name"}</li></Link>
-                    <li><i></i><Link to="/cart" className="dropdown-item mt-3">Cart</Link></li>
-                    <li><Link to="/order" className="dropdown-item">Orders</Link></li>
-                    <li><Link to="/checkout" className="dropdown-item">Checkout</Link></li>
-                    {localStorage.getItem("login") ?
-                      <li><button className="dropdown-item text-danger" onClick={logout}>Logout</button></li> :
-                      <Link to="/login"><li><button className="dropdown-item text-success">Login</button></li></Link>
-                    }
+                    <Link to="/profile">
+                      <li className="dropdown-header text-center fw-bold pt-0 bg-primary mx-3 text-light">
+                        <i className="fa fa-user-circle me-2 align-items-center mt-3"></i>
+                        {localStorage.getItem("name") ? localStorage.getItem("name") : "User Name"}
+                      </li>
+                    </Link>
+
+                    <li>
+                      <Link to="/cart" className="dropdown-item mt-3">
+                        <i className="fa fa-shopping-cart text-dark pe-2"></i> Cart
+                      </Link>
+                    </li>
+
+                    <li>
+                      <Link to="/order" className="dropdown-item">
+                        <i className="fa fa fa-list-alt text-dark pe-2"></i> Orders
+                      </Link>
+                    </li>
+
+                    <li>
+                      <Link to="/checkout" className="dropdown-item">
+                        <i className="fa fa-credit-card text-dark pe-2"></i> Checkout
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/support" className="dropdown-item">
+                        <i className="fa fa-headphones text-dark pe-2"></i>Support
+                      </Link>
+                    </li>
+
+                    {localStorage.getItem("login") ? (
+                      <li>
+                        <button className="dropdown-item text-danger" onClick={logout}>
+                          <i className="fa fa-sign-out text-danger pe-2"></i> Logout
+                        </button>
+                      </li>
+                    ) : (
+                      <Link to="/login">
+                        <li>
+                          <button className="dropdown-item text-success">
+                            <i className="fa fa-sign-in-alt pe-2"></i> Login
+                          </button>
+                        </li>
+                      </Link>
+                    )}
+
                   </ul>
                 </div>
               </div>

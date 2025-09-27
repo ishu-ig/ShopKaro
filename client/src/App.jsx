@@ -1,5 +1,5 @@
-import React from 'react'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import React, { useEffect } from 'react'
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom'
 import Navbar from './Components/Navbar'
 import Footer from './Components/Footer'
 
@@ -28,12 +28,21 @@ import ForgetPasswordPage1 from './pages/ForgetPasswordPage1'
 import ForgetPasswordPage2 from './pages/ForgetPasswordPage2'
 import ForgetPasswordPage3 from './pages/ForgetPasswordPage3'
 import Payment from './pages/Payment'
+import ChatPage from './pages/ChatPage'
 new WOW().init();
 
 
 export default function App() {
+  function ScrollHandler() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0); // scroll to top on every route change
+  }, [pathname]);
+  return null; // nothing to render
+}
   return (
     <BrowserRouter>
+    <ScrollHandler />
         <Navbar />
             <Routes>
                 <Route path='' element={<Home />}/>
@@ -60,6 +69,8 @@ export default function App() {
                 <Route path='/forgetPassword-3' element={<ForgetPasswordPage3 />}/>
 
                 <Route path='/payment/:_id' element={<Payment/>}/>
+
+                <Route path='/support' element={<ChatPage />}/>
 
                 <Route path='/*' element={<ErrorPage />}/>
             </Routes>
