@@ -11,6 +11,7 @@ const WishlistRouter = require("./WishlistRoutes")
 const CheckoutRouter = require("./CheckoutRoutes")
 const NewsletterRouter = require("./NewsletterRoutes")
 const ContactUsRouter = require("./ContactUsRoutes")
+const InvoiceRouter = require("./InvoiceRoutes")
 
 Router.use("/maincategory", MaincategoryRouter)
 Router.use("/subcategory", SubcategoryRouter)
@@ -23,5 +24,6 @@ Router.use("/wishlist", WishlistRouter)
 Router.use("/checkout", CheckoutRouter)
 Router.use("/newsletter", NewsletterRouter)
 Router.use("/contactus", ContactUsRouter)
+Router.use("/invoice", InvoiceRouter)
 
 module.exports = Router
