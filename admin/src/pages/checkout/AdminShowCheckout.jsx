@@ -85,10 +85,11 @@ export default function AdminCheckoutShow() {
                                         value={orderStatus}
                                         onChange={(e) => setOrderStatus(e.target.value)}
                                     >
-                                        <option value="Order Is Placed">Order Is Placed</option>
-                                        <option value="Order Is Ready For Delivery">Order Is Ready For Delivery</option>
-                                        <option value="Out for Delivery">Out for Delivery</option>
-                                        <option value="Delivered">Delivered</option>
+                                        <option value="Ordered">Order Is Placed</option>
+                                        <option value="Packed" disabled={orderStatus !== "Ordered"}>Packed</option>
+                                        <option value="Shipped" disabled={orderStatus !== "Packed"}>Shipped</option>
+                                        <option value="Out for Delivery"disabled={orderStatus !== "Shipped"}>Out for Delivery</option>
+                                        <option value="Delivered" disabled={orderStatus !== "Out for Delivery"}>Delivered</option>
                                     </select>
                                 ) : null}
                             </td>

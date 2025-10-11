@@ -149,7 +149,7 @@ export default function OrderPage() {
           ) : (
             <div className="py-5 text-center">
               <h3>No Order is Placed</h3>
-              <Link to="/product" className="btn btn-primary mt-2">
+              <Link to="/shop" className="btn btn-primary mt-2">
                 Shop Now
               </Link>
             </div>

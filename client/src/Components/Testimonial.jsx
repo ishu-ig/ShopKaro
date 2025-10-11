@@ -5,6 +5,7 @@ import "swiper/css/effect-coverflow";
 import "swiper/css/effect-cards";
 import "swiper/css/pagination";
 import { EffectCards, EffectCoverflow, Pagination } from "swiper/modules";
+import { Autoplay } from "swiper/modules";
 import { useDispatch, useSelector } from "react-redux";
 import { getTestimonial } from "../Redux/ActionCreartors/TestimonialActionCreators";
 
@@ -41,6 +42,11 @@ export default function Testimonial() {
             pagination={{ clickable: true }}
             effect="coverflow"
             centeredSlides={true}
+            modules={[Autoplay]}
+            autoplay={{
+              delay: 1500,
+              disableOnInteraction: false,
+            }}
             coverflowEffect={{
               rotate: 30,
               stretch: 0,

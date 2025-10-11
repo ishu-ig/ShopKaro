@@ -21,7 +21,7 @@ export default function Cart({ title, data }) {
     function placeOrder() {
         const item = {
             user: localStorage.getItem("userid"),
-            orderStatus: "Order is Placed",
+            orderStatus: "Ordered",
             paymentMode: mode,
             paymentStatus: "Pending",
             subtotal,

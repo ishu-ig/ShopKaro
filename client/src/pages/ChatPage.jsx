@@ -1,172 +1,208 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Send, User, Bot, Clock, MoreVertical, Phone, Video, Paperclip, Smile } from 'lucide-react';
+import React, { useState, useEffect, useRef } from "react";
 
-const ChatUI = () => {
+const predefinedMessages = [
+  "Track My Order",
+  "Return or Refund",
+  "Payment Help",
+  "Delivery Information",
+  "Contact Support",
+];
+
+export default function HelpDeskPage({ userId }) {
   const [messages, setMessages] = useState([
-    { 
-      id: 1, 
-      sender: "bot", 
-      text: "👋 Hello! How can I assist you today?", 
-      timestamp: "12:00 PM" 
+    {
+      sender: "bot",
+      text: "👋 Hello! Welcome to our Help Desk. How can I assist you today?",
     },
   ]);
   const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef(null);
+  const [activeView, setActiveView] = useState("chat"); // chat | return | contact | orderDetails
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [userOrders, setUserOrders] = useState([]);
+  const chatEndRef = useRef(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, activeView]);
+
+  const sendBotMessage = (text) => {
+    setMessages((prev) => [...prev, { sender: "bot", text }]);
+  };
 
   const handleSend = () => {
     if (!input.trim()) return;
-    
-    const newMessage = {
-      id: messages.length + 1,
-      sender: "user",
-      text: input,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-    
-    setMessages([...messages, newMessage]);
+    setMessages((prev) => [...prev, { sender: "user", text: input }]);
     setInput("");
-    setIsTyping(true);
-
-    setTimeout(() => {
-      const botReply = {
-        id: messages.length + 2,
-        sender: "bot",
-        text: "Thanks for your message! I'll get back to you shortly.",
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-      setMessages(prev => [...prev, botReply]);
-      setIsTyping(false);
-    }, 2000);
+    handleBotResponse(input);
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+  const handleBotResponse = async (query) => {
+    const q = query.toLowerCase();
+    switch (q) {
+      case "track my order":
+        await fetchUserOrders();
+        break;
+      case "return or refund":
+        setActiveView("return");
+        break;
+      case "contact support":
+        setActiveView("contact");
+        break;
+      case "payment help":
+        sendBotMessage(
+          "💳 Payments may take 3–5 days to reflect. For urgent issues, email payments@yourstore.com."
+        );
+        break;
+      case "delivery information":
+        sendBotMessage("🚚 Most orders are delivered within 3–5 business days.");
+        break;
+      default:
+        sendBotMessage("Please select a quick option below 👇");
+        break;
+    }
+  };
+
+  const fetchUserOrders = async () => {
+    try {
+      const res = await fetch(`/api/orders/user/${userId}`);
+      const data = await res.json();
+      if (!data.length) {
+        sendBotMessage("You have no recent orders 🛍️");
+      } else {
+        setUserOrders(data);
+        sendBotMessage("Here are your recent orders. Click one to see details 👇");
+        setActiveView("chat");
+      }
+    } catch (err) {
+      sendBotMessage("⚠️ Error fetching orders. Please try again later.");
+    }
+  };
+
+  const fetchProductDetails = async (productId) => {
+    try {
+      const res = await fetch(`/api/products/${productId}`);
+      const product = await res.json();
+      setSelectedOrder(product);
+      setActiveView("orderDetails");
+    } catch {
+      sendBotMessage("Unable to load product details. Please try again.");
     }
   };
 
   return (
-    <div className="flex justify-center bg-gray-50 min-h-screen p-4">
-      {/* Card container */}
-      <div className="flex flex-col w-full max-w-3xl h-full shadow-xl rounded-xl overflow-hidden bg-white">
-        
+    <div className="min-h-screen bg-gray-100 flex justify-center items-center p-4">
+      <div className="flex flex-col w-[360px] h-[520px] bg-white rounded-3xl shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="relative">
-              <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-                <Bot className="w-7 h-7" />
-              </div>
-              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-            </div>
-            <div className="ml-3">
-              <h2 className="font-semibold text-lg">Customer Support</h2>
-              <p className="text-xs text-blue-100">Online now</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <button className="p-2 rounded-full hover:bg-blue-500 transition-colors">
-              <Phone className="w-5 h-5" />
-            </button>
-            <button className="p-2 rounded-full hover:bg-blue-500 transition-colors">
-              <Video className="w-5 h-5" />
-            </button>
-            <button className="p-2 rounded-full hover:bg-blue-500 transition-colors">
-              <MoreVertical className="w-5 h-5" />
-            </button>
-          </div>
+        <div className="bg-blue-600 text-white py-3 px-4 font-semibold text-lg flex justify-between items-center">
+          <span>Help Desk</span>
         </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 bg-gray-100">
-          <div className="space-y-4">
-            {messages.map((msg) => (
+        {/* Messages Panel */}
+        <div className="flex-1 p-3 overflow-y-auto bg-gray-50 space-y-3">
+          {messages.map((msg, i) => (
+            <div
+              key={i}
+              className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
+            >
               <div
-                key={msg.id}
-                className={`flex items-start gap-3 ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
+                className={`p-2 rounded-xl max-w-[75%] text-sm whitespace-pre-line
+                  ${msg.sender === "user" ? "bg-blue-500 text-white rounded-br-none" : "bg-gray-200 text-gray-900 rounded-bl-none"}`}
               >
-                {msg.sender === "bot" && (
-                  <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Bot className="w-6 h-6 text-white" />
-                  </div>
-                )}
-                <div
-                  className={`max-w-xs md:max-w-md px-4 py-3 rounded-2xl shadow-sm break-words ${
-                    msg.sender === "user"
-                      ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-br-none"
-                      : "bg-white text-gray-800 rounded-bl-none border border-gray-200"
-                  }`}
-                >
-                  <p className="text-sm">{msg.text}</p>
-                  <div className={`text-xs mt-1 flex items-center ${msg.sender === "user" ? "text-blue-100" : "text-gray-500"}`}>
-                    <Clock className="w-3 h-3 mr-1" />
-                    {msg.timestamp}
-                  </div>
-                </div>
-                {msg.sender === "user" && (
-                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <User className="w-6 h-6 text-white" />
-                  </div>
-                )}
+                {msg.text}
               </div>
+            </div>
+          ))}
+
+          {/* Orders List */}
+          {userOrders.length > 0 &&
+            userOrders.map((o) => (
+              <button
+                key={o._id}
+                onClick={() => fetchProductDetails(o.productId)}
+                className="block w-full text-left text-sm p-2 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100"
+              >
+                Order #{o._id.slice(-6)} – {o.productName}
+              </button>
             ))}
-            
-            {isTyping && (
-              <div className="flex items-start gap-3 justify-start">
-                <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-6 h-6 text-white" />
-                </div>
-                <div className="bg-white text-gray-800 rounded-2xl rounded-bl-none px-4 py-3 shadow-sm border border-gray-200">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            <div ref={messagesEndRef} />
-          </div>
+
+          <div ref={chatEndRef}></div>
         </div>
 
         {/* Input */}
-        <div className="p-4 border-t border-gray-200">
-          <div className="flex items-center gap-2">
-            <button className="p-2 text-gray-500 hover:text-indigo-600 transition-colors">
-              <Paperclip className="w-5 h-5" />
-            </button>
-            <button className="p-2 text-gray-500 hover:text-indigo-600 transition-colors">
-              <Smile className="w-5 h-5" />
-            </button>
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Type a message..."
-                className="w-full border rounded-full px-4 py-3 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-            </div>
-            <button
-              onClick={handleSend}
-              disabled={!input.trim()}
-              className="bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white p-3 rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Send className="w-5 h-5" />
-            </button>
-          </div>
+        <div className="border-t p-2 bg-gray-100 flex">
+          <input
+            type="text"
+            placeholder="Type your message..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            className="flex-1 rounded-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring focus:ring-blue-300"
+          />
+          <button
+            onClick={handleSend}
+            className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700"
+          >
+            Send
+          </button>
         </div>
+
+        {/* Quick Reply Buttons */}
+        <div className="p-2 border-t bg-gray-50 flex flex-wrap gap-2">
+          {predefinedMessages.map((q, i) => (
+            <button
+              key={i}
+              onClick={() => handleBotResponse(q)}
+              className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs hover:bg-blue-200"
+            >
+              {q}
+            </button>
+          ))}
+        </div>
+
+        {/* Right Panel for Return/Contact/Order Details */}
+        {activeView !== "chat" && (
+          <div className="absolute top-0 right-0 w-[380px] h-[520px] p-3 bg-white shadow-xl overflow-y-auto">
+            {activeView === "return" && (
+              <div className="space-y-2">
+                <h2 className="text-lg font-semibold text-blue-700">Return & Refund Policy</h2>
+                <p>
+                  We accept returns within 7 days of delivery for unused, unopened
+                  products. Refunds processed to the original payment method within 5–7 days.
+                </p>
+                <ul className="list-disc pl-5 space-y-1 text-gray-600">
+                  <li>Items damaged during delivery are eligible for free replacement.</li>
+                  <li>Refunds initiated after product inspection.</li>
+                  <li>Contact support@yourstore.com for help.</li>
+                </ul>
+              </div>
+            )}
+
+            {activeView === "contact" && (
+              <div className="space-y-2">
+                <h2 className="text-lg font-semibold text-blue-700">Contact Support</h2>
+                <p>Email: support@yourstore.com</p>
+                <p>Phone: +91-9876543210</p>
+                <p>Address: 123 Market Street, Delhi</p>
+              </div>
+            )}
+
+            {activeView === "orderDetails" && selectedOrder && (
+              <div className="space-y-2">
+                <h2 className="text-lg font-semibold text-blue-700">Order Details</h2>
+                <img
+                  src={`${process.env.REACT_APP_BACKEND_SERVER}/${selectedOrder.pic?.[0]}`}
+                  alt={selectedOrder.name}
+                  className="w-full h-40 object-cover rounded-lg"
+                />
+                <p><b>{selectedOrder.name}</b></p>
+                <p>Price: ₹{selectedOrder.finalPrice}</p>
+                <p>Status: {selectedOrder.status || "Processing"}</p>
+                <p>Expected Delivery: {selectedOrder.expectedDelivery || "N/A"}</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
-};
-
-export default ChatUI;
+}

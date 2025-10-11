@@ -895,3 +895,70 @@
 .category-card:hover .overlay {
   background-color: rgba(0, 0, 0, 0.5);
 }
+
+
+.order-progress {
+  position: relative;
+  margin-top: 20px;
+}
+
+.order-step {
+  flex: 1;
+  position: relative;
+  text-align: center;
+}
+
+.status-circle {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid #ccc;
+  background-color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+  transition: all 0.3s ease;
+}
+
+.status-circle.completed {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  color: #fff;
+}
+
+.progress-line-container {
+  position: absolute;
+  top: 15px; /* center line vertically with circles */
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background-color: #e0e0e0;
+  z-index: -1;
+}
+
+.progress-line {
+  height: 100%;
+  background-color: #0d6efd;
+  transition: width 0.5s ease;
+  border-radius: 2px;
+}
+
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-in-out;
+}
+
+/* Optional scrollbar style */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 5px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(150, 150, 150, 0.4);
+  border-radius: 10px;
+}

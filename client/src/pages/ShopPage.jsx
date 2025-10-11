@@ -84,7 +84,9 @@ export default function ShopPage() {
 
   return (
     <>
-      <HeroSection title="Shop" />
+      <div className="d-none d-lg-block">
+        <HeroSection title="Shop" />
+      </div>
       <div className="container-fluid my-3">
         <div className="row">
 
