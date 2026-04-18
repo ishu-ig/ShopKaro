@@ -14,7 +14,7 @@ export default function CheckoutPage() {
         </div>
         <div className="col-md-6">
             <Cart title="Checkout" />
-            <div style={{marginBottom:"50px"}}></div>
+            {/* <div style={{marginBottom:"50px"}}></div> */}
         </div>
         </div>
     </div>
