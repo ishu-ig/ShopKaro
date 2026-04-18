@@ -4,7 +4,6 @@ import { useSelector, useDispatch } from 'react-redux';
 import { getCheckout } from '../Redux/ActionCreartors/CheckoutActionCreators';
 
 const STATUS_STEPS = ["Ordered", "Packed", "Shipped", "Out for Delivery", "Delivered"];
-
 const STATUS_ICONS = {
   "Ordered":          "fa-file-alt",
   "Packed":           "fa-box",
@@ -15,9 +14,23 @@ const STATUS_ICONS = {
 
 function InfoRow({ label, value }) {
   return (
-    <div className="od-info-row">
-      <span className="od-info-label">{label}</span>
-      <span className="od-info-value">{value || '—'}</span>
+    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'11px 0', borderBottom:'1px solid rgba(200,64,10,0.07)', gap:16 }}>
+      <span style={{ fontSize:'0.72rem', fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'#7A6E65', flexShrink:0, minWidth:80 }}>{label}</span>
+      <span style={{ fontSize:'0.88rem', fontWeight:500, color:'#1C1009', textAlign:'right' }}>{value || <span style={{ color:'#ccc', fontStyle:'italic' }}>Not set</span>}</span>
+    </div>
+  );
+}
+
+function Card({ icon, title, children, delay = '.1s' }) {
+  return (
+    <div className="wow fadeIn" data-wow-delay={delay} style={{ background:'white', borderRadius:20, border:'1px solid rgba(200,64,10,0.08)', boxShadow:'0 2px 16px rgba(28,16,9,0.07)', marginBottom:20, overflow:'hidden' }}>
+      <div style={{ padding:'16px 24px', borderBottom:'1px solid rgba(200,64,10,0.08)', background:'#FFFBF7', display:'flex', alignItems:'center', gap:12 }}>
+        <div style={{ width:34, height:34, borderRadius:10, background:'rgba(200,64,10,0.08)', display:'flex', alignItems:'center', justifyContent:'center', color:'#C8400A', flexShrink:0 }}>
+          <i className={`fa ${icon}`} style={{ fontSize:'0.85rem' }}></i>
+        </div>
+        <h6 style={{ fontFamily:'Playfair Display,serif', fontWeight:700, fontSize:'0.95rem', color:'#1C1009', margin:0 }}>{title}</h6>
+      </div>
+      <div style={{ padding:'20px 24px' }}>{children}</div>
     </div>
   );
 }
@@ -29,11 +42,9 @@ export default function OrderDetailPage() {
   const dispatch = useDispatch();
 
   useEffect(() => { dispatch(getCheckout()); }, [dispatch]);
-
   useEffect(() => {
     if (CheckoutStateData.length) {
-      const found = CheckoutStateData.find(o => o._id === _id);
-      setOrder(found || {});
+      setOrder(CheckoutStateData.find(o => o._id === _id) || {});
     }
   }, [CheckoutStateData, _id]);
 
@@ -47,201 +58,189 @@ export default function OrderDetailPage() {
       const data = await response.json();
       if (response.ok && data.invoice?.invoiceNumber) {
         window.open(`${process.env.REACT_APP_BACKEND_SERVER}/invoices/${data.invoice.invoiceNumber}.pdf`, '_blank');
-      } else {
-        alert('Invoice generation failed.');
-      }
-    } catch (err) {
-      alert('Error generating invoice.');
-    }
+      } else alert('Invoice generation failed.');
+    } catch { alert('Error generating invoice.'); }
   };
 
   if (!order) return (
-    <>
-      <style>{`.od-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50vh;gap:16px}.od-spinner{width:44px;height:44px;border:3px solid #f0ece4;border-top-color:#c9a84c;border-radius:50%;animation:spin 0.8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <div className="od-loading">
-        <div className="od-spinner" />
-        <span style={{ fontSize: 14, color: '#888', letterSpacing: 1 }}>Loading order…</span>
-      </div>
-    </>
+    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', minHeight:'60vh', gap:16 }}>
+      <div style={{ width:44, height:44, border:'3px solid rgba(200,64,10,0.15)', borderTopColor:'#C8400A', borderRadius:'50%', animation:'spin 0.8s linear infinite' }} />
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <span style={{ fontSize:13, color:'#7A6E65', letterSpacing:1 }}>Loading order…</span>
+    </div>
   );
 
   const currentIndex = STATUS_STEPS.indexOf(order.orderStatus);
-  const isCancelled = order.orderStatus === 'Cancelled';
-  const isDelivered = order.orderStatus === 'Delivered';
+  const isCancelled  = order.orderStatus === 'Cancelled';
+  const isDelivered  = order.orderStatus === 'Delivered';
+
+  const statusStyle = isDelivered
+    ? { bg:'rgba(16,185,129,0.1)', color:'#059669' }
+    : isCancelled
+    ? { bg:'rgba(244,63,94,0.1)', color:'#e11d48' }
+    : { bg:'rgba(200,64,10,0.1)', color:'#C8400A' };
 
   return (
-    <>
+    <div style={{ padding:'48px 0 100px', background:'linear-gradient(135deg,#FDF6EE 0%,#FFF8F3 100%)', minHeight:'100vh' }}>
+      <div className="container" style={{ maxWidth:820 }}>
 
-      <div className="od-wrap">
-        <div className="container">
-
-          {/* Header */}
-          <div className="od-page-header">
-            <div className="od-page-header-left">
-              <div className="od-page-icon"><i className="fa fa-receipt" /></div>
-              <div>
-                <div className="od-page-title">Order Details</div>
-                <div className="od-page-sub">#{order._id?.slice(-8)?.toUpperCase()}</div>
-              </div>
-            </div>
-            <div className={`od-status-pill ${isDelivered ? 'delivered' : isCancelled ? 'cancelled' : 'processing'}`}>
-              <i className={`fa ${isDelivered ? 'fa-check' : isCancelled ? 'fa-times' : 'fa-clock'}`} style={{ fontSize: 10 }} />
-              {order.orderStatus}
+        {/* Page header */}
+        <div style={{ display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'space-between', gap:14, marginBottom:28 }}>
+          <div>
+            <p style={{ fontSize:'0.72rem', fontWeight:700, letterSpacing:'0.14em', color:'#C8400A', textTransform:'uppercase', marginBottom:4 }}>Order</p>
+            <h2 style={{ fontFamily:'Playfair Display,serif', fontWeight:900, fontSize:'clamp(1.5rem,3vw,2rem)', color:'#1C1009', margin:0 }}>Order Details</h2>
+            <div style={{ fontSize:'0.8rem', color:'#7A6E65', marginTop:4 }}>
+              #{order._id?.slice(-10)?.toUpperCase()}
             </div>
           </div>
-
-          {/* Order Summary */}
-          <div className="od-card wow fadeIn" data-wow-delay=".1s">
-            <div className="od-card-header">
-              <div className="od-card-header-icon"><i className="fa fa-info" /></div>
-              <h6 className="od-card-header-title">Order Summary</h6>
-            </div>
-            <div className="od-card-body">
-              <div className="od-summary-grid">
-                <div className="od-summary-item">
-                  <div className="od-summary-item-label">Order ID</div>
-                  <div className="od-summary-item-value" style={{ fontSize: 12, wordBreak: 'break-all' }}>{order._id}</div>
-                </div>
-                <div className="od-summary-item">
-                  <div className="od-summary-item-label">Order Date</div>
-                  <div className="od-summary-item-value">
-                    {order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
-                  </div>
-                </div>
-                <div className="od-summary-item">
-                  <div className="od-summary-item-label">Payment Status</div>
-                  <div>
-                    <span className={`od-pay-pill ${order.paymentStatus === 'Pending' ? 'pending' : 'paid'}`}>
-                      <i className={`fa ${order.paymentStatus === 'Pending' ? 'fa-clock' : 'fa-check'}`} style={{ fontSize: 10 }} />
-                      {order.paymentStatus}
-                    </span>
-                  </div>
-                </div>
-                <div className="od-summary-item">
-                  <div className="od-summary-item-label">Payment Mode</div>
-                  <div className="od-summary-item-value">{order.paymentMode}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Order Tracker */}
-          {!isCancelled && (
-            <div className="od-card wow fadeIn" data-wow-delay=".2s">
-              <div className="od-card-header">
-                <div className="od-card-header-icon"><i className="fa fa-map-marked-alt" /></div>
-                <h6 className="od-card-header-title">Order Progress</h6>
-              </div>
-              <div className="od-card-body">
-                <div className="od-tracker">
-                  {STATUS_STEPS.map((step, index) => {
-                    const done    = currentIndex > index;
-                    const current = currentIndex === index;
-                    return (
-                      <div
-                        key={step}
-                        className={`od-tracker-step ${done ? 'completed' : current ? 'current' : ''}`}
-                      >
-                        <div className="od-tracker-circle">
-                          {done
-                            ? <i className="fa fa-check" style={{ fontSize: 12 }} />
-                            : <i className={`fa ${STATUS_ICONS[step]}`} />
-                          }
-                        </div>
-                        <span className="od-tracker-label">{step}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {isCancelled && (
-            <div className="od-card" style={{ border: '1.5px solid rgba(220,53,69,0.2)' }}>
-              <div className="od-card-body" style={{ textAlign: 'center', padding: '28px' }}>
-                <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(220,53,69,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', color: '#dc3545', fontSize: 22 }}>
-                  <i className="fa fa-times" />
-                </div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#dc3545', marginBottom: 4 }}>Order Cancelled</div>
-                <div style={{ fontSize: 13, color: '#888' }}>This order has been cancelled.</div>
-              </div>
-            </div>
-          )}
-
-          {/* Address */}
-          <div className="od-card wow fadeIn" data-wow-delay=".3s">
-            <div className="od-card-header">
-              <div className="od-card-header-icon"><i className="fa fa-map-marker-alt" /></div>
-              <h6 className="od-card-header-title">Delivery Address</h6>
-            </div>
-            <div className="od-card-body">
-              <InfoRow label="Name"    value={order.user?.name} />
-              <InfoRow label="Email"   value={order.user?.email} />
-              <InfoRow label="Phone"   value={order.user?.phone} />
-              <InfoRow label="Address" value={order.user?.address} />
-              <InfoRow label="City"    value={order.user?.city} />
-              <InfoRow label="State"   value={order.user?.state} />
-              <InfoRow label="Pincode" value={order.user?.pin} />
-            </div>
-          </div>
-
-          {/* Products */}
-          <div className="od-card wow fadeIn" data-wow-delay=".4s">
-            <div className="od-card-header">
-              <div className="od-card-header-icon"><i className="fa fa-box-open" /></div>
-              <h6 className="od-card-header-title">Ordered Products</h6>
-            </div>
-            <div className="od-card-body" style={{ padding: '0 24px 8px' }}>
-              {order.products?.length > 0 ? (
-                <table className="od-products-table">
-                  <thead>
-                    <tr>
-                      <th>Product</th>
-                      <th>Price</th>
-                      <th>Qty</th>
-                      <th>Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {order.products.map((prod) => (
-                      <tr key={prod._id}>
-                        <td><span className="od-product-name">{prod.product?.name}</span></td>
-                        <td>₹{prod.product?.finalPrice?.toLocaleString()}</td>
-                        <td>{prod.qty}</td>
-                        <td style={{ fontWeight: 700, color: '#0d1b2a' }}>₹{prod.total?.toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <p style={{ textAlign: 'center', color: '#bbb', padding: '24px 0', fontSize: 14 }}>No products found.</p>
-              )}
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="od-footer-bar wow fadeIn" data-wow-delay=".5s">
-            <div>
-              <div className="od-total-label">Order Total</div>
-              <div className="od-total-amount">₹{order.total?.toLocaleString()}</div>
-            </div>
-            <div className="od-footer-actions">
-              {!isCancelled && (
-                <button onClick={generateInvoice} className="od-btn primary">
-                  <i className="fa fa-file-invoice" style={{ fontSize: 12 }} />
-                  Download Invoice
-                </button>
-              )}
-              <Link to="/order" className="od-btn outline">
-                <i className="fa fa-arrow-left" style={{ fontSize: 11 }} />
-                My Orders
-              </Link>
-            </div>
-          </div>
-
+          <span style={{ background:statusStyle.bg, color:statusStyle.color, borderRadius:50, padding:'8px 20px', fontSize:'0.82rem', fontWeight:700, letterSpacing:'0.04em' }}>
+            <i className={`fa ${isDelivered ? 'fa-check' : isCancelled ? 'fa-times' : 'fa-clock'} me-2`} style={{ fontSize:'0.72rem' }}></i>
+            {order.orderStatus}
+          </span>
         </div>
+
+        {/* Summary */}
+        <Card icon="fa-info-circle" title="Order Summary" delay=".1s">
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))', gap:16 }}>
+            {[
+              { label:'Order ID',       value: <span style={{ fontSize:'0.78rem', wordBreak:'break-all' }}>{order._id}</span> },
+              { label:'Order Date',     value: order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN',{ day:'numeric', month:'long', year:'numeric' }) : '—' },
+              { label:'Payment Mode',   value: order.paymentMode },
+              { label:'Payment Status', value: (
+                <span style={{ background: order.paymentStatus === 'Pending' ? 'rgba(244,63,94,0.1)' : 'rgba(16,185,129,0.1)', color: order.paymentStatus === 'Pending' ? '#e11d48' : '#059669', borderRadius:50, padding:'3px 12px', fontSize:'0.75rem', fontWeight:700 }}>
+                  {order.paymentStatus}
+                </span>
+              )},
+            ].map(({ label, value }) => (
+              <div key={label} style={{ background:'rgba(200,64,10,0.03)', borderRadius:12, padding:'14px 16px', border:'1px solid rgba(200,64,10,0.07)' }}>
+                <div style={{ fontSize:'0.68rem', fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'#7A6E65', marginBottom:6 }}>{label}</div>
+                <div style={{ fontWeight:600, fontSize:'0.88rem', color:'#1C1009' }}>{value}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Tracker */}
+        {!isCancelled && (
+          <Card icon="fa-map-marked-alt" title="Order Progress" delay=".2s">
+            <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', position:'relative', overflowX:'auto', paddingBottom:4 }}>
+              {/* connecting line */}
+              <div style={{ position:'absolute', top:17, left:'5%', right:'5%', height:2, background:'rgba(200,64,10,0.1)', zIndex:0 }} />
+              <div style={{ position:'absolute', top:17, left:'5%', width: currentIndex >= 0 ? `${(currentIndex / (STATUS_STEPS.length - 1)) * 90}%` : '0%', height:2, background:'linear-gradient(90deg,#C8400A,#E86834)', zIndex:1, transition:'width 0.6s ease' }} />
+
+              {STATUS_STEPS.map((step, index) => {
+                const done    = currentIndex > index;
+                const current = currentIndex === index;
+                return (
+                  <div key={step} style={{ display:'flex', flexDirection:'column', alignItems:'center', flex:1, minWidth:60, position:'relative', zIndex:2 }}>
+                    <div style={{
+                      width:36, height:36, borderRadius:'50%',
+                      background: done ? 'linear-gradient(135deg,#C8400A,#E86834)' : current ? 'white' : 'white',
+                      border: done ? 'none' : current ? '2.5px solid #C8400A' : '2px solid rgba(200,64,10,0.2)',
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                      color: done ? 'white' : current ? '#C8400A' : '#ccc',
+                      fontSize: '0.8rem',
+                      boxShadow: current ? '0 0 0 4px rgba(200,64,10,0.12)' : 'none',
+                      transition:'all 0.3s',
+                    }}>
+                      <i className={`fa ${done ? 'fa-check' : STATUS_ICONS[step]}`}></i>
+                    </div>
+                    <span style={{ fontSize:'0.68rem', fontWeight: current || done ? 700 : 500, color: done ? '#C8400A' : current ? '#C8400A' : '#aaa', marginTop:8, textAlign:'center', lineHeight:1.3 }}>{step}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+
+        {isCancelled && (
+          <div style={{ background:'rgba(244,63,94,0.05)', border:'1.5px solid rgba(244,63,94,0.15)', borderRadius:20, padding:'28px', textAlign:'center', marginBottom:20 }}>
+            <div style={{ width:52, height:52, borderRadius:'50%', background:'rgba(244,63,94,0.1)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 12px', color:'#f43f5e', fontSize:22 }}>
+              <i className="fa fa-times" />
+            </div>
+            <div style={{ fontFamily:'Playfair Display,serif', fontSize:15, fontWeight:800, color:'#e11d48', marginBottom:4 }}>Order Cancelled</div>
+            <div style={{ fontSize:13, color:'#7A6E65' }}>This order has been cancelled.</div>
+          </div>
+        )}
+
+        {/* Delivery Address */}
+        <Card icon="fa-map-marker-alt" title="Delivery Address" delay=".3s">
+          {[
+            { label:'Name',    value: order.user?.name    },
+            { label:'Email',   value: order.user?.email   },
+            { label:'Phone',   value: order.user?.phone   },
+            { label:'Address', value: order.user?.address },
+            { label:'City',    value: order.user?.city    },
+            { label:'State',   value: order.user?.state   },
+            { label:'Pincode', value: order.user?.pin     },
+          ].map(f => <InfoRow key={f.label} {...f} />)}
+        </Card>
+
+        {/* Products */}
+        <Card icon="fa-box-open" title="Ordered Products" delay=".4s">
+          {order.products?.length > 0 ? (
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              {order.products.map((prod) => (
+                <div key={prod._id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:14, padding:'12px 16px', background:'rgba(200,64,10,0.03)', borderRadius:12, border:'1px solid rgba(200,64,10,0.07)', flexWrap:'wrap' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:12, flex:1, minWidth:0 }}>
+                    <div style={{ width:36, height:36, borderRadius:8, background:'rgba(200,64,10,0.08)', display:'flex', alignItems:'center', justifyContent:'center', color:'#C8400A', flexShrink:0 }}>
+                      <i className="fa fa-utensils" style={{ fontSize:'0.8rem' }}></i>
+                    </div>
+                    <div style={{ fontWeight:600, fontSize:'0.88rem', color:'#1C1009', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{prod.product?.name}</div>
+                  </div>
+                  <div style={{ display:'flex', gap:20, alignItems:'center', flexShrink:0 }}>
+                    <div style={{ textAlign:'center' }}>
+                      <div style={{ fontSize:'0.65rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', color:'#7A6E65', marginBottom:2 }}>Price</div>
+                      <div style={{ fontWeight:600, fontSize:'0.85rem', color:'#1C1009' }}>₹{prod.product?.finalPrice?.toLocaleString()}</div>
+                    </div>
+                    <div style={{ textAlign:'center' }}>
+                      <div style={{ fontSize:'0.65rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', color:'#7A6E65', marginBottom:2 }}>Qty</div>
+                      <div style={{ fontWeight:700, fontSize:'0.88rem', color:'#1C1009' }}>{prod.qty}</div>
+                    </div>
+                    <div style={{ textAlign:'center' }}>
+                      <div style={{ fontSize:'0.65rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', color:'#7A6E65', marginBottom:2 }}>Total</div>
+                      <div style={{ fontFamily:'Playfair Display,serif', fontWeight:900, fontSize:'1rem', color:'#C8400A' }}>₹{prod.total?.toLocaleString()}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ textAlign:'center', color:'#ccc', padding:'20px 0', fontSize:14 }}>No products found.</p>
+          )}
+        </Card>
+
+        {/* Footer bar */}
+        <div style={{ background:'white', borderRadius:20, border:'1px solid rgba(200,64,10,0.08)', boxShadow:'0 2px 16px rgba(28,16,9,0.07)', padding:'20px 24px', display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'space-between', gap:16 }}>
+          <div>
+            <div style={{ fontSize:'0.7rem', fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'#7A6E65', marginBottom:4 }}>Order Total</div>
+            <div style={{ fontFamily:'Playfair Display,serif', fontWeight:900, fontSize:'1.6rem', color:'#C8400A' }}>₹{order.total?.toLocaleString()}</div>
+          </div>
+          <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
+            {!isCancelled && (
+              <button
+                onClick={generateInvoice}
+                style={{ padding:'10px 22px', background:'linear-gradient(135deg,#1A1A2E,#2d1b4e)', color:'white', border:'none', borderRadius:50, fontWeight:700, fontSize:'0.85rem', cursor:'pointer', transition:'opacity 0.2s', boxShadow:'0 4px 14px rgba(26,26,46,0.25)', display:'flex', alignItems:'center', gap:8 }}
+                onMouseEnter={e => e.currentTarget.style.opacity='0.88'}
+                onMouseLeave={e => e.currentTarget.style.opacity='1'}
+              >
+                <i className="fa fa-file-invoice" style={{ fontSize:'0.78rem' }}></i>
+                Download Invoice
+              </button>
+            )}
+            <Link
+              to="/order"
+              style={{ padding:'10px 22px', background:'transparent', border:'1.5px solid rgba(200,64,10,0.3)', color:'#C8400A', borderRadius:50, fontWeight:700, fontSize:'0.85rem', textDecoration:'none', transition:'all 0.2s', display:'flex', alignItems:'center', gap:8 }}
+              onMouseEnter={e => { e.currentTarget.style.background='#C8400A'; e.currentTarget.style.color='white'; }}
+              onMouseLeave={e => { e.currentTarget.style.background='transparent'; e.currentTarget.style.color='#C8400A'; }}
+            >
+              <i className="fa fa-arrow-left" style={{ fontSize:'0.72rem' }}></i>
+              My Orders
+            </Link>
+          </div>
+        </div>
+
       </div>
-    </>
+    </div>
   );
 }

@@ -1,29 +1,55 @@
-import React from 'react'
-import HeroSection from '../Components/HeroSection'
-import Fact from '../Components/Fact'
-import { Link } from 'react-router-dom'
+import React from 'react';
+import { Link } from 'react-router-dom';
 
 export default function ErrorPage() {
   return (
-    <>
-        <HeroSection  title="404! Page Not Found"/>
-        <Fact />
+    <div style={{ background: 'linear-gradient(135deg,#FDF6EE 0%,#FFF8F3 100%)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 16px' }}>
+      <div style={{ textAlign: 'center', maxWidth: 500 }}>
 
-        {/* 404 Start  */}
-        <div className="container-fluid py-5 my-5 wow fadeIn" data-wow-delay="0.3s">
-            <div className="container text-center py-5">
-                <div className="row justify-content-center">
-                    <div className="col-lg-6">
-                        <i className="bi bi-exclamation-triangle display-1 text-primary"></i>
-                        <h1 className="display-1">404</h1>
-                        <h1 className="mb-4">Page Not Found</h1>
-                        <p className="mb-4">We’re sorry, the page you have looked for does not exist in our website! Maybe go to our home page or try to use Link search?</p>
-                        <Link className="btn btn-primary rounded-pill py-3 px-5" to="/">Go Back To Home</Link>
-                    </div>
-                </div>
+        {/* Big 404 */}
+        <div style={{ position: 'relative', marginBottom: 8, lineHeight: 1 }}>
+          <span style={{ fontFamily: 'Playfair Display,serif', fontWeight: 900, fontSize: 'clamp(7rem,22vw,10rem)', color: 'rgba(200,64,10,0.08)', display: 'block', letterSpacing: '-0.04em', userSelect: 'none' }}>
+            404
+          </span>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(200,64,10,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className="fa fa-utensils" style={{ fontSize: '2rem', color: '#C8400A', opacity: 0.6 }}></i>
             </div>
+          </div>
         </div>
-        {/* 404 End */}
-    </>
-  )
+
+        {/* Decorative line */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 22 }}>
+          <span style={{ width: 36, height: 3, background: '#C8400A', borderRadius: 2, display: 'block' }} />
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#F4A044', display: 'block' }} />
+          <span style={{ width: 56, height: 3, background: '#F4A044', borderRadius: 2, display: 'block', opacity: 0.5 }} />
+        </div>
+
+        <h1 style={{ fontFamily: 'Playfair Display,serif', fontWeight: 900, fontSize: 'clamp(1.5rem,4vw,2.2rem)', color: '#1C1009', marginBottom: 12 }}>
+          Page Not Found
+        </h1>
+        <p style={{ color: '#7A6E65', fontSize: '0.92rem', lineHeight: 1.7, marginBottom: 32, maxWidth: 380, margin: '0 auto 32px' }}>
+          Oops! The page you're looking for doesn't exist. It might have been moved or deleted.
+        </p>
+
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Link to="/"
+            style={{ padding: '13px 32px', background: 'linear-gradient(135deg,#C8400A,#E86834)', color: 'white', textDecoration: 'none', borderRadius: 50, fontWeight: 700, fontSize: '0.9rem', boxShadow: '0 8px 20px rgba(200,64,10,0.25)', transition: 'opacity 0.2s,transform 0.2s', display: 'inline-flex', alignItems: 'center', gap: 8 }}
+            onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = ''; }}
+          >
+            <i className="fa fa-home" style={{ fontSize: '0.82rem' }}></i> Go Home
+          </Link>
+          <Link to="/product"
+            style={{ padding: '13px 32px', background: 'transparent', border: '1.5px solid rgba(200,64,10,0.3)', color: '#C8400A', textDecoration: 'none', borderRadius: 50, fontWeight: 700, fontSize: '0.9rem', transition: 'all 0.2s', display: 'inline-flex', alignItems: 'center', gap: 8 }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#C8400A'; e.currentTarget.style.color = 'white'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#C8400A'; }}
+          >
+            <i className="fa fa-utensils" style={{ fontSize: '0.82rem' }}></i> Browse Menu
+          </Link>
+        </div>
+
+      </div>
+    </div>
+  );
 }

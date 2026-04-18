@@ -4,18 +4,20 @@ import { Link, useNavigate } from "react-router-dom";
 const Field = ({ label, value }) => (
   <div className="profile-field">
     <span className="profile-field-label">{label}</span>
-    <span className="profile-field-value">{value || <span className="profile-empty">Not set</span>}</span>
+    <span className="profile-field-value">
+      {value || <span className="profile-empty">Not set</span>}
+    </span>
   </div>
-)
+);
 
 export default function Profile({ title }) {
-  const [data, setData] = useState({})
-  const [loading, setLoading] = useState(true)
-  const navigate = useNavigate()
-  const isCheckout = title === "Checkout"
+  const [data, setData] = useState({});
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const isCheckout = title === "Checkout";
 
   useEffect(() => {
-    ;(async () => {
+    (async () => {
       try {
         let response = await fetch(
           `${process.env.REACT_APP_BACKEND_SERVER}/api/user/${localStorage.getItem("userid")}`,
@@ -25,29 +27,29 @@ export default function Profile({ title }) {
               "Content-Type": "application/json",
               authorization: localStorage.getItem("token"),
             },
-          }
-        )
-        response = await response.json()
-        if (response.result === "Done") setData(response.data)
-        else navigate("/login")
+          },
+        );
+        response = await response.json();
+        if (response.result === "Done") setData(response.data);
+        else navigate("/login");
       } catch (error) {
-        console.error("Error fetching user data:", error)
+        console.error("Error fetching user data:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    })()
-  }, [])
+    })();
+  }, []);
 
   const fields = [
-    { label: "Full Name",   value: data.name     },
-    { label: "Username",    value: data.username  },
-    { label: "Email",       value: data.email     },
-    { label: "Phone",       value: data.phone     },
-    { label: "Address",     value: data.address   },
-    { label: "Pin Code",    value: data.pin       },
-    { label: "City",        value: data.city      },
-    { label: "State",       value: data.state     },
-  ]
+    { label: "Full Name", value: data.name },
+    { label: "Username", value: data.username },
+    { label: "Email", value: data.email },
+    { label: "Phone", value: data.phone },
+    { label: "Address", value: data.address },
+    { label: "Pin Code", value: data.pin },
+    { label: "City", value: data.city },
+    { label: "State", value: data.state },
+  ];
 
   return (
     <>
@@ -222,34 +224,56 @@ export default function Profile({ title }) {
           0%   { background-position: 200% 0; }
           100% { background-position: -200% 0; }
         }
+          @media (max-width: 768px) {
+  .profile-wrapper {
+    padding: 40px 0 100px;
+          background: #f7f4ef;
+          min-height: 50vh;
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  padding: 40px 0 100px;
+          background: #f7f4ef;
+          min-height: 15vh;
+}
       `}</style>
 
-      <div className={`profile-wrapper ${isCheckout ? '' : ''}`}>
+      <div className={`profile-wrapper ${isCheckout ? "" : ""}`}>
         <div className={isCheckout ? "container-fluid px-4" : "container"}>
-
           {/* Header */}
           <div className="profile-header-bar">
             <div className="profile-header-icon">
-              <i className={`fa ${isCheckout ? 'fa-map-marker-alt' : 'fa-user'}`} />
+              <i
+                className={`fa ${isCheckout ? "fa-map-marker-alt" : "fa-user"}`}
+              />
             </div>
             <div>
               <h5 className="profile-header-title">
                 {isCheckout ? "Billing Address" : `${title} Profile`}
               </h5>
               <div className="profile-header-sub">
-                {isCheckout ? "Confirm your delivery details" : "Manage your account information"}
+                {isCheckout
+                  ? "Confirm your delivery details"
+                  : "Manage your account information"}
               </div>
             </div>
           </div>
 
           <div className="row g-4 justify-content-center">
-
             {/* Avatar column (hidden in checkout) */}
             {!isCheckout && (
               <div className="col-lg-4 col-md-5">
                 <div className="profile-avatar-card">
                   {loading ? (
-                    <div style={{ width: '100%', aspectRatio: '3/4', background: '#162236' }} />
+                    <div
+                      style={{
+                        width: "100%",
+                        aspectRatio: "3/4",
+                        background: "#162236",
+                      }}
+                    />
                   ) : (
                     <img
                       src={
@@ -262,19 +286,25 @@ export default function Profile({ title }) {
                     />
                   )}
                   <div className="profile-avatar-overlay">
-                    <div className="profile-avatar-name">{data.name || 'ShopKaro User'}</div>
-                    <div className="profile-avatar-user">@{data.username || '—'}</div>
+                    <div className="profile-avatar-name">
+                      {data.name || "ShopKaro User"}
+                    </div>
+                    <div className="profile-avatar-user">
+                      @{data.username || "—"}
+                    </div>
                   </div>
                 </div>
               </div>
             )}
 
             {/* Info card */}
-            <div className={isCheckout ? "col-12 col-md-8" : "col-lg-8 col-md-7"}>
+            <div
+              className={isCheckout ? "col-12 col-md-8" : "col-lg-8 col-md-7"}
+            >
               <div className="profile-info-card">
                 <div className="profile-info-header">
                   <h6 className="profile-info-header-title">
-                    {isCheckout ? 'Delivery Information' : 'Account Details'}
+                    {isCheckout ? "Delivery Information" : "Account Details"}
                   </h6>
                   <span className="profile-complete-badge">
                     <i className="fa fa-check me-1" style={{ fontSize: 9 }} />
@@ -284,14 +314,21 @@ export default function Profile({ title }) {
 
                 <div className="profile-fields">
                   {loading
-                    ? Array(8).fill(null).map((_, i) => (
-                      <div key={i} className="profile-field">
-                        <div className="profile-skeleton" style={{ width: 70 }} />
-                        <div className="profile-skeleton" style={{ width: 140 }} />
-                      </div>
-                    ))
-                    : fields.map(f => <Field key={f.label} {...f} />)
-                  }
+                    ? Array(8)
+                        .fill(null)
+                        .map((_, i) => (
+                          <div key={i} className="profile-field">
+                            <div
+                              className="profile-skeleton"
+                              style={{ width: 70 }}
+                            />
+                            <div
+                              className="profile-skeleton"
+                              style={{ width: 140 }}
+                            />
+                          </div>
+                        ))
+                    : fields.map((f) => <Field key={f.label} {...f} />)}
                 </div>
 
                 {!isCheckout && (
@@ -304,10 +341,9 @@ export default function Profile({ title }) {
                 )}
               </div>
             </div>
-
           </div>
         </div>
       </div>
     </>
-  )
+  );
 }

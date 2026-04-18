@@ -1,259 +1,201 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 
+const QUICK_LINKS_1 = [
+  { to: "/",           label: "Home"        },
+  { to: "/about",      label: "About Us"    },
+  { to: "/feature",    label: "Features"    },
+  { to: "/product",    label: "Products"    },
+  { to: "/testimonial",label: "Testimonial" },
+];
+
+const QUICK_LINKS_2 = [
+  { to: "/contactUs",  label: "Contact Us"         },
+  { to: "#",           label: "Privacy Policy"      },
+  { to: "#",           label: "Terms & Conditions"  },
+  { to: "#",           label: "Refund Policy"       },
+  { to: "#",           label: "Delivery Policy"     },
+];
+
+const SOCIALS = [
+  { icon: "fab fa-facebook-f",  href: "#" },
+  { icon: "fab fa-twitter",     href: "#" },
+  { icon: "fab fa-instagram",   href: "#" },
+  { icon: "fab fa-linkedin-in", href: "#" },
+];
 
 export default function Footer() {
-  let [email, setEmail] = useState("")
-  let [message, setMessage] = useState("")
+  const [email, setEmail]     = useState("");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function postData(e) {
-    e.preventDefault()
-    if (email.length === 0) {
-      setMessage("Please EnterValid Email Address")
-    }
-    else {
+    e.preventDefault();
+    if (!email.trim()) { setMessage("Please enter a valid email address."); return; }
+    setLoading(true);
+    try {
       let response = await fetch(`${process.env.REACT_APP_BACKEND_SERVER}/api/newsletter`, {
         method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({ email: email })
-      })
-      response = await response.json()
-      console.log(response)
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      response = await response.json();
       if (response.result === "Done") {
-        setMessage("Thanks to Subscribe Our Newsletter Service")
-        setEmail("")
+        setMessage("🎉 Thanks for subscribing!");
+        setEmail("");
+      } else {
+        setMessage(response.reason?.email || "Something went wrong.");
       }
-      else
-        setMessage(response.reason?.email)
+    } catch {
+      setMessage("Server error. Please try again.");
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
-    <>
-      {/* Footer Start  */}
-      <div
-        className="container-fluid footer bg-dark wow fadeIn px-4"
-        data-wow-delay=".3s"
-      >
+    <footer style={{ background: '#0d1117', color: 'rgba(255,255,255,0.55)', fontFamily: 'DM Sans, sans-serif' }}>
+
+      {/* Main footer body */}
+      <div className="container" style={{ padding: '64px 0 40px' }}>
         <div className="row g-5">
-          <div className="col-lg-2 col-md-6">
-            <Link to="/">
-              <h1 className="text-white fw-bold d-block">
-                Shop<span className="text-secondary">Karo</span>{" "}
-              </h1>
-            </Link>
-            <p className="mt-4 text-light text-justify">
-              We provide Upto 90% Discount on Top Brands Product and We deals in
-              Kids Female Males Products
-            </p>
-            <div className="d-flex hightech-link">
-              <Link
-                to="#"
-                className="btn-light nav-fill btn btn-square rounded-circle me-2"
-              >
-                <i className="fab fa-facebook-f text-primary"></i>
-              </Link>
-              <Link
-                to="#"
-                className="btn-light nav-fill btn btn-square rounded-circle me-2"
-              >
-                <i className="fab fa-twitter text-primary"></i>
-              </Link>
-              <Link
-                to="#"
-                className="btn-light nav-fill btn btn-square rounded-circle me-2"
-              >
-                <i className="fab fa-instagram text-primary"></i>
-              </Link>
-              <Link
-                to="#"
-                className="btn-light nav-fill btn btn-square rounded-circle me-0"
-              >
-                <i className="fab fa-linkedin-in text-primary"></i>
-              </Link>
-            </div>
-          </div>
+
+          {/* Brand col */}
           <div className="col-lg-3 col-md-6">
-            <Link to="/contactUs" className="h3 text-secondary">
-              Contact Us
+            <Link to="/" style={{ textDecoration: 'none' }}>
+              <h2 style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, fontSize: '1.75rem', color: 'white', marginBottom: 16 }}>
+                Eazy<span style={{ color: '#C8400A' }}>Dine</span>
+              </h2>
             </Link>
-            <div className="text-white mt-4 d-flex flex-column contact-link">
-              <Link
-                to="/"
-                className="pb-3 text-light border-bottom border-primary"
-              >
-                <i className="fas fa-map-marker-alt text-secondary me-2"></i>{" "}
-                123 Street, New York, USA
-              </Link>
-              <Link
-                to="tel:+123
-                456 7890"
-                className="py-3 text-light border-bottom border-primary"
-              >
-                <i
-                  className="fas fa-phone-alt text-secondary me-2"
-                  target="_blank"
-                  rel="noreferrer"
-                ></i>{" "}
-                +123 456 7890
-              </Link>
-              <Link
-                to="https://wa.me/8218635344"
-                className="py-3 text-light border-bottom border-primary"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <i className="fa fa-whatsapp text-secondary me-2 fs-4"></i> +123
-                456 7890
-              </Link>
-              <Link
-                to="mailto:ishaangupta124@gmail.com"
-                className="py-3 text-light border-bottom border-primary"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <i className="fas fa-envelope text-secondary me-2"></i>{" "}
-                info@exmple.con
-              </Link>
-            </div>
-          </div>
-          <div className="col-lg-2 col-md-6">
-            <Link to="##" className="h3 text-secondary">
-              Quick Link
-            </Link>
-            <div className="mt-4 d-flex flex-column short-link">
-              <Link
-                to="/"
-                className="mb-2 text-white"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <i className="fas fa-angle-right text-secondary me-2"></i>Home
-              </Link>
-              <Link
-                to="/about"
-                className="mb-2 text-white"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <i className="fas fa-angle-right text-secondary me-2"></i>About
-                us
-              </Link>
-              <Link
-                to="feature"
-                className="mb-2 text-white"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <i className="fas fa-angle-right text-secondary me-2"></i>
-                Feature
-              </Link>
-              <Link
-                to="shop"
-                className="mb-2 text-white"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <i className="fas fa-angle-right text-secondary me-2"></i>Shop
-              </Link>
-              <Link
-                to="testimonial"
-                className="mb-2 text-white"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <i className="fas fa-angle-right text-secondary me-2"></i>
-                Testimonial
-              </Link>
-            </div>
-          </div>
-          <div className="col-lg-2 col-md-6">
-            <Link to="##" className="h3 text-secondary">
-              Quick Link
-            </Link>
-            <div className="mt-4 d-flex flex-column short-link">
-              <Link to="/contactUs" className="mb-2 text-white">
-                <i
-                  className="fas fa-angle-right text-secondary me-2"
-                  target="_blank"
-                  rel="noreferrer"
-                ></i>
-                ContactUs
-              </Link>
-              <Link to="#" className="mb-2 text-white">
-                <i
-                  className="fas fa-angle-right text-secondary me-2"
-                  target="_blank"
-                  rel="noreferrer"
-                ></i>
-                Privacy Policy
-              </Link>
-              <Link to="#" className="mb-2 text-white">
-                <i
-                  className="fas fa-angle-right text-secondary me-2"
-                  target="_blank"
-                  rel="noreferrer"
-                ></i>
-                Terms And Conditions
-              </Link>
-              <Link to="#" className="mb-2 text-white">
-                <i
-                  className="fas fa-angle-right text-secondary me-2"
-                  target="_blank"
-                  rel="noreferrer"
-                ></i>
-                Refund Policy
-              </Link>
-              <Link to="#" className="mb-2 text-white">
-                <i
-                  className="fas fa-angle-right text-secondary me-2"
-                  target="_blank"
-                  rel="noreferrer"
-                ></i>
-                Delivery Policy
-              </Link>
+            <p style={{ fontSize: '0.88rem', lineHeight: 1.75, marginBottom: 24, color: 'rgba(255,255,255,0.45)' }}>
+              Bringing you the finest dining experiences with up to 50% off on top restaurants and premium food products.
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              {SOCIALS.map(({ icon, href }) => (
+                <a key={icon} href={href} style={{
+                  width: 36, height: 36, borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'rgba(255,255,255,0.55)',
+                  textDecoration: 'none',
+                  transition: 'all 0.25s',
+                  fontSize: '0.78rem',
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#C8400A'; e.currentTarget.style.borderColor = '#C8400A'; e.currentTarget.style.color = 'white'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'rgba(255,255,255,0.55)'; }}
+                >
+                  <i className={icon}></i>
+                </a>
+              ))}
             </div>
           </div>
 
-          <div className="col-lg-3 col-md-12 ">
-            <Link to="#" className="h3 text-secondary mb-4">
-              Newsletter
-            </Link>
-            <h6 className="text-light ">
-              {message ? message : "Suncribe to our NewsLetter Service to Get Latest Update About Our New Product And Great Deals"}
+          {/* Contact col */}
+          <div className="col-lg-3 col-md-6">
+            <h6 style={{ fontFamily: 'Playfair Display, serif', color: 'white', fontWeight: 700, fontSize: '1rem', marginBottom: 20, paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+              Contact Us
             </h6>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {[
+                { icon: 'fa-map-marker-alt', text: '123 Street, New York, USA',       href: '#' },
+                { icon: 'fa-phone-alt',      text: '+123 456 7890',                   href: 'tel:+1234567890' },
+                { icon: 'fa-whatsapp fab',   text: '+91 82186 35344',                 href: 'https://wa.me/8218635344' },
+                { icon: 'fa-envelope',       text: 'info@example.com',                href: 'mailto:info@example.com' },
+              ].map(({ icon, text, href }) => (
+                <a key={text} href={href} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: 'rgba(255,255,255,0.45)', fontSize: '0.86rem', transition: 'color 0.2s' }}
+                  onMouseEnter={e => e.currentTarget.style.color = 'white'}
+                  onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.45)'}
+                >
+                  <span style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(200,64,10,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <i className={`fa ${icon}`} style={{ color: '#C8400A', fontSize: '0.78rem' }}></i>
+                  </span>
+                  {text}
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick links col */}
+          <div className="col-lg-3 col-md-6">
+            <h6 style={{ fontFamily: 'Playfair Display, serif', color: 'white', fontWeight: 700, fontSize: '1rem', marginBottom: 20, paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+              Quick Links
+            </h6>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
+              {[...QUICK_LINKS_1, ...QUICK_LINKS_2].map(({ to, label }) => (
+                <Link key={label} to={to} style={{ color: 'rgba(255,255,255,0.45)', textDecoration: 'none', fontSize: '0.86rem', display: 'flex', alignItems: 'center', gap: 6, transition: 'color 0.2s' }}
+                  onMouseEnter={e => e.currentTarget.style.color = '#C8400A'}
+                  onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.45)'}
+                >
+                  <i className="fa fa-angle-right" style={{ fontSize: '0.7rem', color: '#C8400A' }}></i>
+                  {label}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Newsletter col */}
+          <div className="col-lg-3 col-md-6">
+            <h6 style={{ fontFamily: 'Playfair Display, serif', color: 'white', fontWeight: 700, fontSize: '1rem', marginBottom: 20, paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+              Newsletter
+            </h6>
+            <p style={{ fontSize: '0.86rem', color: 'rgba(255,255,255,0.45)', marginBottom: 18, lineHeight: 1.7 }}>
+              {message
+                ? <span style={{ color: message.startsWith('🎉') ? '#10b981' : '#f43f5e', fontWeight: 600 }}>{message}</span>
+                : 'Subscribe for the latest deals, new dishes, and restaurant updates.'}
+            </p>
             <form onSubmit={postData}>
-              <div className="mb-3">
+              <div style={{ position: 'relative', marginBottom: 10 }}>
                 <input
                   type="email"
-                  name="email"
-                  placeholder="Email Address"
-                  className="form-control"
-                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Your email address"
                   value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  style={{
+                    width: '100%', padding: '11px 16px', borderRadius: 12,
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    background: 'rgba(255,255,255,0.06)',
+                    color: 'white', fontSize: '0.86rem', outline: 'none',
+                    transition: 'border-color 0.2s',
+                    boxSizing: 'border-box',
+                  }}
+                  onFocus={e => e.target.style.borderColor = '#C8400A'}
+                  onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
                 />
               </div>
-              <button type="submit" className="btn w-100 btn-secondary">
-                Subscribe
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  width: '100%', padding: '11px 0',
+                  background: loading ? 'rgba(200,64,10,0.5)' : 'linear-gradient(135deg,#C8400A,#E86834)',
+                  color: 'white', border: 'none', borderRadius: 12,
+                  fontWeight: 700, fontSize: '0.86rem', cursor: loading ? 'not-allowed' : 'pointer',
+                  transition: 'opacity 0.2s', letterSpacing: '0.04em',
+                }}
+                onMouseEnter={e => !loading && (e.currentTarget.style.opacity = '0.88')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+              >
+                {loading ? 'Subscribing…' : 'Subscribe →'}
               </button>
             </form>
           </div>
-        </div>
-        <hr className="text-light mt-5 mb-4" />
-        <div className="row">
-          <div className="col-md-6 text-center text-md-start">
-            <span className="text-light">
-              <Link to="##" className="text-secondary">
-                <i className="fas fa-copyright text-secondary me-2"></i>ShopKaro
-              </Link>
-              , All right reserved.
-            </span>
-          </div>
+
         </div>
       </div>
-      {/* Footer End  */}
-    </>
+
+      {/* Bottom bar */}
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', padding: '18px 0' }}>
+        <div className="container" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+          <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.35)' }}>
+            © {new Date().getFullYear()} <span style={{ color: '#C8400A', fontWeight: 600 }}>EazyDine</span>. All rights reserved.
+          </span>
+          <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.25)' }}>
+            Made with <span style={{ color: '#f43f5e' }}>♥</span> for food lovers
+          </span>
+        </div>
+      </div>
+
+    </footer>
   );
 }
