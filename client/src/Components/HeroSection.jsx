@@ -1,22 +1,24 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 
-export default function HeroSection({title}) {
+export default function HeroSection({ title }) {
   return (
     <>
-        {/* Page Header Start */}
-        <div className="container-fluid page-header py-5">
-            <div className="container text-center py-5">
-                <h1 className="display-2 text-white mb-4 animated slideInDown">{title}</h1>
-                <nav aria-label="breadcrumb animated slideInDown">
-                    <ol className="breadcrumb justify-content-center mb-0">
-                        <li className="breadcrumb-item"><Link href="/">Home</Link></li>
-                        <li className="breadcrumb-item" aria-current="page">{title}</li>
-                    </ol>
-                </nav>
-            </div>
+      <style>{`
+        
+      `}</style>
+
+      <div className="hero-banner">
+        <div className="container hero-inner">
+          <div className="hero-eyebrow">ShopKaro</div>
+          <h1 className="hero-title">{title}</h1>
+          <nav className="hero-breadcrumb" aria-label="breadcrumb">
+            <Link to="/">Home</Link>
+            <span className="hero-breadcrumb-sep">&#9670;</span>
+            <span className="hero-breadcrumb-current">{title}</span>
+          </nav>
         </div>
-        {/* Page Header End */}
+      </div>
     </>
   )
 }

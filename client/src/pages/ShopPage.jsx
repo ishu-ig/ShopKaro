@@ -11,13 +11,13 @@ import { useDispatch, useSelector } from 'react-redux';
 
 export default function ShopPage() {
   const [data, setData] = useState([]);
-  const [mc, setMc] = useState("");
-  const [sc, setSc] = useState("");
-  const [br, setBr] = useState("");
-  const [flag, setFlag] = useState(false);
+  const [mc, setMc] = useState("All");
+  const [sc, setSc] = useState("All");
+  const [br, setBr] = useState("All");
   const [search, setSearch] = useState("");
   const [min, setMin] = useState(0);
-  const [max, setMax] = useState(1000);
+  const [max, setMax] = useState(100000);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const ProductStateData = useSelector((state) => state.ProductStateData);
   const MaincategoryStateData = useSelector((state) => state.MaincategoryStateData);
@@ -27,9 +27,9 @@ export default function ShopPage() {
   const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
 
-  useEffect(() => { dispatch(getMaincategory()) }, []);
-  useEffect(() => { dispatch(getSubcategory()) }, []);
-  useEffect(() => { dispatch(getBrand()) }, []);
+  useEffect(() => { dispatch(getMaincategory()); }, []);
+  useEffect(() => { dispatch(getSubcategory()); }, []);
+  useEffect(() => { dispatch(getBrand()); }, []);
 
   function postSearch(e) {
     e.preventDefault();
@@ -50,17 +50,17 @@ export default function ShopPage() {
     else if (option === "2") sorted.sort((x, y) => y.finalPrice - x.finalPrice);
     else sorted.sort((x, y) => x.finalPrice - y.finalPrice);
     setData(sorted);
-    setFlag(!flag);
   }
 
-  function filter(mc, sc, br, min = -1, max = -1) {
+  function filter(mcVal, scVal, brVal, minVal = -1, maxVal = -1) {
     setSearch("");
     setData(ProductStateData.filter((p) =>
-      (mc === "All" || mc === p.maincategory?.name) &&
-      (sc === "All" || sc === p.subcategory?.name) &&
-      (br === "All" || br === p.brand?.name) &&
-      (min === -1 || p.finalPrice >= min) &&
-      (max === -1 || p.finalPrice <= max)
+      p.active &&
+      (mcVal === "All" || mcVal === p.maincategory?.name) &&
+      (scVal === "All" || scVal === p.subcategory?.name) &&
+      (brVal === "All" || brVal === p.brand?.name) &&
+      (minVal === -1 || p.finalPrice >= minVal) &&
+      (maxVal === -1 || p.finalPrice <= maxVal)
     ));
   }
 
@@ -71,137 +71,133 @@ export default function ShopPage() {
 
   useEffect(() => {
     dispatch(getProduct());
-    const mc = searchParams.get("mc") ?? "All";
-    const sc = searchParams.get("sc") ?? "All";
-    const br = searchParams.get("br") ?? "All";
+    const mcQ = searchParams.get("mc") ?? "All";
+    const scQ = searchParams.get("sc") ?? "All";
+    const brQ = searchParams.get("br") ?? "All";
     if (ProductStateData.length) {
-      setMc(mc);
-      setSc(sc);
-      setBr(br);
-      filter(mc, sc, br);
+      setMc(mcQ); setSc(scQ); setBr(brQ);
+      filter(mcQ, scQ, brQ);
     }
   }, [ProductStateData.length, searchParams]);
 
+  const FilterSection = ({ label, items, current, paramKey }) => (
+    <div className="sk-filter-group">
+      <div className="sk-filter-group-title">{label}</div>
+      <Link
+        to={`/shop?mc=${paramKey === 'mc' ? 'All' : mc}&sc=${paramKey === 'sc' ? 'All' : sc}&br=${paramKey === 'br' ? 'All' : br}`}
+        className={`sk-filter-item ${current === "All" ? "active" : ""}`}
+      >
+        All
+      </Link>
+      {items.filter(x => x.active).map(item => (
+        <Link
+          key={item._id}
+          to={`/shop?mc=${paramKey === 'mc' ? item.name : mc}&sc=${paramKey === 'sc' ? item.name : sc}&br=${paramKey === 'br' ? item.name : br}`}
+          className={`sk-filter-item ${current === item.name ? "active" : ""}`}
+        >
+          {item.name}
+        </Link>
+      ))}
+    </div>
+  );
+
   return (
     <>
-      <div className="d-none d-lg-block">
-        <HeroSection title="Shop" />
-      </div>
-      <div className="container-fluid my-3">
-        <div className="row">
+      <div className="sk-shop-page">
+        <div className="d-none d-lg-block">
+          <HeroSection title="Shop" />
+        </div>
 
-          {/* Desktop Sidebar */}
-          <div className="col-md-2 d-none d-md-block">
-            <div className="list-group mb-3">
-              <Link className="list-group-item list-group-item-action active">Maincategory</Link>
-              <Link to={`/shop?mc=All&sc=${sc}&br=${br}`} className={`list-group-item ${mc === "All" ? "bg-primary text-white" : ""}`}>All</Link>
-              {MaincategoryStateData.filter(x => x.active).map((item) => (
-                <Link to={`/shop?mc=${item.name}&sc=${sc}&br=${br}`} key={item._id} className={`list-group-item ${mc === item.name ? "bg-primary text-white" : ""}`}>{item.name}</Link>
-              ))}
-            </div>
+        <div className="container py-4">
+          <div className="row g-4">
 
-            <div className="list-group mb-3">
-              <Link className="list-group-item list-group-item-action active">Subcategory</Link>
-              <Link to={`/shop?mc=${mc}&sc=All&br=${br}`} className={`list-group-item ${sc === "All" ? "bg-primary text-white" : ""}`}>All</Link>
-              {SubcategoryStateData.filter(x => x.active).map((item) => (
-                <Link to={`/shop?mc=${mc}&sc=${item.name}&br=${br}`} key={item._id} className={`list-group-item ${sc === item.name ? "bg-primary text-white" : ""}`}>{item.name}</Link>
-              ))}
-            </div>
-
-            <div className="list-group mb-3">
-              <Link className="list-group-item list-group-item-action active">Brands</Link>
-              <Link to={`/shop?mc=${mc}&sc=${sc}&br=All`} className={`list-group-item ${br === "All" ? "bg-primary text-white" : ""}`}>All</Link>
-              {BrandStateData.filter(x => x.active).map((item) => (
-                <Link to={`/shop?mc=${mc}&sc=${sc}&br=${item.name}`} key={item._id} className={`list-group-item ${br === item.name ? "bg-primary text-white" : ""}`}>{item.name}</Link>
-              ))}
-            </div>
-
-            <h5 className='bg-primary text-light text-center p-2'>Price Filter</h5>
-            <form onSubmit={applyPriceFilter}>
-              <div className="row">
-                <div className="col-6 mb-3">
-                  <label>Minimum</label>
-                  <input type="number" value={min} onChange={(e) => setMin(e.target.value)} className='form-control border-3 border-primary' />
+            {/* Desktop Sidebar */}
+            <div className="col-lg-2 d-none d-lg-block">
+              <div className="sk-sidebar">
+                <div className="sk-sidebar-title">
+                  <i className="fa fa-sliders-h"></i> Filters
                 </div>
-                <div className="col-6 mb-3">
-                  <label>Maximum</label>
-                  <input type="number" value={max} onChange={(e) => setMax(e.target.value)} className='form-control border-3 border-primary' />
-                </div>
-              </div>
-              <div className="mb-3">
-                <button type="submit" className='btn btn-primary w-100'>Apply Filter</button>
-              </div>
-            </form>
-          </div>
+                <FilterSection label="Category" items={MaincategoryStateData} current={mc} paramKey="mc" />
+                <FilterSection label="Subcategory" items={SubcategoryStateData} current={sc} paramKey="sc" />
+                <FilterSection label="Brands" items={BrandStateData} current={br} paramKey="br" />
 
-          {/* Mobile Filter Dropdown */}
-          <div className="col-12 d-block d-md-none mb-3">
-            <button className="btn btn-primary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#mobileFilters">
-              Filter Options
-            </button>
-            <div className="collapse mt-2" id="mobileFilters">
-              <div className="card card-body">
-                <div className="list-group mb-3">
-                  <strong>Maincategory</strong>
-                  <Link to={`/shop?mc=All&sc=${sc}&br=${br}`} className={`list-group-item ${mc === "All" ? "bg-primary text-white" : ""}`}>All</Link>
-                  {MaincategoryStateData.filter(x => x.active).map((item) => (
-                    <Link to={`/shop?mc=${item.name}&sc=${sc}&br=${br}`} key={item._id} className={`list-group-item ${mc === item.name ? "bg-primary text-white" : ""}`}>{item.name}</Link>
-                  ))}
-                </div>
-
-                <div className="list-group mb-3">
-                  <strong>Subcategory</strong>
-                  <Link to={`/shop?mc=${mc}&sc=All&br=${br}`} className={`list-group-item ${sc === "All" ? "bg-primary text-white" : ""}`}>All</Link>
-                  {SubcategoryStateData.filter(x => x.active).map((item) => (
-                    <Link to={`/shop?mc=${mc}&sc=${item.name}&br=${br}`} key={item._id} className={`list-group-item ${sc === item.name ? "bg-primary text-white" : ""}`}>{item.name}</Link>
-                  ))}
-                </div>
-
-                <div className="list-group mb-3">
-                  <strong>Brands</strong>
-                  <Link to={`/shop?mc=${mc}&sc=${sc}&br=All`} className={`list-group-item ${br === "All" ? "bg-primary text-white" : ""}`}>All</Link>
-                  {BrandStateData.filter(x => x.active).map((item) => (
-                    <Link to={`/shop?mc=${mc}&sc=${sc}&br=${item.name}`} key={item._id} className={`list-group-item ${br === item.name ? "bg-primary text-white" : ""}`}>{item.name}</Link>
-                  ))}
-                </div>
-
-                <form onSubmit={applyPriceFilter}>
-                  <div className="row">
-                    <div className="col-6 mb-3">
-                      <label>Minimum</label>
-                      <input type="number" value={min} onChange={(e) => setMin(e.target.value)} className='form-control' />
+                <div className="sk-filter-group sk-price-filter">
+                  <div className="sk-filter-group-title">Price Range</div>
+                  <form onSubmit={applyPriceFilter}>
+                    <div className="mb-2">
+                      <label>Min (₹)</label>
+                      <input type="number" value={min} onChange={e => setMin(e.target.value)} className="sk-price-input" />
                     </div>
-                    <div className="col-6 mb-3">
-                      <label>Maximum</label>
-                      <input type="number" value={max} onChange={(e) => setMax(e.target.value)} className='form-control' />
+                    <div className="mb-2">
+                      <label>Max (₹)</label>
+                      <input type="number" value={max} onChange={e => setMax(e.target.value)} className="sk-price-input" />
                     </div>
-                  </div>
-                  <button type="submit" className="btn btn-success w-100">Apply Price Filter</button>
-                </form>
+                    <button type="submit" className="sk-price-btn">Apply</button>
+                  </form>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Product Display */}
-          <div className="col-md-10">
-            <div className="row">
-              <div className="col-md-9 mb-3">
-                <form onSubmit={postSearch}>
-                  <div className="btn-group w-100">
-                    <input type="search" placeholder='Search' value={search} onChange={(e) => setSearch(e.target.value)} className='form-control border-3 border-primary' style={{ borderRadius: "10px 0 0 10px" }} />
-                    <button type='submit' className='btn btn-primary'>Search</button>
-                  </div>
-                </form>
+            {/* Main Content */}
+            <div className="col-lg-10">
+              {/* Mobile Filter Toggle */}
+              <div className="d-lg-none mb-3">
+                <button className="sk-mobile-filter-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
+                  <i className="fa fa-filter"></i>
+                  {sidebarOpen ? "Hide Filters" : "Show Filters"}
+                </button>
               </div>
-              <div className="col-md-3">
-                <select onChange={(e) => sortFilter(e.target.value)} className='form-select border-3 border-primary'>
-                  <option value="1">Latest</option>
-                  <option value="2">Price : High to Low</option>
-                  <option value="3">Price : Low to High</option>
+
+              {/* Mobile Sidebar */}
+              {sidebarOpen && (
+                <div className="sk-mobile-sidebar d-lg-none">
+                  <FilterSection label="Category" items={MaincategoryStateData} current={mc} paramKey="mc" />
+                  <FilterSection label="Subcategory" items={SubcategoryStateData} current={sc} paramKey="sc" />
+                  <FilterSection label="Brands" items={BrandStateData} current={br} paramKey="br" />
+                  <form onSubmit={applyPriceFilter}>
+                    <div className="sk-filter-group-title mb-2">Price Range</div>
+                    <div className="row g-2 mb-2">
+                      <div className="col-6">
+                        <label className="sk-price-filter" style={{fontSize:11,fontWeight:600,letterSpacing:1,textTransform:'uppercase',color:'#888',display:'block',marginBottom:4}}>Min</label>
+                        <input type="number" value={min} onChange={e => setMin(e.target.value)} className="sk-price-input" />
+                      </div>
+                      <div className="col-6">
+                        <label style={{fontSize:11,fontWeight:600,letterSpacing:1,textTransform:'uppercase',color:'#888',display:'block',marginBottom:4}}>Max</label>
+                        <input type="number" value={max} onChange={e => setMax(e.target.value)} className="sk-price-input" />
+                      </div>
+                    </div>
+                    <button type="submit" className="sk-price-btn">Apply Price Filter</button>
+                  </form>
+                </div>
+              )}
+
+              {/* Toolbar */}
+              <div className="sk-toolbar">
+                <form onSubmit={postSearch} className="sk-search-wrap">
+                  <input
+                    type="search"
+                    placeholder="Search products, brands, categories..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    className="sk-search-input"
+                  />
+                  <button type="submit" className="sk-search-btn">
+                    <i className="fa fa-search"></i>
+                  </button>
+                </form>
+                <select onChange={e => sortFilter(e.target.value)} className="sk-sort-select">
+                  <option value="1">Latest First</option>
+                  <option value="2">Price: High to Low</option>
+                  <option value="3">Price: Low to High</option>
                 </select>
               </div>
+
+              <div className="sk-results-count mb-3 px-1">
+                Showing <strong>{Math.min(data.length, 21)}</strong> of <strong>{data.length}</strong> products
+              </div>
+
+              <Product title="Shop" data={data} />
             </div>
-            <Product title="Shop" data={data} />
           </div>
         </div>
       </div>

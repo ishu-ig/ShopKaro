@@ -3,215 +3,245 @@ import { useParams, Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { getCheckout } from '../Redux/ActionCreartors/CheckoutActionCreators';
 
+const STATUS_STEPS = ["Ordered", "Packed", "Shipped", "Out for Delivery", "Delivered"];
+
+const STATUS_ICONS = {
+  "Ordered":          "fa-file-alt",
+  "Packed":           "fa-box",
+  "Shipped":          "fa-truck",
+  "Out for Delivery": "fa-map-marker-alt",
+  "Delivered":        "fa-check-circle",
+};
+
+function InfoRow({ label, value }) {
+  return (
+    <div className="od-info-row">
+      <span className="od-info-label">{label}</span>
+      <span className="od-info-value">{value || '—'}</span>
+    </div>
+  );
+}
 
 export default function OrderDetailPage() {
-    const { _id } = useParams();  // Order ID from URL
-    const CheckoutStateData = useSelector(state => state.CheckoutStateData);
-    const [order, setOrder] = useState(null);
-    const dispatch = useDispatch();
+  const { _id } = useParams();
+  const CheckoutStateData = useSelector(state => state.CheckoutStateData);
+  const [order, setOrder] = useState(null);
+  const dispatch = useDispatch();
 
-    useEffect(() => {
-        dispatch(getCheckout());
-    }, [dispatch]);
+  useEffect(() => { dispatch(getCheckout()); }, [dispatch]);
 
-    useEffect(() => {
-        if (CheckoutStateData.length) {
-            const foundOrder = CheckoutStateData.find(order => order._id === _id);
-            setOrder(foundOrder || {});
-        }
-    }, [CheckoutStateData, _id]);
-
-    const generateInvoice = async () => {
-        try {
-            let response = await fetch(`${process.env.REACT_APP_BACKEND_SERVER}/api/invoice/generate`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ orderId: _id }),
-            });
-
-            const data = await response.json();
-
-            if (response.ok && data.invoice?.invoiceNumber) {
-                alert('Invoice generated!');
-                downloadInvoice(data.invoice.invoiceNumber);
-            } else {
-                alert('Invoice generation failed.');
-            }
-        } catch (err) {
-            console.error('Error generating invoice:', err);
-            alert('Error generating invoice.');
-        }
-    };
-
-    const downloadInvoice = (invoiceNumber) => {
-        const invoiceUrl = `${process.env.REACT_APP_BACKEND_SERVER}/invoices/${invoiceNumber}.pdf`;
-        window.open(invoiceUrl, '_blank');
-    };
-
-    if (!order) {
-        return (
-            <div className="container text-center my-5">
-                <h3>Loading Order Details...</h3>
-            </div>
-        );
+  useEffect(() => {
+    if (CheckoutStateData.length) {
+      const found = CheckoutStateData.find(o => o._id === _id);
+      setOrder(found || {});
     }
+  }, [CheckoutStateData, _id]);
 
-    const statusSteps = ["Ordered", "Packed", "Shipped", "Out for Delivery", "Delivered"];
-    const currentIndex = statusSteps.indexOf(order.orderStatus);
+  const generateInvoice = async () => {
+    try {
+      let response = await fetch(`${process.env.REACT_APP_BACKEND_SERVER}/api/invoice/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: _id }),
+      });
+      const data = await response.json();
+      if (response.ok && data.invoice?.invoiceNumber) {
+        window.open(`${process.env.REACT_APP_BACKEND_SERVER}/invoices/${data.invoice.invoiceNumber}.pdf`, '_blank');
+      } else {
+        alert('Invoice generation failed.');
+      }
+    } catch (err) {
+      alert('Error generating invoice.');
+    }
+  };
 
-    return (
-        <>
-            <div className="container my-4">
-                <h3 className="bg-primary text-light text-center mb-4 p-2">Order Details</h3>
+  if (!order) return (
+    <>
+      <style>{`.od-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50vh;gap:16px}.od-spinner{width:44px;height:44px;border:3px solid #f0ece4;border-top-color:#c9a84c;border-radius:50%;animation:spin 0.8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <div className="od-loading">
+        <div className="od-spinner" />
+        <span style={{ fontSize: 14, color: '#888', letterSpacing: 1 }}>Loading order…</span>
+      </div>
+    </>
+  );
 
-                {/* ===== Order Summary ===== */}
-                <div className="card shadow-sm p-3 mb-4">
-                    <div className="card-body">
-                        <h5><strong>Order ID:</strong> {order._id}</h5>
-                        <p><strong>Order Date:</strong> {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "N/A"}</p>
-                        <p>
-                            <strong>Order Status:</strong>{" "}
-                            <span className={`fw-bold ${order.orderStatus === "Delivered" ? "text-success" : "text-danger"}`}>
-                                {order.orderStatus}
-                            </span>
-                        </p>
-                        <p>
-                            <strong>Payment Status:</strong>{" "}
-                            <span className={`fw-bold ${order.paymentStatus === "Pending" ? "text-danger" : "text-success"}`}>
-                                {order.paymentStatus}
-                            </span>
-                        </p>
-                        <p><strong>Payment Mode:</strong> {order.paymentMode}</p>
-                    </div>
-                </div>
+  const currentIndex = STATUS_STEPS.indexOf(order.orderStatus);
+  const isCancelled = order.orderStatus === 'Cancelled';
+  const isDelivered = order.orderStatus === 'Delivered';
 
-                {/* ===== Graphical Order Status Tracker ===== */}
-                <div className="card shadow-sm p-3 mb-4">
-                    <div className="card-body">
-                        <h5 className="mb-3 text-center">Order Status Progress</h5>
+  return (
+    <>
 
-                        <div
-                            className="d-flex flex-column flex-md-row align-items-center position-relative"
-                            style={{ gap: "10px" }}
-                        >
-                            {statusSteps.map((step, index) => {
-                                const stepCompleted = currentIndex > index;
-                                const stepCurrent = currentIndex === index;
+      <div className="od-wrap">
+        <div className="container">
 
-                                return (
-                                    <React.Fragment key={step}>
-                                        {/* Status Circle */}
-                                        <div className="d-flex flex-column align-items-center position-relative" style={{ flex: 1 }}>
-                                            <div
-                                                style={{
-                                                    width: "30px",
-                                                    height: "30px",
-                                                    borderRadius: "50%",
-                                                    backgroundColor: stepCompleted ? "#28a745" : stepCurrent ? "#0d6efd" : "#6c757d",
-                                                    color: "#fff",
-                                                    display: "flex",
-                                                    justifyContent: "center",
-                                                    alignItems: "center",
-                                                    zIndex: 2,
-                                                    fontWeight: "bold",
-                                                    fontSize: "16px",
-                                                }}
-                                            >
-                                                {stepCompleted ? "✔" : index + 1}
-                                            </div>
-                                            <span
-                                                style={{
-                                                    marginTop: "8px",
-                                                    color: stepCompleted ? "#28a745" : stepCurrent ? "#0d6efd" : "#6c757d",
-                                                    fontWeight: stepCurrent ? "bold" : "normal",
-                                                    fontSize: "12px",
-                                                    textAlign: "center",
-                                                }}
-                                            >
-                                                {step}
-                                            </span>
-                                        </div>
-
-                                        {/* Connecting Line */}
-                                        {index < statusSteps.length - 1 && (
-                                            <div
-                                                style={{
-                                                    flex: 1,
-                                                    height: "4px",
-                                                    backgroundColor: currentIndex > index ? "#28a745" : "#6c757d",
-                                                    zIndex: 1,
-                                                    margin: "0 -15px", // overlap edges
-                                                }}
-                                            ></div>
-                                        )}
-                                    </React.Fragment>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
-                {/* ===== User & Address Details ===== */}
-                <div className="card shadow-sm p-3 mb-4">
-                    <div className="card-body">
-                        <h5 className="mb-3">User & Address Details</h5>
-                        <table className="table table-bordered">
-                            <tbody>
-                                <tr><th>Name</th><td>{order.user?.name}</td></tr>
-                                <tr><th>Email</th><td>{order.user?.email}</td></tr>
-                                <tr><th>Phone</th><td>{order.user?.phone}</td></tr>
-                                <tr><th>Address</th><td>{order.user?.address}</td></tr>
-                                <tr><th>City</th><td>{order.user?.city}</td></tr>
-                                <tr><th>State</th><td>{order.user?.state}</td></tr>
-                                <tr><th>Pincode</th><td>{order.user?.pin}</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                {/* ===== Product List ===== */}
-                <div className="card shadow-sm p-3 mb-4">
-                    <div className="card-body">
-                        <h5 className="mb-3">Ordered Products</h5>
-                        {order?.products?.length > 0 ? (
-                            <table className="table table-bordered">
-                                <thead className="table-light text-center">
-                                    <tr>
-                                        <th>Product</th>
-                                        <th>Price (₹)</th>
-                                        <th>Quantity</th>
-                                        <th>Total (₹)</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="text-center">
-                                    {order.products.map((prod) => (
-                                        <tr key={prod._id}>
-                                            <td>{prod.product?.name}</td>
-                                            <td>{prod.product?.finalPrice}</td>
-                                            <td>{prod.qty}</td>
-                                            <td>{prod.total}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        ) : (
-                            <p className="text-center text-muted">No products found for this order.</p>
-                        )}
-                    </div>
-                </div>
-
-                {/* ===== Total + Invoice Button ===== */}
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h4><strong>Total Amount:</strong> ₹{order.total}</h4>
-                    <div className='btn-group'>
-                        <button onClick={generateInvoice} className="btn btn-success me-2">
-                            View Invoice
-                        </button>
-                        <Link to="/order" className="btn btn-outline-primary">Back to Orders</Link>
-                    </div>
-                </div>
+          {/* Header */}
+          <div className="od-page-header">
+            <div className="od-page-header-left">
+              <div className="od-page-icon"><i className="fa fa-receipt" /></div>
+              <div>
+                <div className="od-page-title">Order Details</div>
+                <div className="od-page-sub">#{order._id?.slice(-8)?.toUpperCase()}</div>
+              </div>
             </div>
+            <div className={`od-status-pill ${isDelivered ? 'delivered' : isCancelled ? 'cancelled' : 'processing'}`}>
+              <i className={`fa ${isDelivered ? 'fa-check' : isCancelled ? 'fa-times' : 'fa-clock'}`} style={{ fontSize: 10 }} />
+              {order.orderStatus}
+            </div>
+          </div>
 
-            <div style={{ marginBottom: "100px" }}></div>
-        </>
-    );
+          {/* Order Summary */}
+          <div className="od-card wow fadeIn" data-wow-delay=".1s">
+            <div className="od-card-header">
+              <div className="od-card-header-icon"><i className="fa fa-info" /></div>
+              <h6 className="od-card-header-title">Order Summary</h6>
+            </div>
+            <div className="od-card-body">
+              <div className="od-summary-grid">
+                <div className="od-summary-item">
+                  <div className="od-summary-item-label">Order ID</div>
+                  <div className="od-summary-item-value" style={{ fontSize: 12, wordBreak: 'break-all' }}>{order._id}</div>
+                </div>
+                <div className="od-summary-item">
+                  <div className="od-summary-item-label">Order Date</div>
+                  <div className="od-summary-item-value">
+                    {order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
+                  </div>
+                </div>
+                <div className="od-summary-item">
+                  <div className="od-summary-item-label">Payment Status</div>
+                  <div>
+                    <span className={`od-pay-pill ${order.paymentStatus === 'Pending' ? 'pending' : 'paid'}`}>
+                      <i className={`fa ${order.paymentStatus === 'Pending' ? 'fa-clock' : 'fa-check'}`} style={{ fontSize: 10 }} />
+                      {order.paymentStatus}
+                    </span>
+                  </div>
+                </div>
+                <div className="od-summary-item">
+                  <div className="od-summary-item-label">Payment Mode</div>
+                  <div className="od-summary-item-value">{order.paymentMode}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Order Tracker */}
+          {!isCancelled && (
+            <div className="od-card wow fadeIn" data-wow-delay=".2s">
+              <div className="od-card-header">
+                <div className="od-card-header-icon"><i className="fa fa-map-marked-alt" /></div>
+                <h6 className="od-card-header-title">Order Progress</h6>
+              </div>
+              <div className="od-card-body">
+                <div className="od-tracker">
+                  {STATUS_STEPS.map((step, index) => {
+                    const done    = currentIndex > index;
+                    const current = currentIndex === index;
+                    return (
+                      <div
+                        key={step}
+                        className={`od-tracker-step ${done ? 'completed' : current ? 'current' : ''}`}
+                      >
+                        <div className="od-tracker-circle">
+                          {done
+                            ? <i className="fa fa-check" style={{ fontSize: 12 }} />
+                            : <i className={`fa ${STATUS_ICONS[step]}`} />
+                          }
+                        </div>
+                        <span className="od-tracker-label">{step}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {isCancelled && (
+            <div className="od-card" style={{ border: '1.5px solid rgba(220,53,69,0.2)' }}>
+              <div className="od-card-body" style={{ textAlign: 'center', padding: '28px' }}>
+                <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(220,53,69,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', color: '#dc3545', fontSize: 22 }}>
+                  <i className="fa fa-times" />
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#dc3545', marginBottom: 4 }}>Order Cancelled</div>
+                <div style={{ fontSize: 13, color: '#888' }}>This order has been cancelled.</div>
+              </div>
+            </div>
+          )}
+
+          {/* Address */}
+          <div className="od-card wow fadeIn" data-wow-delay=".3s">
+            <div className="od-card-header">
+              <div className="od-card-header-icon"><i className="fa fa-map-marker-alt" /></div>
+              <h6 className="od-card-header-title">Delivery Address</h6>
+            </div>
+            <div className="od-card-body">
+              <InfoRow label="Name"    value={order.user?.name} />
+              <InfoRow label="Email"   value={order.user?.email} />
+              <InfoRow label="Phone"   value={order.user?.phone} />
+              <InfoRow label="Address" value={order.user?.address} />
+              <InfoRow label="City"    value={order.user?.city} />
+              <InfoRow label="State"   value={order.user?.state} />
+              <InfoRow label="Pincode" value={order.user?.pin} />
+            </div>
+          </div>
+
+          {/* Products */}
+          <div className="od-card wow fadeIn" data-wow-delay=".4s">
+            <div className="od-card-header">
+              <div className="od-card-header-icon"><i className="fa fa-box-open" /></div>
+              <h6 className="od-card-header-title">Ordered Products</h6>
+            </div>
+            <div className="od-card-body" style={{ padding: '0 24px 8px' }}>
+              {order.products?.length > 0 ? (
+                <table className="od-products-table">
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th>Price</th>
+                      <th>Qty</th>
+                      <th>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {order.products.map((prod) => (
+                      <tr key={prod._id}>
+                        <td><span className="od-product-name">{prod.product?.name}</span></td>
+                        <td>₹{prod.product?.finalPrice?.toLocaleString()}</td>
+                        <td>{prod.qty}</td>
+                        <td style={{ fontWeight: 700, color: '#0d1b2a' }}>₹{prod.total?.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p style={{ textAlign: 'center', color: '#bbb', padding: '24px 0', fontSize: 14 }}>No products found.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="od-footer-bar wow fadeIn" data-wow-delay=".5s">
+            <div>
+              <div className="od-total-label">Order Total</div>
+              <div className="od-total-amount">₹{order.total?.toLocaleString()}</div>
+            </div>
+            <div className="od-footer-actions">
+              {!isCancelled && (
+                <button onClick={generateInvoice} className="od-btn primary">
+                  <i className="fa fa-file-invoice" style={{ fontSize: 12 }} />
+                  Download Invoice
+                </button>
+              )}
+              <Link to="/order" className="od-btn outline">
+                <i className="fa fa-arrow-left" style={{ fontSize: 11 }} />
+                My Orders
+              </Link>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </>
+  );
 }

@@ -1,85 +1,129 @@
-import React, { useEffect, useState } from 'react'
-import HeroSection from '../Components/HeroSection'
-import { useDispatch, useSelector } from 'react-redux'
-import { deleteWishlist, getWishlist } from '../Redux/ActionCreartors/WishlistActionCreators'
-import { Link } from 'react-router-dom'
+import React, { useEffect, useState } from 'react';
+import HeroSection from '../Components/HeroSection';
+import { useDispatch, useSelector } from 'react-redux';
+import { deleteWishlist, getWishlist } from '../Redux/ActionCreartors/WishlistActionCreators';
+import { Link } from 'react-router-dom';
 
 export default function WishlistPage() {
-    let [wishlist, setWishlist] = useState([])
-    let WishlistStateData = useSelector(state => state.WishlistStateData)
-    let dispatch = useDispatch()
+    const [wishlist, setWishlist] = useState([]);
+    const WishlistStateData = useSelector(state => state.WishlistStateData);
+    const dispatch = useDispatch();
 
     function deleteRecord(_id) {
-        if (window.confirm("Are You Sure To Delete This Item")) {
-            dispatch(deleteWishlist({ _id: _id }))
-            getAPIData()
+        if (window.confirm("Remove this item from your wishlist?")) {
+            dispatch(deleteWishlist({ _id }));
+            getAPIData();
         }
     }
+
     function getAPIData() {
-        dispatch(getWishlist())
-        if (WishlistStateData.length)
-            setWishlist(WishlistStateData)
-        else
-            setWishlist([])
+        dispatch(getWishlist());
+        if (WishlistStateData.length) setWishlist(WishlistStateData);
+        else setWishlist([]);
     }
+
     useEffect(() => {
-        (() => {
-            getAPIData()
-        })()
-    }, [WishlistStateData.length])
+        getAPIData();
+    }, [WishlistStateData.length]);
+
     return (
         <>
-            <HeroSection title="My WishList" />
-            <h5 className=' text-light text-center bg-primary p-2 mt-3 mx-5'>Wishlist</h5>
-            <div className="container-fluid mt-3 mb-5 pb-3">
+            {/* <style>{styles}</style> */}
+            <HeroSection title="My Wishlist" />
+            <div className="wl-root">
+                <div className="wl-container">
+                    <div className="wl-header">
+                        <div className="wl-header-left">
+                            <p className="wl-eyebrow">My Collection</p>
+                            <h1 className="wl-title">Wish<em>list</em></h1>
+                            {wishlist.length > 0 && (
+                                <p className="wl-count">{wishlist.length} {wishlist.length === 1 ? "item" : "items"} saved</p>
+                            )}
+                        </div>
+                        <Link to="/shop" className="wl-shop-link">Continue Shopping →</Link>
+                    </div>
 
-                <div className='mx-5'>
-                    {
-                        wishlist.length ?
-                            <>
-                                <table className='table table-bordered border-2 table-striped align-middle'>
-                                    <thead className="table-primary text-center">
-                                        <tr>
-                                            <th></th>
-                                            <th>Name</th>
-                                            <th>Brand</th>
-                                            <th>Color</th>
-                                            <th>Size</th>
-                                            <th>Price</th>
-                                            <th>Stock</th>
-                                            <th></th>
-                                            <th></th>
+                    {wishlist.length ? (
+                        <div className="wl-table-wrap">
+                            <table className="wl-table">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>Product</th>
+                                        <th>Color</th>
+                                        <th>Size</th>
+                                        <th>Price</th>
+                                        <th>Stock</th>
+                                        <th className="center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {wishlist.map(item => (
+                                        <tr key={item._id}>
+                                            <td className="wl-img-cell">
+                                                <Link
+                                                    to={`${process.env.REACT_APP_BACKEND_SERVER}/${item.product?.pic}`}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="wl-img-link"
+                                                >
+                                                    <img
+                                                        src={`${process.env.REACT_APP_BACKEND_SERVER}/${item.product?.pic}`}
+                                                        alt={item.product?.name}
+                                                        className="wl-img"
+                                                    />
+                                                </Link>
+                                            </td>
+                                            <td>
+                                                <div className="wl-product-name">{item.product?.name}</div>
+                                                <div className="wl-product-brand">{item.product?.brand?.name}</div>
+                                            </td>
+                                            <td>
+                                                <span className="wl-badge wl-badge-color">{item.product?.color || "—"}</span>
+                                            </td>
+                                            <td>
+                                                <span className="wl-badge wl-badge-size">{item.product?.size || "—"}</span>
+                                            </td>
+                                            <td>
+                                                <span className="wl-price">₹{item.product?.finalPrice?.toLocaleString()}</span>
+                                            </td>
+                                            <td>
+                                                {item.product?.stockQuantity === 0
+                                                    ? <span className="wl-stock-out">Out of Stock</span>
+                                                    : <span className="wl-stock-ok">{item.product?.stockQuantity} left</span>
+                                                }
+                                            </td>
+                                            <td style={{textAlign: 'center'}}>
+                                                <div style={{display:'flex', gap: 8, justifyContent:'center'}}>
+                                                    <Link to={`/product/${item.product?._id}`} className="wl-btn-cart">
+                                                        <i className="fa fa-shopping-cart" />
+                                                    </Link>
+                                                    <button className="wl-btn-delete" onClick={() => deleteRecord(item._id)}>
+                                                        <i className="fa fa-trash" />
+                                                    </button>
+                                                </div>
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody className='text-dark'>
-                                        {
-                                            wishlist.map((item) => {
-                                                return <tr key={item.id}>
-                                                    <td className='align-content-center'>
-                                                        <Link to={`${process.env.REACT_APP_BACKEND_SERVER}/${item.product?.pic}`} target='_blank' rel='noreferrer'>
-                                                            <img src={`${process.env.REACT_APP_BACKEND_SERVER}/${item.product?.pic}`} height={50} width={50} alt="Product image" /></Link>
-                                                    </td>
-                                                    <th>{item.product?.name}</th>
-                                                    <th>{item.product?.brand?.name}</th>
-                                                    <th>{item.product?.color}</th>
-                                                    <th>{item.product?.size}</th>
-                                                    <td>&#8377;{item.product?.finalPrice}</td>
-                                                    <td>{item.product?.stockQuantity === 0 ? "Out Of Stock" : `${item.product?.stockQuantity} Left in the Stock`}</td>
-                                                    <td><Link to={`/product/${item.product?._id}`} className='btn btn-primary'><i className='fa fa-shopping-cart text-light fs-5'></i></Link></td>
-                                                    <td><button className='btn btn-primary' onClick={() => deleteRecord(item._id)}><i className='fa fa-trash text-danger fs-5'></i></button></td>
-                                                </tr>
-                                            })
-                                        }
-                                    </tbody>
-                                </table>
-                            </> :
-                            <div className="py-5 text-center ">
-                                <h3>No Item In Wishlist</h3>
-                                <Link to="/shop" className="btn btn-primary" >Shop Now</Link>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <div className="wl-empty">
+                            <div className="wl-empty-icon">
+                                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.2">
+                                    <path d="M16 28s-12-7.5-12-16a8 8 0 0 1 12-6.9A8 8 0 0 1 28 12c0 8.5-12 16-12 16z"/>
+                                </svg>
                             </div>
-                    }
+                            <h2 className="wl-empty-title">Your wishlist is empty</h2>
+                            <p className="wl-empty-desc">Save items you love and revisit them anytime.</p>
+                            <Link to="/shop" className="wl-empty-btn">
+                                Explore Products →
+                            </Link>
+                        </div>
+                    )}
                 </div>
             </div>
         </>
-    )
+    );
 }

@@ -1,14 +1,22 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 
 export default function Navbar() {
   let navigate = useNavigate();
   let [data, setData] = useState([]);
+  let [scrolled, setScrolled] = useState(false);
+  let [menuOpen, setMenuOpen] = useState(false);
 
   function logout() {
     localStorage.clear();
     navigate("/login");
   }
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -19,16 +27,13 @@ export default function Navbar() {
             method: "GET",
             headers: {
               "content-Type": "application/json",
-              "authorization": localStorage.getItem("token")
+              authorization: localStorage.getItem("token"),
             },
           }
         );
         response = await response.json();
-        console.log(response)
-        if (response.result === "Done")
-          setData(response.data)
-        else
-          navigate("/login")
+        if (response.result === "Done") setData(response.data);
+        else navigate("/login");
       } catch (error) {
         console.error("Error fetching user data:", error);
       }
@@ -37,197 +42,141 @@ export default function Navbar() {
 
   return (
     <>
-      {/* 🔹 Top Bar with Contact & Social Links */}
-      <div className="container-fluid bg-dark py-2 d-none d-md-block">
+      <style>{`
+        
+      `}</style>
+
+      {/* Top Bar */}
+      <div className="sk-topbar d-none d-md-block">
         <div className="container">
           <div className="d-flex justify-content-between align-items-center">
-            {/* 🔹 Contact Info */}
-            <div className="d-flex flex-wrap">
-              <small className="me-3 text-white-50">
-                <Link to="mailto:vishankchauhan@gmail.com" target="_blank" rel="noreferrer" className="text-light">
-                  <i className="fas fa-envelope me-2 text-secondary"></i>
-                  <span className="d-none d-lg-inline">vishankchauhan@gmail.com</span>
-                </Link>
-              </small>
-              <small className="me-3 text-white-50">
-                <Link to="tel:+919873848046" target="_blank" rel="noreferrer" className="text-light">
-                  <i className="fas fa-phone me-2 text-secondary"></i>
-                  <span className="d-none d-lg-inline">+91-9873848046</span>
-                </Link>
-              </small>
-              <small className="me-3 text-white-50">
-                <Link to="https://wa.me/+919873848046" target="_blank" rel="noreferrer" className="text-light">
-                  <i className="fa fa-whatsapp fs-5 me-2 text-secondary"></i>
-                  <span className="d-none d-lg-inline">+91-9873848046</span>
-                </Link>
-              </small>
+            <div className="d-flex gap-4">
+              <Link to="mailto:vishankchauhan@gmail.com" target="_blank">
+                <i className="fas fa-envelope me-2" style={{color:'var(--sk-gold)'}}></i>
+                <span className="d-none d-lg-inline">vishankchauhan@gmail.com</span>
+              </Link>
+              <Link to="tel:+919873848046" target="_blank">
+                <i className="fas fa-phone me-2" style={{color:'var(--sk-gold)'}}></i>
+                <span className="d-none d-lg-inline">+91-9873848046</span>
+              </Link>
             </div>
-
-            {/* 🔹 Social Icons */}
-            <div className="d-flex">
-              <a href="#" className="bg-light nav-fill btn btn-sm-square rounded-circle me-2">
-                <i className="fab fa-facebook-f text-primary"></i>
-              </a>
-              <a href="#" className="bg-light nav-fill btn btn-sm-square rounded-circle me-2">
-                <i className="fab fa-twitter text-primary"></i>
-              </a>
-              <a href="#" className="bg-light nav-fill btn btn-sm-square rounded-circle me-2">
-                <i className="fab fa-instagram text-primary"></i>
-              </a>
-              <a href="#" className="bg-light nav-fill btn btn-sm-square rounded-circle">
-                <i className="fab fa-linkedin-in text-primary"></i>
-              </a>
+            <div className="d-flex gap-2">
+              {["facebook-f","twitter","instagram","linkedin-in"].map(icon => (
+                <a key={icon} href="#" className="social-btn">
+                  <i className={`fab fa-${icon}`}></i>
+                </a>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* 🔹 Main Navbar */}
-      <div className="container-fluid bg-primary sticky-top">
+      {/* Main Navbar */}
+      <nav className={`sk-navbar ${scrolled ? 'scrolled' : ''}`}>
         <div className="container">
-          <nav className="navbar navbar-dark navbar-expand-lg py-2">
-            {/* 🔹 Logo */}
-            <Link to="/" className="navbar-brand">
-              <h1 className="text-white fw-bold d-block">
-                Shop<span className="text-secondary me-5">Karo</span>
-              </h1>
+          <div className="d-flex align-items-center justify-content-between py-1">
+
+            {/* Brand */}
+            <Link to="/" className="sk-brand">
+              Shop<span>Karo</span>
             </Link>
 
-            {/* 🔹 Mobile Toggle Button */}
-            <button
-              className="navbar-toggler"
-              type="button"
-              data-bs-toggle="collapse"
-              data-bs-target="#navbarCollapse"
-              aria-controls="navbarCollapse"
-              aria-expanded="false"
-              aria-label="Toggle navigation"
-            >
-              <span className="navbar-toggler-icon"></span>
-            </button>
+            {/* Desktop Nav Links */}
+            <ul className="d-none d-lg-flex list-unstyled mb-0 align-items-center gap-0">
+              {["/","about","shop","feature","testimonial","contactus"].map((path,i) => {
+                const labels = ["Home","About","Shop","Features","Testimonials","Contact"];
+                return (
+                  <li key={path}>
+                    <NavLink to={path === "/" ? "/" : `/${path}`} className={({isActive}) => `sk-nav-link ${isActive ? 'active' : ''}`} end={path === "/"}>
+                      {labels[i]}
+                    </NavLink>
+                  </li>
+                );
+              })}
+            </ul>
 
-            {/* 🔹 Navbar Links */}
-            <div className="collapse navbar-collapse" id="navbarCollapse">
-              <ul className="navbar-nav mx-auto text-center">
-                <li className="nav-item">
-                  <NavLink to="/" className="nav-link">Home</NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/about" className="nav-link">About</NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/shop" className="nav-link">Shop</NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/feature" className="nav-link">Features</NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/testimonial" className="nav-link">Testimonials</NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/contactus" className="nav-link">Contact</NavLink>
-                </li>
-              </ul>
+            {/* Right Icons */}
+            <div className="d-none d-lg-flex align-items-center gap-2">
+              <Link to="/wishlist" className="sk-icon-btn" title="Wishlist">
+                <i className="fa fa-heart"></i>
+              </Link>
+              <Link to="/cart" className="sk-icon-btn" title="Cart">
+                <i className="fa fa-shopping-cart"></i>
+              </Link>
 
-              {/* 🔹 Icons & Profile Dropdown */}
-              <div className="d-flex align-items-center justify-content-center justify-content-lg-end w-100">
-                {/* Wishlist Icon */}
-                <Link to="/wishlist" className="nav-icon me-3 d-none d-lg-block">
-                  <i className="fa fa-heart text-white fs-5"></i>
-                </Link>
-
-                {/* Cart Icon */}
-                <Link to="/cart" className="nav-icon me-3 d-none d-lg-block">
-                  <i className="fa fa-shopping-cart text-white fs-5"></i>
-                </Link>
-
-                {/* 🔹 Profile Dropdown */}
-                <div className="nav-item dropdown">
-                  <a
-                    href="#"
-                    className="nav-link dropdown-toggle d-flex align-items-center"
-                    data-bs-toggle="dropdown"
-                  >
-                    <i className="fa fa-user text-white fs-5 me-2"><span className="ms-3">Profile</span></i>
-                  </a>
-                  <ul className="dropdown-menu dropdown-menu-end rounded">
-                    {data.pic && localStorage.getItem("login") ? (
-                      <li className="dropdown-header text-center">
-                        <img
-                          src={
-                            `${process.env.REACT_APP_BACKEND_SERVER}/${data.pic}`
-                          }
-                          alt="User"
-                          className="rounded-circle mb-2 border shadow align-content-center"
-                          height={50}
-                          width={50}
-                        />
-                      </li>
-                    ) : (
-                      <li className="dropdown-header text-center">
-                        <img
-                          src="/img/noimage.jpg"
-                          alt="User"
-                          className="rounded-circle mb-2 border shadow align-content-center"
-                          height={50}
-                          width={50}
-                        />
-                      </li>
-                    )}
-
-                    <Link to="/profile">
-                      <li className="dropdown-header text-center fw-bold pt-0 bg-primary mx-3 text-light">
-                        <i className="fa fa-user-circle me-2 align-items-center mt-3"></i>
-                        {localStorage.getItem("name") ? localStorage.getItem("name") : "User Name"}
-                      </li>
-                    </Link>
-
-                    <li>
-                      <Link to="/cart" className="dropdown-item mt-3">
-                        <i className="fa fa-shopping-cart text-dark pe-2"></i> Cart
+              {/* Profile Dropdown */}
+              <div className="dropdown">
+                <button className="btn p-0 border-0 bg-transparent dropdown-toggle d-flex align-items-center gap-2" data-bs-toggle="dropdown">
+                  <img
+                    src={data.pic ? `${process.env.REACT_APP_BACKEND_SERVER}/${data.pic}` : "/img/noimage.jpg"}
+                    className="sk-avatar"
+                    alt="User"
+                  />
+                </button>
+                <ul className="dropdown-menu sk-dropdown dropdown-menu-end">
+                  <div className="sk-dropdown-header">
+                    <img
+                      src={data.pic ? `${process.env.REACT_APP_BACKEND_SERVER}/${data.pic}` : "/img/noimage.jpg"}
+                      alt="User"
+                    />
+                    <span className="user-name">{localStorage.getItem("name") || "Guest User"}</span>
+                  </div>
+                  {[
+                    { to:"/profile", icon:"user", label:"My Profile" },
+                    { to:"/cart", icon:"shopping-cart", label:"Cart" },
+                    { to:"/order", icon:"list-alt", label:"Orders" },
+                    { to:"/checkout", icon:"credit-card", label:"Checkout" },
+                    { to:"/support", icon:"headphones", label:"Support" },
+                  ].map(item => (
+                    <li key={item.to}>
+                      <Link to={item.to} className="sk-dropdown-item">
+                        <i className={`fa fa-${item.icon}`}></i> {item.label}
                       </Link>
                     </li>
-
-                    <li>
-                      <Link to="/order" className="dropdown-item">
-                        <i className="fa fa fa-list-alt text-dark pe-2"></i> Orders
-                      </Link>
-                    </li>
-
-                    <li>
-                      <Link to="/checkout" className="dropdown-item">
-                        <i className="fa fa-credit-card text-dark pe-2"></i> Checkout
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/support" className="dropdown-item">
-                        <i className="fa fa-headphones text-dark pe-2"></i>Support
-                      </Link>
-                    </li>
-
+                  ))}
+                  <li>
                     {localStorage.getItem("login") ? (
-                      <li>
-                        <button className="dropdown-item text-danger" onClick={logout}>
-                          <i className="fa fa-sign-out text-danger pe-2"></i> Logout
-                        </button>
-                      </li>
+                      <button className="sk-dropdown-item danger w-100 text-start border-0 bg-transparent" onClick={logout}>
+                        <i className="fa fa-sign-out"></i> Logout
+                      </button>
                     ) : (
-                      <Link to="/login">
-                        <li>
-                          <button className="dropdown-item text-success">
-                            <i className="fa fa-sign-in-alt pe-2"></i> Login
-                          </button>
-                        </li>
+                      <Link to="/login" className="sk-dropdown-item success">
+                        <i className="fa fa-sign-in-alt"></i> Login
                       </Link>
                     )}
-
-                  </ul>
-                </div>
+                  </li>
+                </ul>
               </div>
             </div>
-          </nav>
+
+            {/* Mobile Toggler */}
+            <button className="sk-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#mobileNav">
+              <span></span>
+            </button>
+          </div>
+
+          {/* Mobile Collapse */}
+          <div className="collapse sk-collapse" id="mobileNav">
+            <ul className="list-unstyled mb-0">
+              {["/","about","shop","feature","testimonial","contactus"].map((path,i) => {
+                const labels = ["Home","About","Shop","Features","Testimonials","Contact"];
+                return (
+                  <li key={path}>
+                    <NavLink to={path === "/" ? "/" : `/${path}`} className={({isActive}) => `sk-nav-link ${isActive ? 'active' : ''}`} end={path === "/"}>
+                      {labels[i]}
+                    </NavLink>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="d-flex sk-icons-row">
+              <Link to="/wishlist" className="sk-icon-btn"><i className="fa fa-heart"></i></Link>
+              <Link to="/cart" className="sk-icon-btn"><i className="fa fa-shopping-cart"></i></Link>
+              <Link to="/profile" className="sk-icon-btn"><i className="fa fa-user"></i></Link>
+            </div>
+          </div>
         </div>
-      </div>
+      </nav>
     </>
   );
 }

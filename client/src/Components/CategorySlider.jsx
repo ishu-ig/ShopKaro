@@ -2,66 +2,77 @@ import React, { useEffect, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/pagination";
-import { FreeMode } from "swiper/modules";
+import { FreeMode, Autoplay } from "swiper/modules";
 import { Link } from "react-router-dom";
 import { getMaincategory } from "../Redux/ActionCreartors/MaincategoryActionCreators";
 import { useDispatch, useSelector } from "react-redux";
-import "animate.css"; // Make sure animate.css is included
 
 export default function CategorySlider({ title, data }) {
-  const MaincategoryStateData = useSelector(state => state.MaincategoryStateData);
+  const MaincategoryStateData = useSelector((state) => state.MaincategoryStateData);
   const dispatch = useDispatch();
-  let [slidesPerView, setSlidesPerView] = useState(
-      window.innerWidth < 1000 ? 1 : 3
-    );
+  const [slidesPerView, setSlidesPerView] = useState(
+    window.innerWidth < 640 ? 1.2 : window.innerWidth < 1000 ? 2.2 : 3.2
+  );
 
   useEffect(() => {
     dispatch(getMaincategory());
   }, [dispatch, MaincategoryStateData.length]);
 
-  const options = {
-    slidesPerView: slidesPerView,
-    spaceBetween: 20,
-    freeMode: true,
-    pagination: { clickable: true },
-    modules: [FreeMode],
-    loop: true,
-    className: "mySwiper",
-  };
+  useEffect(() => {
+    const handleResize = () => {
+      setSlidesPerView(
+        window.innerWidth < 640 ? 1.2 : window.innerWidth < 1000 ? 2.2 : 3.2
+      );
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   return (
     <>
-      {/* Section Start */}
-      <div className="container-fluid py-5 bg-light">
+      <section className="sk-cat-section">
         <div className="container">
-          {/* Section Title */}
-          <div className="text-center mx-auto pb-5 wow fadeIn animate__animated animate__fadeIn" data-wow-delay=".3s" style={{ maxWidth: "600px" }}>
-            <h5 className="text-primary fw-bold text-uppercase">{`Our ${title}`}</h5>
-            <h1 className="fw-bold text-dark">We Deal In Following!</h1>
+          <div className="row align-items-end mb-5">
+            <div className="col-md-8">
+              <span className="sk-cat-eyebrow">Explore</span>
+              <h2 className="sk-cat-heading">
+                We Deal In <em>Following!</em>
+              </h2>
+              <p className="sk-cat-subtext">Browse our curated selection across all categories</p>
+            </div>
           </div>
 
-          {/* Swiper Section */}
-          <Swiper {...options} className="position-relative">
+          <Swiper
+            slidesPerView={slidesPerView}
+            spaceBetween={20}
+            freeMode={true}
+            loop={true}
+            modules={[FreeMode, Autoplay]}
+            autoplay={{ delay: 3500, disableOnInteraction: false }}
+            className="sk-cat-swiper"
+          >
             {data?.map((item) => (
-              <SwiperSlide key={item.id}>
-                <div className="card category-card border-0 shadow-lg position-relative wow zoomIn animate__animated animate__zoomIn"
-                  data-wow-delay=".3s">
+              <SwiperSlide key={item.id || item._id}>
+                <div className="sk-cat-card">
                   <img
                     src={`${process.env.REACT_APP_BACKEND_SERVER}/${item.pic}`}
-                    className="card-img-top"
                     alt={item.name}
+                    loading="lazy"
                   />
-                  <div className="overlay d-flex flex-column justify-content-end text-center">
-                    <h4 className="fw-bold text-light">{item.name}</h4>
+                  <div className="sk-cat-card-gradient"></div>
+                  <div className="sk-cat-card-body">
+                    <span className="sk-cat-card-tag">{title}</span>
+                    <h4>{item.name}</h4>
                     <Link
                       to={
                         title === "Maincategory" ? `/shop?mc=${item.name}` :
                         title === "Subcategory" ? `/shop?sc=${item.name}` :
                         `/shop?br=${item.name}`
                       }
-                      className="btn custom-btn mt-2"
+                      className="sk-cat-cta"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      Shop Now
+                      Shop Now <i className="fa fa-arrow-right fa-xs"></i>
                     </Link>
                   </div>
                 </div>
@@ -69,8 +80,7 @@ export default function CategorySlider({ title, data }) {
             ))}
           </Swiper>
         </div>
-      </div>
-      {/* Section End */}
+      </section>
     </>
   );
 }

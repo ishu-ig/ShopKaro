@@ -1,94 +1,88 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 
+const features = [
+  {
+    icon: 'fa-award',
+    title: 'Top Brands',
+    desc: 'Curated selection from 100+ premium brands — only the best make it to our shelves.',
+    delay: '.1s',
+  },
+  {
+    icon: 'fa-certificate',
+    title: '100% Original Products',
+    desc: 'Every item is authenticity-verified. Shop with complete confidence, every time.',
+    delay: '.2s',
+  },
+  {
+    icon: 'fa-rotate-left',
+    title: '7-Day Refund Policy',
+    desc: 'Not satisfied? Return it within 7 days, no questions asked. Your peace of mind matters.',
+    delay: '.3s',
+  },
+  {
+    icon: 'fa-headset',
+    title: '24/7 Customer Support',
+    desc: 'Our dedicated team is available round the clock to assist you whenever you need.',
+    delay: '.4s',
+  },
+  {
+    icon: 'fa-users',
+    title: '100,000+ Happy Customers',
+    desc: 'Join a growing community of satisfied shoppers who trust ShopKaro every day.',
+    delay: '.5s',
+  },
+  {
+    icon: 'fa-truck-fast',
+    title: 'Fastest Delivery',
+    desc: 'Lightning-fast shipping straight to your door — because great products deserve great service.',
+    delay: '.6s',
+  },
+]
+
 export default function Features() {
   return (
     <>
-        {/* Services Start */}
-        <div className="container-fluid services py-5 mb-5">
-            <div className="container">
-                <div className="text-center mx-auto pb-5 wow fadeIn" data-wow-delay=".3s" style={{maxWidth: "600px"}}>
-                    <h5 className="text-primary">Our Features</h5>
-                    <h1>Best In Industry Features</h1>
+      <section className="features-section">
+        <div className="container">
+
+          {/* Heading */}
+          <div className="text-center mb-5 wow fadeIn" data-wow-delay=".2s">
+            <div className="features-eyebrow">Our Features</div>
+            <h2 className="features-heading">
+              Best in <em>Industry</em> Features
+            </h2>
+            <p className="features-sub">
+              Everything you need for a premium shopping experience — built in from the ground up.
+            </p>
+          </div>
+
+          {/* Grid */}
+          <div className="row g-4">
+            {features.map((f, i) => (
+              <div key={f.title} className="col-md-6 col-lg-4 wow fadeIn" data-wow-delay={f.delay}>
+                <div className="feature-card">
+                  <span className="feature-number">{String(i + 1).padStart(2, '0')}</span>
+                  <div className="feature-card-inner">
+                    <div className="feature-icon-wrap">
+                      <i className={`fa ${f.icon}`} />
+                    </div>
+                    <h4 className="feature-title">{f.title}</h4>
+                    <p className="feature-desc">{f.desc}</p>
+                    <Link to="/shop" className="feature-link">
+                      Shop Now
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </Link>
+                  </div>
                 </div>
-                <div className="row g-5 services-inner">
-                    <div className="col-md-6 col-lg-4 wow fadeIn" data-wow-delay=".3s">
-                        <div className="services-item bg-light">
-                            <div className="p-4 text-center services-content">
-                                <div className="services-content-icon">
-                                    <i className="fa fa-check fs-1 mb-4 text-primary"></i>
-                                    <h4 className="mb-3">Top Brands</h4>
-                                    <p className="mb-4">Lorem ipsum dolor sit amet elit. Sed efficitur quis purus ut interdum. Aliquam dolor eget urna ultricies tincidunt.</p>
-                                    <Link to="/shop" className="btn btn-secondary text-white px-5 py-3 rounded-pill">Shop</Link>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="col-md-6 col-lg-4 wow fadeIn" data-wow-delay=".5s">
-                        <div className="services-item bg-light">
-                            <div className="p-4 text-center services-content">
-                                <div className="services-content-icon">
-                                    <i className="fa fa-copyright fs-1 mb-4 text-primary"></i>
-                                    <h4 className="mb-3">100% Original Product</h4>
-                                    <p className="mb-4">Lorem ipsum dolor sit amet elit. Sed efficitur quis purus ut interdum. Aliquam dolor eget urna ultricies tincidunt.</p>
-                                    <Link to="/shop" className="btn btn-secondary text-white px-5 py-3 rounded-pill">Shop</Link>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="col-md-6 col-lg-4 wow fadeIn" data-wow-delay=".7s">
-                        <div className="services-item bg-light">
-                            <div className="p-4 text-center services-content">
-                                <div className="services-content-icon">
-                                    <i className="fa fa-rotate-left fs-1 mb-4 text-primary"></i>
-                                    <h4 className="mb-3">7 Day Refund Policy</h4>
-                                    <p className="mb-4">Lorem ipsum dolor sit amet elit. Sed efficitur quis purus ut interdum. Aliquam dolor eget urna ultricies tincidunt.</p>
-                                    <Link to="/shop" className="btn btn-secondary text-white px-5 py-3 rounded-pill">Shop</Link>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="col-md-6 col-lg-4 wow fadeIn" data-wow-delay=".3s">
-                        <div className="services-item bg-light">
-                            <div className="p-4 text-center services-content">
-                                <div className="services-content-icon">
-                                    <i className="fas fa-phone fs-1 mb-4 text-primary"></i>
-                                    <h4 className="mb-3">24/7 Costomer Support</h4>
-                                    <p className="mb-4">Lorem ipsum dolor sit amet elit. Sed efficitur quis purus ut interdum. Aliquam dolor eget urna ultricies tincidunt.</p>
-                                    <Link to="/shop" className="btn btn-secondary text-white px-5 py-3 rounded-pill">Shop</Link>
-                                </div>
-                                
-                            </div>
-                        </div>
-                    </div>
-                    <div className="col-md-6 col-lg-4 wow fadeIn" data-wow-delay=".5s">
-                        <div className="services-item bg-light">
-                            <div className="p-4 text-center services-content">
-                                <div className="services-content-icon">
-                                    <i className="fa fa-users fs-1 mb-4 text-primary"></i>
-                                    <h4 className="mb-3">100000+ Happy Coustomer</h4>
-                                    <p className="mb-4">Lorem ipsum dolor sit amet elit. Sed efficitur quis purus ut interdum. Aliquam dolor eget urna ultricies tincidunt.</p>
-                                    <Link to="/shop" className="btn btn-secondary text-white px-5 py-3 rounded-pill">Shop</Link>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="col-md-6 col-lg-4 wow fadeIn" data-wow-delay=".7s">
-                        <div className="services-item bg-light">
-                            <div className="p-4 text-center services-content">
-                                <div className="services-content-icon">
-                                    <i className="fas fa-truck fs-1 mb-4 text-primary"></i>
-                                    <h4 className="mb-3">Fastest Delivery</h4>
-                                    <p className="mb-4">Lorem ipsum dolor sit amet elit. Sed efficitur quis purus ut interdum. Aliquam dolor eget urna ultricies tincidunt.</p>
-                                    <Link to="/shop" className="btn btn-secondary text-white px-5 py-3 rounded-pill">Shop</Link>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+              </div>
+            ))}
+          </div>
+
         </div>
-        {/* Services End */}
+      </section>
     </>
   )
 }

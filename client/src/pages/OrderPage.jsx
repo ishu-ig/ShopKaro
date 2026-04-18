@@ -20,28 +20,39 @@ export default function OrderPage() {
     }
   }, [CheckoutStateData.length]);
 
-  function updateOrder(_id) {
-    if (window.confirm('Are you sure you want to cancel your Order?')) {
-      const item = orders.find((x) => x._id === _id);
-      if (!item) return;
+function updateOrder(_id) {
+  if (window.confirm('Are you sure you want to cancel your Order?')) {
+    const item = orders.find((x) => x._id === _id);
+    if (!item) return;
 
-      // Update order status
-      const updatedItem = { ...item, orderStatus: 'Cancelled' };
-      dispatch(updateCheckout(updatedItem));
+    // Determine payment status
+    const newPaymentStatus =
+      item.paymentStatus === 'Done'  ? 'Refund Initialized' : item.paymentStatus;
 
-      // Restore stock
-      item.products.forEach((prod) => {
-        const product = ProductStateData.find((x) => x._id === prod.product._id);
-        if (product) {
-          product.stockQuantity += prod.qty;
-          product.stock = true;
-          dispatch(updateProduct(product));
-        }
-      });
+    // Update order status
+    const updatedItem = {
+      ...item,
+      orderStatus: 'Cancelled',
+      paymentStatus: newPaymentStatus,
+    };
 
-      navigate(0);
-    }
+    dispatch(updateCheckout(updatedItem));
+
+    // Restore stock
+    item.products.forEach((prod) => {
+      const product = ProductStateData.find((x) => x._id === prod.product._id);
+      if (product) {
+        product.stockQuantity += prod.qty;
+        product.stock = true;
+        dispatch(updateProduct(product));
+      }
+    });
+
+    // Refresh page (better to use state update instead of reload)
+    navigate(0);
   }
+}
+
 
   return (
     <>
