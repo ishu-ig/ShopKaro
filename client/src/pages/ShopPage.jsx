@@ -101,8 +101,74 @@ export default function ShopPage() {
     </div>
   );
 
+  const MobilePriceFilter = (
+    <form onSubmit={(e) => { applyPriceFilter(e); setSidebarOpen(false); }}>
+      <div className="sk-filter-group-title mb-2">Price Range</div>
+      <div className="row g-2 mb-2">
+        <div className="col-6">
+          <label style={{fontSize:11,fontWeight:600,letterSpacing:1,textTransform:'uppercase',color:'#888',display:'block',marginBottom:4}}>Min (₹)</label>
+          <input type="number" value={min} onChange={e => setMin(e.target.value)} className="sk-price-input" />
+        </div>
+        <div className="col-6">
+          <label style={{fontSize:11,fontWeight:600,letterSpacing:1,textTransform:'uppercase',color:'#888',display:'block',marginBottom:4}}>Max (₹)</label>
+          <input type="number" value={max} onChange={e => setMax(e.target.value)} className="sk-price-input" />
+        </div>
+      </div>
+      <button type="submit" className="sk-price-btn">Apply Price Filter</button>
+    </form>
+  );
+
   return (
     <>
+      {/* Mobile Filter Overlay */}
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          style={{
+            position: 'fixed', inset: 0,
+            background: 'rgba(0,0,0,0.45)',
+            zIndex: 1040,
+          }}
+        />
+      )}
+
+      {/* Mobile Filter Drawer */}
+      <div
+        className="d-lg-none"
+        style={{
+          position: 'fixed',
+          top: 0, left: 0,
+          width: '78%', maxWidth: 320,
+          height: '100%',
+          background: '#fff',
+          zIndex: 1050,
+          overflowY: 'auto',
+          padding: '20px 18px 40px',
+          transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 0.3s cubic-bezier(0.25,0.8,0.25,1)',
+          boxShadow: sidebarOpen ? '4px 0 24px rgba(0,0,0,0.18)' : 'none',
+        }}
+      >
+        {/* Drawer Header */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20, paddingBottom:14, borderBottom:'2px solid #c9a84c' }}>
+          <span style={{ fontFamily:'Playfair Display,serif', fontSize:'1.1rem', fontWeight:700, color:'#0d1b2a', display:'flex', alignItems:'center', gap:8 }}>
+            <i className="fa fa-sliders-h" style={{ color:'#c9a84c' }}></i> Filters
+          </span>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            style={{ background:'none', border:'none', fontSize:20, color:'#888', cursor:'pointer', lineHeight:1, padding:4 }}
+            aria-label="Close filters"
+          >
+            &times;
+          </button>
+        </div>
+
+        <FilterSection label="Category" items={MaincategoryStateData} current={mc} paramKey="mc" />
+        <FilterSection label="Subcategory" items={SubcategoryStateData} current={sc} paramKey="sc" />
+        <FilterSection label="Brands" items={BrandStateData} current={br} paramKey="br" />
+        {MobilePriceFilter}
+      </div>
+
       <div className="sk-shop-page">
         <div className="d-none d-lg-block">
           <HeroSection title="Shop" />
@@ -138,38 +204,14 @@ export default function ShopPage() {
               </div>
             </div>
 
-            {/* Main Content */}
-            <div className="col-lg-10">
+            {/* Main Content — full width on mobile, no shifting */}
+            <div className="col-12 col-lg-10">
               {/* Mobile Filter Toggle */}
               <div className="d-lg-none mb-3">
-                <button className="sk-mobile-filter-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
-                  <i className="fa fa-filter"></i>
-                  {sidebarOpen ? "Hide Filters" : "Show Filters"}
+                <button className="sk-mobile-filter-btn" onClick={() => setSidebarOpen(true)}>
+                  <i className="fa fa-filter"></i> Filters
                 </button>
               </div>
-
-              {/* Mobile Sidebar */}
-              {sidebarOpen && (
-                <div className="sk-mobile-sidebar d-lg-none">
-                  <FilterSection label="Category" items={MaincategoryStateData} current={mc} paramKey="mc" />
-                  <FilterSection label="Subcategory" items={SubcategoryStateData} current={sc} paramKey="sc" />
-                  <FilterSection label="Brands" items={BrandStateData} current={br} paramKey="br" />
-                  <form onSubmit={applyPriceFilter}>
-                    <div className="sk-filter-group-title mb-2">Price Range</div>
-                    <div className="row g-2 mb-2">
-                      <div className="col-6">
-                        <label className="sk-price-filter" style={{fontSize:11,fontWeight:600,letterSpacing:1,textTransform:'uppercase',color:'#888',display:'block',marginBottom:4}}>Min</label>
-                        <input type="number" value={min} onChange={e => setMin(e.target.value)} className="sk-price-input" />
-                      </div>
-                      <div className="col-6">
-                        <label style={{fontSize:11,fontWeight:600,letterSpacing:1,textTransform:'uppercase',color:'#888',display:'block',marginBottom:4}}>Max</label>
-                        <input type="number" value={max} onChange={e => setMax(e.target.value)} className="sk-price-input" />
-                      </div>
-                    </div>
-                    <button type="submit" className="sk-price-btn">Apply Price Filter</button>
-                  </form>
-                </div>
-              )}
 
               {/* Toolbar */}
               <div className="sk-toolbar">

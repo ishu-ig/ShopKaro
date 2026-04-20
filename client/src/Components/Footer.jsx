@@ -57,7 +57,7 @@ export default function Footer() {
     <footer style={{ background: '#0d1117', color: 'rgba(255,255,255,0.55)', fontFamily: 'DM Sans, sans-serif' }}>
 
       {/* Main footer body */}
-      <div className="container" style={{ padding: '64px 0 40px' }}>
+      <div className="container" style={{ padding: '64px 20px 50px 20px' }}>
         <div className="row g-5">
 
           {/* Brand col */}
