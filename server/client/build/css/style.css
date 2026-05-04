@@ -26,11 +26,18 @@
 /* ── Base ── */
 *, *::before, *::after { box-sizing: border-box; }
 
+html {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 body {
   font-family: 'DM Sans', sans-serif;
   background: var(--sk-cream);
   color: #1a1a1a;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 h1, h2, h3, h4, .brand-font {
@@ -120,7 +127,7 @@ h1, h2, h3, h4, .brand-font {
 .topbar .top-link a:hover { color: var(--sk-gold); }
 
 /* Scrolling notice */
-#note { width: 500px; overflow: hidden; }
+#note { width: 100%; max-width: 500px; overflow: hidden; }
 #note small {
   position: relative;
   display: inline-block;
@@ -350,7 +357,7 @@ h1, h2, h3, h4, .brand-font {
 
 /* ── Testimonials ── */
 .testimonial-item { background: #f0ece4; border-radius: var(--radius-md); }
-.testimonial-message { width: 350px; height: 200px; overflow: auto; text-align: justify; }
+.testimonial-message { width: 100%; max-width: 350px; height: 200px; overflow: auto; text-align: justify; }
 .testimonial-message::-webkit-scrollbar { display: none; }
 
 .testimonial-carousel .owl-dots { margin-top: 15px; display: flex; align-items: flex-end; justify-content: center; }
@@ -1325,7 +1332,7 @@ h1, h2, h3, h4, .brand-font {
           background: rgba(255,255,255,0.07);
           border: 1px solid rgba(255,255,255,0.15);
           border-radius: 8px;
-          padding: 6px 10px;
+          padding: 13px 10px;
           cursor: pointer;
         }
         .sk-toggler span, .sk-toggler span::before, .sk-toggler span::after {
