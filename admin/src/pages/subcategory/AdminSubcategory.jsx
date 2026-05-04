@@ -7,7 +7,7 @@ import $ from 'jquery';                                         // Import jQuery
 import 'datatables.net-dt/css/dataTables.dataTables.min.css';   // Import DataTables styles
 import 'datatables.net';
 
-import { deleteSubcategory, getSubcategory } from "../../Redux/ActionCreartors/SubcategoryActionCreators"
+import { deleteSubcategory, getSubcategory } from "../../Redux/ActionCreators/SubcategoryActionCreators"
 export default function AdminSubcategory() {
     let SubcategoryStateData = useSelector(state => state.SubcategoryStateData)
     let dispatch = useDispatch()

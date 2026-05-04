@@ -185,10 +185,41 @@ async function deleteRecord(req, res) {
     }
 }
 
+async function addReview(req, res) {
+    try {
+        const { rating, comment } = req.body
+        if (!comment || comment.trim() === "") {
+            return res.status(400).send({ result: "Fail", reason: "Comment is required" })
+        }
+        let data = await Product.findOne({ _id: req.params._id })
+        if (!data) {
+            return res.status(404).send({ result: "Fail", reason: "Product Not Found" })
+        }
+        // Prevent duplicate review by same user
+        const alreadyReviewed = data.reviews.find(r => r.user?.toString() === req.body.user)
+        if (alreadyReviewed) {
+            return res.status(400).send({ result: "Fail", reason: "You have already reviewed this product" })
+        }
+        data.reviews.push({
+            user: req.body.user,
+            name: req.body.name || "Anonymous",
+            rating: Number(rating) || 5,
+            comment: comment.trim(),
+            date: new Date()
+        })
+        await data.save()
+        res.send({ result: "Done", data: data.reviews })
+    } catch (error) {
+        console.log(error)
+        res.status(500).send({ result: "Fail", reason: "Internal Server Error" })
+    }
+}
+
 module.exports = {
     createRecord: createRecord,
     getRecord: getRecord,
     getSingleRecord: getSingleRecord,
     updateRecord: updateRecord,
-    deleteRecord: deleteRecord
+    deleteRecord: deleteRecord,
+    addReview: addReview
 }

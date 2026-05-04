@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 import { useDispatch, useSelector } from 'react-redux';
 
-import { deleteContactUs, getContactUs, updateContactUs } from "../../Redux/ActionCreartors/ContactUsActionCreators"
+import { deleteContactUs, getContactUs, updateContactUs } from "../../Redux/ActionCreators/ContactUsActionCreators"
 import { useNavigate, useParams } from 'react-router-dom';
 export default function AdminContactUsShow() {
     let { _id } = useParams()

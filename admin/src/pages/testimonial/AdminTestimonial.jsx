@@ -8,7 +8,7 @@ import $ from 'jquery';                                         // Import jQuery
 import 'datatables.net-dt/css/dataTables.dataTables.min.css';   // Import DataTables styles
 import 'datatables.net';
 
-import { deleteTestimonial, getTestimonial } from "../../Redux/ActionCreartors/TestimonialActionCreators"
+import { deleteTestimonial, getTestimonial } from "../../Redux/ActionCreators/TestimonialActionCreators"
 export default function AdminTestimonial() {
     let TestimonialStateData = useSelector(state => state.TestimonialStateData)
     let dispatch = useDispatch()

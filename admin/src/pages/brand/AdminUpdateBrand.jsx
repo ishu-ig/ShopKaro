@@ -6,7 +6,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import formValidator from '../../FormValidators/formValidator'
 import imageValidator from '../../FormValidators/imageValidator'
 
-import { getBrand, updateBrand } from "../../Redux/ActionCreartors/BrandActionCreators"
+import { getBrand, updateBrand } from "../../Redux/ActionCreators/BrandActionCreators"
 export default function AdminUpdateBrand() {
     let { _id } = useParams()  //in case of real backend
     // let { id } = useParams()

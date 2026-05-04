@@ -56,7 +56,7 @@ app.use(cors(corsOptions));
 app.use(express.json());                     // parse incoming json data
 app.use("/public", express.static("public"));           // optional
 app.use("/uploads", express.static(path.join(__dirname, 'public/uploads')));
-app.use("/invoices", express.static(path.join(__dirname, 'public/invoice')));
+app.use("/invoices", express.static(path.join(__dirname, "public/invoices")))
 app.use("/api", Router);
 
 // Serve React frontend

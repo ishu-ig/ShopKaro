@@ -8,7 +8,7 @@ import $ from 'jquery';                                         // Import jQuery
 import 'datatables.net-dt/css/dataTables.dataTables.min.css';   // Import DataTables styles
 import 'datatables.net';
 
-import { deleteProduct, getProduct } from "../../Redux/ActionCreartors/ProductActionCreators"
+import { deleteProduct, getProduct } from "../../Redux/ActionCreators/ProductActionCreators"
 export default function AdminProduct() {
     let ProductStateData = useSelector(state => state.ProductStateData)
     let dispatch = useDispatch()

@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import formValidator from '../../FormValidators/formValidator'
 import imageValidator from '../../FormValidators/imageValidator'
 
-import { createMaincategory, getMaincategory } from "../../Redux/ActionCreartors/MaincategoryActionCreators"
+import { createMaincategory, getMaincategory } from "../../Redux/ActionCreators/MaincategoryActionCreators"
 
 export default function AdminCreateMaincategory() {
     let [data, setData] = useState({

@@ -1,4 +1,6 @@
 const Router = require("express").Router()
+const path = require("path")
+const express = require("express")
 
 const BrandRouter = require("./BrandRoutes")
 const MaincategoryRouter = require("./MaincategoryRoutes")
@@ -25,5 +27,9 @@ Router.use("/checkout", CheckoutRouter)
 Router.use("/newsletter", NewsletterRouter)
 Router.use("/contactus", ContactUsRouter)
 Router.use("/invoice", InvoiceRouter)
+
+// ── Serve generated PDF invoices as static files ──────────────────────────────
+// Access via: GET /invoices/INV-YYYYMMDD-XXXX.pdf
+Router.use("/invoices", express.static(path.join(__dirname, "../public/invoices")))
 
 module.exports = Router

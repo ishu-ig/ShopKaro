@@ -5,10 +5,10 @@ import { useDispatch, useSelector } from 'react-redux'
 import formValidator from '../../FormValidators/formValidator'
 import imageValidator from '../../FormValidators/imageValidator'
 
-import { updateProduct, getProduct } from "../../Redux/ActionCreartors/ProductActionCreators"
-import { getMaincategory } from "../../Redux/ActionCreartors/MaincategoryActionCreators"
-import { getSubcategory } from "../../Redux/ActionCreartors/SubcategoryActionCreators"
-import { getBrand } from "../../Redux/ActionCreartors/BrandActionCreators"
+import { updateProduct, getProduct } from "../../Redux/ActionCreators/ProductActionCreators"
+import { getMaincategory } from "../../Redux/ActionCreators/MaincategoryActionCreators"
+import { getSubcategory } from "../../Redux/ActionCreators/SubcategoryActionCreators"
+import { getBrand } from "../../Redux/ActionCreators/BrandActionCreators"
 
 var rte
 export default function AdminUpdateProduct() {

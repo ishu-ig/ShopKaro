@@ -6,7 +6,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import formValidator from '../../FormValidators/formValidator'
 import imageValidator from '../../FormValidators/imageValidator'
 
-import { getSubcategory, updateSubcategory } from "../../Redux/ActionCreartors/SubcategoryActionCreators"
+import { getSubcategory, updateSubcategory } from "../../Redux/ActionCreators/SubcategoryActionCreators"
 export default function AdminUpdateSubcategory() {
     let { _id } = useParams()  //in case of real backend
     // let { id } = useParams()

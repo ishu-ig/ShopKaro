@@ -8,7 +8,7 @@ import $ from 'jquery';                                         // Import jQuery
 import 'datatables.net-dt/css/dataTables.dataTables.min.css';   // Import DataTables styles
 import 'datatables.net';
 
-import { deleteMaincategory, getMaincategory } from "../../Redux/ActionCreartors/MaincategoryActionCreators"
+import { deleteMaincategory, getMaincategory } from "../../Redux/ActionCreators/MaincategoryActionCreators"
 export default function AdminMaincategory() {
     let MaincategoryStateData = useSelector(state => state.MaincategoryStateData)
     let dispatch = useDispatch()

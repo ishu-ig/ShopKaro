@@ -6,7 +6,7 @@ import { useDispatch } from 'react-redux'
 import formValidator from '../../FormValidators/formValidator'
 import imageValidator from '../../FormValidators/imageValidator'
 
-import { createTestimonial } from "../../Redux/ActionCreartors/TestimonialActionCreators"
+import { createTestimonial } from "../../Redux/ActionCreators/TestimonialActionCreators"
 
 export default function AdminCreateTestimonial() {
     let [data, setData] = useState({

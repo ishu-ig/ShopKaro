@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import formValidator from '../../FormValidators/formValidator'
 import imageValidator from '../../FormValidators/imageValidator'
 
-import { createSubcategory, getSubcategory } from "../../Redux/ActionCreartors/SubcategoryActionCreators"
+import { createSubcategory, getSubcategory } from "../../Redux/ActionCreators/SubcategoryActionCreators"
 
 export default function AdminCreateSubcategory() {
     let [data, setData] = useState({

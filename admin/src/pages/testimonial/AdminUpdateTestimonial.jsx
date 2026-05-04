@@ -6,7 +6,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import formValidator from '../../FormValidators/formValidator'
 import imageValidator from '../../FormValidators/imageValidator'
 
-import { getTestimonial, updateTestimonial } from "../../Redux/ActionCreartors/TestimonialActionCreators"
+import { getTestimonial, updateTestimonial } from "../../Redux/ActionCreators/TestimonialActionCreators"
 export default function AdminUpdateTestimonial() {
     let { _id } = useParams()  //in case of real backend
     // let { id } = useParams()

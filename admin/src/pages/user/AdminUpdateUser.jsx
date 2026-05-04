@@ -129,6 +129,7 @@ export default function AdminUpdateUser() {
                                 <select name="role" onChange={getInputData} value={data.role} className='form-select border-3 border-primary'>
                                     <option value="Admin">Admin</option>
                                     <option value="Super Admin">Super Admin</option>
+                                    <option value="Delivery Boy">Delivery Boy</option>
                                 </select>
                             </div>
                             <div className="col-md-6 mb-3">

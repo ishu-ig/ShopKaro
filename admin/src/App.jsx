@@ -48,6 +48,7 @@ import AdminCreateBrand from './pages/brand/AdminCreateBrand';
 import AdminUpdateBrand from './pages/brand/AdminUpdateBrand';
 import AdminContactUsShow from './pages/contactus/AdminContactUsShow';
 import ViewProductPage from './pages/checkout/ViewProductPage';
+import NotificationPage from './pages/NotificationPage';
 
 
 export default function App() {
@@ -155,6 +156,8 @@ function MainContent({ isSidebarExpanded, toggleSidebar, checkLoginStatus }) {
 
                     <Route path='/profile' element={<ProfilePage />} />
                     <Route path='/update-profile' element={<UpdateProfilePage />} />
+
+                    <Route path='/notifications' element={<NotificationPage />} />
 
                 </Routes>
 

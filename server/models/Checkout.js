@@ -34,6 +34,14 @@ const CheckoutSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
+    expectedDelivery: {
+        type: Date,
+        default: null
+    },
+    deliveryBoy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+    },
     products: []
 }, { timestamps: true })
 const Checkout = new mongoose.model("Checkout", CheckoutSchema)

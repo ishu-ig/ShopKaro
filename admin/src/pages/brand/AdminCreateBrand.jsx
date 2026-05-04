@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import formValidator from '../../FormValidators/formValidator'
 import imageValidator from '../../FormValidators/imageValidator'
 
-import { createBrand, getBrand } from "../../Redux/ActionCreartors/BrandActionCreators"
+import { createBrand, getBrand } from "../../Redux/ActionCreators/BrandActionCreators"
 
 export default function AdminCreateBrand() {
     let [data, setData] = useState({

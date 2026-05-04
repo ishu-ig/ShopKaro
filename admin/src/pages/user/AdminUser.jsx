@@ -62,7 +62,7 @@ export default function AdminUser() {
     return (
         <>
             <div>
-                <h5 className='bg-primary text-light text-center p-2'>User {localStorage.getItem("role") === "Super Admin" ? <Link to="/admin/user/create"><i className='fa fa-plus text-light float-end'></i></Link> : null}</h5>
+                <h5 className='bg-primary text-light text-center p-2'>User {localStorage.getItem("role") === "Admin" ? <Link to="/user/create"><i className='fa fa-plus text-light float-end'></i></Link> : null}</h5>
                 <div className="table-responsive">
                     <table id='DataTable' className="table table-striped table-hover table-bordered text-center">
                         <thead className="text-light" style={{ backgroundColor: "#1F2A40" }}>

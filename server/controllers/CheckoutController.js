@@ -43,9 +43,17 @@ async function verifyOrder(req, res) {
 async function createRecord(req, res) {
     try {
         let data = new Checkout(req.body)
+
+        // Compute expected delivery: COD gets +6 days, prepaid gets +4 days
+        const deliveryDays = (req.body.paymentMode === "COD") ? 6 : 4
+        const expectedDelivery = new Date()
+        expectedDelivery.setDate(expectedDelivery.getDate() + deliveryDays)
+        data.expectedDelivery = expectedDelivery
+
         await data.save()
         let finalData = await Checkout.findOne({ _id: data._id })
             .populate("user", ["name", "username", "email", "phone", "address", "pin", "city", "state"])
+            .populate("deliveryBoy", ["name", "username", "email", "phone", "address", "pin", "city", "state"])
             .populate({
                 path: "products.product",
                 select: "name brand color size basePrice stockQuantity pic",
@@ -90,6 +98,7 @@ async function getRecord(req, res) {
     try {
         let data = await Checkout.find().sort({ _id: -1 })
             .populate("user", ["name", "username", "email", "phone", "address", "pin", "city", "state"])
+            .populate("deliveryBoy", ["name", "username", "email", "phone", "address", "pin", "city", "state"])
             .populate({
                 path: "products.product",
                 select: "name brand color size basePrice stockQuantity pic",
@@ -121,6 +130,7 @@ async function getUserRecord(req, res) {
     try {
         let data = await Checkout.find({ user: req.params.userid }).sort({ _id: -1 })
             .populate("user", ["name", "username", "email", "phone", "address", "pin", "city", "state"])
+            .populate("deliveryBoy", ["name", "username", "email", "phone", "address", "pin", "city", "state"])
             .populate({
                 path: "products.product",
                 select: "name brand color size basePrice stockQuantity pic",
@@ -153,6 +163,7 @@ async function getSingleRecord(req, res) {
     try {
         let data = await Checkout.findOne({ _id: req.params._id })
             .populate("user", ["name", "username", "email", "phone", "address", "pin", "city", "state"])
+            .populate("deliveryBoy", ["name", "username", "email", "phone", "address", "pin", "city", "state"])
             .populate({
                 path: "products.product",
                 select: "name brand color size basePrice stockQuantity pic",
@@ -192,12 +203,14 @@ async function updateRecord(req, res) {
             let previousOrderStatus = data.orderStatus
             data.orderStatus = req.body.orderStatus ?? data.orderStatus
             data.paymentMode = req.body.paymentMode ?? data.paymentMode
-            data.paymentStatus = req.body.paymentStatus ?? data.paymentStatus
+            data.paymentStatus = req.body.paymentStatus ?? data.paymentStatus,
+            data.deliveryBoy = req.body.deliveryBoy ?? data.deliveryBoy
             data.rppid = req.body.rppid ?? data.rppid
             await data.save()
 
             let finalData = await Checkout.findOne({ _id: data._id })
                 .populate("user", ["name", "username", "email", "phone", "address", "pin", "city", "state"])
+                .populate("deliveryBoy", ["name", "username", "email", "phone", "address", "pin", "city", "state"])
                 .populate({
                     path: "products.product",
                     select: "name brand color size basePrice stockQuantity pic",
@@ -265,7 +278,7 @@ async function updateRecord(req, res) {
                 reason: "Record Not Found"
             })
     } catch (error) {
-        // console.log(error)
+        console.log(error)
 
         res.status(500).send({
             result: "Fail",

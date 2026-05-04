@@ -96,7 +96,7 @@ export default function AdminCreateUser() {
     return (
         <>
             <div>
-                <h5 className='bg-primary text-light text-center p-2'>User <Link to="/user"><i className='fa fa-arrow-left text-light float-end'></i></Link></h5>
+                <h5 className='bg-primary text-light text-center p-2'>User <Link to="/user"><i className="fa fa-arrow-left text-light float-end pt-1"></i></Link></h5>
                 <div className="card mt-3 shadow-sm p-4">
                     <form onSubmit={postData}>
                         <div className="row">
@@ -142,6 +142,7 @@ export default function AdminCreateUser() {
                                 <select name="role" onChange={getInputData} className='form-select border-3 border-primary'>
                                     <option value="Admin">Admin</option>
                                     <option value="Super Admin">Super Admin</option>
+                                    <option value="Delivery Boy">Delivery Boy</option>
                                 </select>
                             </div>
                             <div className="col-md-6 mb-3">

@@ -6,7 +6,7 @@ import $ from 'jquery';                                         // Import jQuery
 import 'datatables.net-dt/css/dataTables.dataTables.min.css';   // Import DataTables styles
 import 'datatables.net';
 
-import { deleteNewsletter, getNewsletter, updateNewsletter } from "../../Redux/ActionCreartors/NewsletterActionCreators"
+import { deleteNewsletter, getNewsletter, updateNewsletter } from "../../Redux/ActionCreators/NewsletterActionCreators"
 export default function AdminNewsletter() {
     let NewsletterStateData = useSelector(state => state.NewsletterStateData)
     let [flag, setFlag] = useState(false)

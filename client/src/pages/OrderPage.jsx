@@ -6,11 +6,12 @@ import { updateProduct } from '../Redux/ActionCreartors/ProductActionCreators';
 import { Link, useNavigate } from 'react-router-dom';
 
 const STATUS_COLOR = {
-  'Delivered':  { bg: 'rgba(16,185,129,0.1)', color: '#059669', dot: '#10b981' },
-  'Cancelled':  { bg: 'rgba(244,63,94,0.1)',  color: '#e11d48', dot: '#f43f5e' },
-  'Ordered':    { bg: 'rgba(200,64,10,0.1)',  color: '#c8400a', dot: '#e86834' },
-  'Shipped':    { bg: 'rgba(59,130,246,0.1)', color: '#2563eb', dot: '#3b82f6' },
-  'Packed':     { bg: 'rgba(245,158,11,0.1)', color: '#d97706', dot: '#f59e0b' },
+  'Delivered':        { bg: 'rgba(16,185,129,0.1)',  color: '#059669', dot: '#10b981' },
+  'Cancelled':        { bg: 'rgba(244,63,94,0.1)',   color: '#e11d48', dot: '#f43f5e' },
+  'Ordered':          { bg: 'rgba(200,64,10,0.1)',   color: '#c8400a', dot: '#e86834' },
+  'Shipped':          { bg: 'rgba(59,130,246,0.1)',  color: '#2563eb', dot: '#3b82f6' },
+  'Packed':           { bg: 'rgba(245,158,11,0.1)',  color: '#d97706', dot: '#f59e0b' },
+  'Out for Delivery': { bg: 'rgba(139,92,246,0.1)',  color: '#7c3aed', dot: '#8b5cf6' },
 };
 const DEFAULT_STATUS = { bg: 'rgba(107,114,128,0.1)', color: '#6b7280', dot: '#9ca3af' };
 
@@ -53,7 +54,7 @@ export default function OrderPage() {
   return (
     <>
       <HeroSection title="My Orders" />
-      <div style={{ padding: '48px 0 100px', background: 'linear-gradient(135deg,#FDF6EE 0%,#FFF8F3 100%)', minHeight: '100vh' }}>
+      <div style={{ padding:'48px 0 100px', background:'linear-gradient(135deg,#FDF6EE 0%,#FFF8F3 100%)', minHeight:'100vh' }}>
         <div className="container">
 
           {/* Page heading */}
@@ -65,15 +66,9 @@ export default function OrderPage() {
           {orders.length ? orders.map((item) => {
             const s = STATUS_COLOR[item?.orderStatus] || DEFAULT_STATUS;
             return (
-              <div key={item?._id} style={{
-                background: 'white',
-                borderRadius: 20,
-                border: '1px solid rgba(200,64,10,0.08)',
-                boxShadow: '0 2px 16px rgba(28,16,9,0.07)',
-                marginBottom: 20,
-                overflow: 'hidden',
-                transition: 'box-shadow 0.3s ease',
-              }}
+              <div
+                key={item?._id}
+                style={{ background:'white', borderRadius:20, border:'1px solid rgba(200,64,10,0.08)', boxShadow:'0 2px 16px rgba(28,16,9,0.07)', marginBottom:20, overflow:'hidden', transition:'box-shadow 0.3s ease' }}
                 onMouseEnter={e => e.currentTarget.style.boxShadow = '0 8px 32px rgba(28,16,9,0.12)'}
                 onMouseLeave={e => e.currentTarget.style.boxShadow = '0 2px 16px rgba(28,16,9,0.07)'}
               >
@@ -88,27 +83,52 @@ export default function OrderPage() {
                     </div>
                   </div>
                   {/* Status badge */}
-                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                    <span style={{ background:s.bg, color:s.color, borderRadius:50, padding:'6px 16px', fontSize:'0.78rem', fontWeight:700, letterSpacing:'0.04em', display:'flex', alignItems:'center', gap:6 }}>
-                      <span style={{ width:7, height:7, borderRadius:'50%', background:s.dot, display:'inline-block' }} />
-                      {item?.orderStatus}
-                    </span>
-                  </div>
+                  <span style={{ background:s.bg, color:s.color, borderRadius:50, padding:'6px 16px', fontSize:'0.78rem', fontWeight:700, letterSpacing:'0.04em', display:'flex', alignItems:'center', gap:6 }}>
+                    <span style={{ width:7, height:7, borderRadius:'50%', background:s.dot, display:'inline-block' }} />
+                    {item?.orderStatus}
+                  </span>
                 </div>
 
-                {/* Products */}
+                {/* Products grid */}
                 <div style={{ padding:'16px 24px' }}>
                   <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))', gap:12 }}>
                     {item?.products?.map((prod) => (
-                      <div key={prod._id} style={{ display:'flex', alignItems:'center', gap:10, background:'rgba(200,64,10,0.03)', borderRadius:12, padding:'10px 14px', border:'1px solid rgba(200,64,10,0.07)' }}>
-                        <div style={{ width:36, height:36, borderRadius:8, background:'rgba(200,64,10,0.08)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                          <i className="fa fa-utensils" style={{ color:'#C8400A', fontSize:'0.85rem' }}></i>
+                      <Link
+                        key={prod._id}
+                        to={`/product/${prod.product?._id}`}
+                        style={{ textDecoration:'none' }}
+                      >
+                        <div
+                          style={{ display:'flex', alignItems:'center', gap:10, background:'rgba(200,64,10,0.03)', borderRadius:12, padding:'10px 14px', border:'1px solid rgba(200,64,10,0.07)', cursor:'pointer', transition:'background 0.2s, border-color 0.2s' }}
+                          onMouseEnter={e => { e.currentTarget.style.background='rgba(200,64,10,0.08)'; e.currentTarget.style.borderColor='rgba(200,64,10,0.2)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.background='rgba(200,64,10,0.03)'; e.currentTarget.style.borderColor='rgba(200,64,10,0.07)'; }}
+                        >
+                          {/* Product image */}
+                          {prod.product?.pic?.[0] ? (
+                            <img
+                              src={`${process.env.REACT_APP_BACKEND_SERVER}/${prod.product.pic[0].replace(/\\/g, '/')}`}
+                              alt={prod.product?.name}
+                              style={{ width:44, height:44, borderRadius:8, objectFit:'cover', flexShrink:0, border:'1px solid rgba(200,64,10,0.12)' }}
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.nextSibling.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          {/* Fallback icon */}
+                          <div style={{ width:44, height:44, borderRadius:8, background:'rgba(200,64,10,0.08)', display: prod.product?.pic?.[0] ? 'none' : 'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                            <i className="fa fa-box" style={{ color:'#C8400A', fontSize:'0.85rem' }}></i>
+                          </div>
+
+                          <div style={{ minWidth:0 }}>
+                            <div style={{ fontWeight:600, fontSize:'0.85rem', color:'#1C1009', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{prod.product?.name}</div>
+                            <div style={{ fontSize:'0.75rem', color:'#7A6E65' }}>×{prod.qty} · <span style={{ color:'#C8400A', fontWeight:700 }}>₹{prod.total?.toLocaleString()}</span></div>
+                            <div style={{ fontSize:'0.68rem', color:'#C8400A', marginTop:2, display:'flex', alignItems:'center', gap:3 }}>
+                              <i className="fa fa-external-link-alt" style={{ fontSize:'0.6rem' }}></i> View product
+                            </div>
+                          </div>
                         </div>
-                        <div style={{ minWidth:0 }}>
-                          <div style={{ fontWeight:600, fontSize:'0.85rem', color:'#1C1009', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{prod.product?.name}</div>
-                          <div style={{ fontSize:'0.75rem', color:'#7A6E65' }}>×{prod.qty} · <span style={{ color:'#C8400A', fontWeight:700 }}>₹{prod.total?.toLocaleString()}</span></div>
-                        </div>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 </div>
@@ -116,6 +136,14 @@ export default function OrderPage() {
                 {/* Footer row */}
                 <div style={{ padding:'14px 24px 18px', borderTop:'1px solid rgba(200,64,10,0.08)', display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'space-between', gap:14 }}>
                   <div style={{ display:'flex', flexWrap:'wrap', gap:20 }}>
+                    <div>
+                      <div style={{ fontSize:'0.7rem', fontWeight:700, letterSpacing:'0.1em', color:'#7A6E65', textTransform:'uppercase', marginBottom:2 }}>Expected Delivery</div>
+                      <div style={{ fontSize:'0.85rem', fontWeight:600, color:'#1C1009' }}>
+                        {item?.expectedDelivery
+                          ? new Date(item.expectedDelivery).toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' })
+                          : '3–6 business days'}
+                      </div>
+                    </div>
                     <div>
                       <div style={{ fontSize:'0.7rem', fontWeight:700, letterSpacing:'0.1em', color:'#7A6E65', textTransform:'uppercase', marginBottom:2 }}>Payment</div>
                       <div style={{ fontSize:'0.85rem', fontWeight:600, color:'#1C1009' }}>{item?.paymentMode}</div>
