@@ -224,30 +224,28 @@ export default function Profile({ title }) {
           0%   { background-position: 200% 0; }
           100% { background-position: -200% 0; }
         }
-          @media (max-width: 768px) {
-  .profile-wrapper {
-    padding: 40px 0 100px;
-          background: #f7f4ef;
-          min-height: 50vh;
-  }
-}
-
-/* Mobile */
-@media (max-width: 480px) {
-  padding: 40px 0 100px;
-          background: #f7f4ef;
-          min-height: 15vh;
-}
+        @media (max-width: 768px) {
+          .profile-wrapper {
+            padding: 40px 0 100px;
+            background: #f7f4ef;
+            min-height: 50vh;
+          }
+        }
+        @media (max-width: 480px) {
+          .profile-wrapper {
+            padding: 40px 0 100px;
+            background: #f7f4ef;
+            min-height: 15vh;
+          }
+        }
       `}</style>
 
-      <div className={`profile-wrapper ${isCheckout ? "" : ""}`}>
+      <div className="profile-wrapper">
         <div className={isCheckout ? "container-fluid px-4" : "container"}>
           {/* Header */}
           <div className="profile-header-bar">
             <div className="profile-header-icon">
-              <i
-                className={`fa ${isCheckout ? "fa-map-marker-alt" : "fa-user"}`}
-              />
+              <i className={`fa ${isCheckout ? "fa-map-marker-alt" : "fa-user"}`} />
             </div>
             <div>
               <h5 className="profile-header-title">
@@ -267,13 +265,7 @@ export default function Profile({ title }) {
               <div className="col-lg-4 col-md-5">
                 <div className="profile-avatar-card">
                   {loading ? (
-                    <div
-                      style={{
-                        width: "100%",
-                        aspectRatio: "3/4",
-                        background: "#162236",
-                      }}
-                    />
+                    <div style={{ width: "100%", aspectRatio: "3/4", background: "#162236" }} />
                   ) : (
                     <img
                       src={
@@ -286,21 +278,15 @@ export default function Profile({ title }) {
                     />
                   )}
                   <div className="profile-avatar-overlay">
-                    <div className="profile-avatar-name">
-                      {data.name || "ShopKaro User"}
-                    </div>
-                    <div className="profile-avatar-user">
-                      @{data.username || "—"}
-                    </div>
+                    <div className="profile-avatar-name">{data.name || "ShopKaro User"}</div>
+                    <div className="profile-avatar-user">@{data.username || "—"}</div>
                   </div>
                 </div>
               </div>
             )}
 
             {/* Info card */}
-            <div
-              className={isCheckout ? "col-12 col-md-8" : "col-lg-8 col-md-7"}
-            >
+            <div className={isCheckout ? "col-12" : "col-lg-8 col-md-7"}>
               <div className="profile-info-card">
                 <div className="profile-info-header">
                   <h6 className="profile-info-header-title">
@@ -314,20 +300,12 @@ export default function Profile({ title }) {
 
                 <div className="profile-fields">
                   {loading
-                    ? Array(8)
-                        .fill(null)
-                        .map((_, i) => (
-                          <div key={i} className="profile-field">
-                            <div
-                              className="profile-skeleton"
-                              style={{ width: 70 }}
-                            />
-                            <div
-                              className="profile-skeleton"
-                              style={{ width: 140 }}
-                            />
-                          </div>
-                        ))
+                    ? Array(8).fill(null).map((_, i) => (
+                        <div key={i} className="profile-field">
+                          <div className="profile-skeleton" style={{ width: 70 }} />
+                          <div className="profile-skeleton" style={{ width: 140 }} />
+                        </div>
+                      ))
                     : fields.map((f) => <Field key={f.label} {...f} />)}
                 </div>
 
