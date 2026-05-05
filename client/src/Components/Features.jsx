@@ -69,8 +69,10 @@ export default function Features() {
                     </div>
                     <h4 className="feature-title">{f.title}</h4>
                     <p className="feature-desc">{f.desc}</p>
-                    <Link to="/shop" className="feature-link">
-                      Shop Now
+                    <Link to="/feature-detail"
+                    state={{ title: f.title }}
+                    className="feature-link">
+                      Read More 
                       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                         <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
