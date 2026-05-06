@@ -16,7 +16,7 @@ const server = http.createServer(app);
 // Attach socket.io to server
 const io = new Server(server, {
     cors: {
-        origin: ["http://localhost:3000", "http://localhost:8000", "http://localhost:4000"],
+        origin: ["http://localhost:3000", "http://localhost:8000", "http://localhost:4000","https://shop-karo-ten.vercel.app/","https://shopkaro-sflc.onrender.com"],
         methods: ["GET", "POST"],
         credentials: true
     }
