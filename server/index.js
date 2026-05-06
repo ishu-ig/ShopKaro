@@ -41,7 +41,7 @@ io.on("connection", (socket) => {
 });
 
 // ✅ CORS whitelist (fix includes)
-var whitelist = ['http://localhost:3000', 'http://localhost:8000', 'http://localhost:4000','https://shopkaro-sflc.onrender.com','https://shop-karo-ten.vercel.app/'];
+var whitelist = ['http://localhost:3000', 'http://localhost:8000', 'http://localhost:4000','https://shop-karo-ten.vercel.app/','https://shopkaro-sflc.onrender.com'];
 var corsOptions = {
     origin: function (origin, callback) {
         if (!origin || whitelist.includes(origin)) {  // allow server-side or whitelist
