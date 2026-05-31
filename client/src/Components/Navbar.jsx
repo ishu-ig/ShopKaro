@@ -89,12 +89,20 @@ export default function Navbar() {
 
         /* ---------- MAIN NAVBAR ---------- */
         .sk-navbar {
-          background: var(--sk-dark);
-          position: sticky; top: 0; z-index: 100;
-          border-bottom: 1px solid #2a2a40;
-          transition: box-shadow .3s;
-        }
-        .sk-navbar.scrolled { box-shadow: 0 2px 20px rgba(0,0,0,.4); }
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 1000;
+  background: var(--sk-dark);
+  border-bottom: 1px solid #2a2a40;
+  transition: box-shadow .3s;
+}
+
+.sk-navbar.scrolled {
+  box-shadow: 0 2px 20px rgba(0,0,0,.4);
+}
 
         .sk-brand { font-size: 22px; font-weight: 700; color: #fff; text-decoration: none; }
         .sk-brand span { color: var(--sk-gold); }
