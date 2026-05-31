@@ -2912,3 +2912,24 @@ h1, h2, h3, h4, .brand-font {
           color: #888;
         }
         .sk-results-count strong { color: #0d1b2a; }
+
+        .features-arrow {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid #ddd;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #333;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.features-arrow:hover {
+  background: #000;        /* change to your brand color */
+  border-color: #000;
+  color: #fff;
+}

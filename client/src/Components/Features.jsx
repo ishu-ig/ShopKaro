@@ -1,7 +1,7 @@
-import React from 'react'
+import React, { useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { Swiper, SwiperSlide } from 'swiper/react'
-import { Navigation, Pagination, Loop } from 'swiper/modules'
+import { Navigation, Pagination } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/navigation'
 import 'swiper/css/pagination'
@@ -40,24 +40,51 @@ const features = [
 ]
 
 export default function Features() {
+  const swiperRef = useRef(null)
+
   return (
     <section className="features-section">
       <div className="container">
 
-        {/* Heading */}
-        <div className="text-center mb-5 wow fadeIn" data-wow-delay=".2s">
-          <div className="features-eyebrow">Our Features</div>
-          <h2 className="features-heading">
-            Best in <em>Industry</em> Features
-          </h2>
-          <p className="features-sub">
-            Everything you need for a premium shopping experience — built in from the ground up.
-          </p>
+        {/* Heading + Nav Arrows */}
+        <div className="d-flex align-items-center justify-content-between mb-5">
+          <div className="wow fadeIn" data-wow-delay=".2s">
+            <div className="features-eyebrow">Our Features</div>
+            <h2 className="features-heading">
+              Best in <em>Industry</em> Features
+            </h2>
+            <p className="features-sub mb-0">
+              Everything you need for a premium shopping experience — built in from the ground up.
+            </p>
+          </div>
+
+          {/* Custom Arrows */}
+          <div className="d-flex gap-2">
+            <button
+              className="features-arrow"
+              onClick={() => swiperRef.current?.slidePrev()}
+              aria-label="Previous"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M13 4l-6 6 6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            <button
+              className="features-arrow"
+              onClick={() => swiperRef.current?.slideNext()}
+              aria-label="Next"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M7 4l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Swiper Slider */}
         <Swiper
           modules={[Navigation, Pagination]}
+          onSwiper={(swiper) => (swiperRef.current = swiper)}
           loop={true}
           spaceBetween={24}
           slidesPerView={1}
@@ -65,7 +92,6 @@ export default function Features() {
             768: { slidesPerView: 2 },
             1024: { slidesPerView: 3 },
           }}
-          navigation
           pagination={{ clickable: true }}
         >
           {features.map((f, i) => (
