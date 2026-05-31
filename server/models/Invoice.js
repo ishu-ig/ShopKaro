@@ -7,7 +7,7 @@ const invoiceSchema = new mongoose.Schema({
     },
     order: { 
         type: mongoose.Schema.Types.ObjectId, 
-        ref: 'Order', required: true 
+        ref: 'Checkout', required: true 
     },
     invoiceNumber: { 
         type: String, 
