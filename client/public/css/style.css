@@ -2933,3 +2933,33 @@ h1, h2, h3, h4, .brand-font {
   border-color: #000;
   color: #fff;
 }
+
+.sk-active-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #0d1b2a;
+  color: #c9a84c;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 50px;
+  letter-spacing: 0.5px;
+}
+
+.sk-active-filter-remove {
+  background: none;
+  border: none;
+  color: rgba(201,168,76,0.6);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 2px;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.sk-active-filter-remove:hover {
+  color: #fff;
+}

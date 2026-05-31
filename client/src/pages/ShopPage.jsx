@@ -106,11 +106,11 @@ export default function ShopPage() {
       <div className="sk-filter-group-title mb-2">Price Range</div>
       <div className="row g-2 mb-2">
         <div className="col-6">
-          <label style={{fontSize:11,fontWeight:600,letterSpacing:1,textTransform:'uppercase',color:'#888',display:'block',marginBottom:4}}>Min (₹)</label>
+          <label style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', color: '#888', display: 'block', marginBottom: 4 }}>Min (₹)</label>
           <input type="number" value={min} onChange={e => setMin(e.target.value)} className="sk-price-input" />
         </div>
         <div className="col-6">
-          <label style={{fontSize:11,fontWeight:600,letterSpacing:1,textTransform:'uppercase',color:'#888',display:'block',marginBottom:4}}>Max (₹)</label>
+          <label style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', color: '#888', display: 'block', marginBottom: 4 }}>Max (₹)</label>
           <input type="number" value={max} onChange={e => setMax(e.target.value)} className="sk-price-input" />
         </div>
       </div>
@@ -150,13 +150,13 @@ export default function ShopPage() {
         }}
       >
         {/* Drawer Header */}
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20, paddingBottom:14, borderBottom:'2px solid #c9a84c' }}>
-          <span style={{ fontFamily:'Playfair Display,serif', fontSize:'1.1rem', fontWeight:700, color:'#0d1b2a', display:'flex', alignItems:'center', gap:8 }}>
-            <i className="fa fa-sliders-h" style={{ color:'#c9a84c' }}></i> Filters
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 14, borderBottom: '2px solid #c9a84c' }}>
+          <span style={{ fontFamily: 'Playfair Display,serif', fontSize: '1.1rem', fontWeight: 700, color: '#0d1b2a', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <i className="fa fa-sliders-h" style={{ color: '#c9a84c' }}></i> Filters
           </span>
           <button
             onClick={() => setSidebarOpen(false)}
-            style={{ background:'none', border:'none', fontSize:20, color:'#888', cursor:'pointer', lineHeight:1, padding:4 }}
+            style={{ background: 'none', border: 'none', fontSize: 20, color: '#888', cursor: 'pointer', lineHeight: 1, padding: 4 }}
             aria-label="Close filters"
           >
             &times;
@@ -204,8 +204,9 @@ export default function ShopPage() {
               </div>
             </div>
 
-            {/* Main Content — full width on mobile, no shifting */}
+            {/* Main Content */}
             <div className="col-12 col-lg-10">
+
               {/* Mobile Filter Toggle */}
               <div className="d-lg-none mb-3">
                 <button className="sk-mobile-filter-btn" onClick={() => setSidebarOpen(true)}>
@@ -234,8 +235,57 @@ export default function ShopPage() {
                 </select>
               </div>
 
-              <div className="sk-results-count mb-3 px-1">
-                Showing <strong>{Math.min(data.length, 21)}</strong> of <strong>{data.length}</strong> products
+              {/* Results count + Active filter tags */}
+              <div className="d-flex flex-wrap align-items-center gap-2 mb-3 px-1">
+                <span className="sk-results-count">
+                  Showing <strong>{Math.min(data.length, 21)}</strong> of <strong>{data.length}</strong> products
+                </span>
+
+                {mc !== "All" && (
+                  <span className="sk-active-filter">
+                    <i className="fa fa-tag" style={{ fontSize: 10 }} /> {mc}
+                    <Link
+                      to={`/shop?mc=All&sc=${sc}&br=${br}`}
+                      className="sk-active-filter-remove"
+                    >×</Link>
+                  </span>
+                )}
+                {sc !== "All" && (
+                  <span className="sk-active-filter">
+                    <i className="fa fa-tag" style={{ fontSize: 10 }} /> {sc}
+                    <Link
+                      to={`/shop?mc=${mc}&sc=All&br=${br}`}
+                      className="sk-active-filter-remove"
+                    >×</Link>
+                  </span>
+                )}
+                {br !== "All" && (
+                  <span className="sk-active-filter">
+                    <i className="fa fa-tag" style={{ fontSize: 10 }} /> {br}
+                    <Link
+                      to={`/shop?mc=${mc}&sc=${sc}&br=All`}
+                      className="sk-active-filter-remove"
+                    >×</Link>
+                  </span>
+                )}
+                {search && (
+                  <span className="sk-active-filter">
+                    <i className="fa fa-search" style={{ fontSize: 10 }} /> "{search}"
+                    <button
+                      className="sk-active-filter-remove"
+                      onClick={() => { setSearch(""); filter(mc, sc, br); }}
+                    >×</button>
+                  </span>
+                )}
+                {(min > 0 || max < 100000) && (
+                  <span className="sk-active-filter">
+                    ₹{min} – ₹{max}
+                    <button
+                      className="sk-active-filter-remove"
+                      onClick={() => { setMin(0); setMax(100000); filter(mc, sc, br); }}
+                    >×</button>
+                  </span>
+                )}
               </div>
 
               <Product title="Shop" data={data} />

@@ -27,7 +27,7 @@ export default function Profile({ title }) {
               "Content-Type": "application/json",
               authorization: localStorage.getItem("token"),
             },
-          },
+          }
         );
         response = await response.json();
         if (response.result === "Done") setData(response.data);
@@ -59,6 +59,8 @@ export default function Profile({ title }) {
           background: #f7f4ef;
           min-height: 100vh;
         }
+
+        /* ── Header bar ── */
         .profile-header-bar {
           background: #0d1b2a;
           border-radius: 14px;
@@ -76,6 +78,7 @@ export default function Profile({ title }) {
           display: flex; align-items: center; justify-content: center;
           color: #c9a84c;
           font-size: 16px;
+          flex-shrink: 0;
         }
         .profile-header-title {
           font-family: 'Playfair Display', serif;
@@ -89,6 +92,8 @@ export default function Profile({ title }) {
           letter-spacing: 1.5px;
           text-transform: uppercase;
         }
+
+        /* ── Avatar card — Desktop ── */
         .profile-avatar-card {
           background: #0d1b2a;
           border-radius: 20px;
@@ -121,6 +126,61 @@ export default function Profile({ title }) {
           font-size: 13px;
           color: rgba(201,168,76,0.7);
         }
+
+        /* ── Avatar card — Tablet ── */
+        @media (max-width: 991px) {
+          .profile-avatar-card {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            border-radius: 16px;
+          }
+          .profile-avatar-card::after {
+            width: 4px;
+            height: 100%;
+            top: 0; left: 0;
+            right: auto; bottom: auto;
+            background: linear-gradient(180deg, #c9a84c, rgba(201,168,76,0.2));
+          }
+          .profile-avatar-img {
+            width: 110px;
+            height: 110px;
+            aspect-ratio: 1/1;
+            border-radius: 12px;
+            flex-shrink: 0;
+            margin: 16px 0 16px 16px;
+          }
+          .profile-avatar-overlay {
+            padding: 16px 20px 16px 0;
+          }
+          .profile-avatar-name {
+            font-size: 18px;
+          }
+        }
+
+        /* ── Avatar card — Mobile ── */
+        @media (max-width: 576px) {
+          .profile-avatar-card {
+            gap: 14px;
+          }
+          .profile-avatar-img {
+            width: 80px;
+            height: 80px;
+            margin: 12px 0 12px 12px;
+            border-radius: 10px;
+          }
+          .profile-avatar-name {
+            font-size: 16px;
+          }
+          .profile-avatar-user {
+            font-size: 12px;
+          }
+          .profile-avatar-overlay {
+            padding: 12px 12px 12px 0;
+          }
+        }
+
+        /* ── Info card ── */
         .profile-info-card {
           background: #fff;
           border-radius: 20px;
@@ -151,6 +211,8 @@ export default function Profile({ title }) {
           letter-spacing: 1px;
           text-transform: uppercase;
         }
+
+        /* ── Fields ── */
         .profile-fields {
           padding: 8px 0;
         }
@@ -185,6 +247,8 @@ export default function Profile({ title }) {
           font-style: italic;
           font-weight: 400;
         }
+
+        /* ── Footer ── */
         .profile-info-footer {
           padding: 20px 28px;
           border-top: 1px solid #f0ece4;
@@ -213,6 +277,8 @@ export default function Profile({ title }) {
           box-shadow: 0 8px 24px rgba(201,168,76,0.3);
           transform: translateY(-1px);
         }
+
+        /* ── Skeleton ── */
         .profile-skeleton {
           background: linear-gradient(90deg, #eee 25%, #f5f5f5 50%, #eee 75%);
           background-size: 200% 100%;
@@ -224,17 +290,17 @@ export default function Profile({ title }) {
           0%   { background-position: 200% 0; }
           100% { background-position: -200% 0; }
         }
+
+        /* ── Wrapper responsive ── */
         @media (max-width: 768px) {
           .profile-wrapper {
             padding: 40px 0 100px;
-            background: #f7f4ef;
             min-height: 50vh;
           }
         }
         @media (max-width: 480px) {
           .profile-wrapper {
             padding: 40px 0 100px;
-            background: #f7f4ef;
             min-height: 15vh;
           }
         }
@@ -242,6 +308,7 @@ export default function Profile({ title }) {
 
       <div className="profile-wrapper">
         <div className={isCheckout ? "container-fluid px-4" : "container"}>
+
           {/* Header */}
           <div className="profile-header-bar">
             <div className="profile-header-icon">
@@ -260,12 +327,17 @@ export default function Profile({ title }) {
           </div>
 
           <div className="row g-4 justify-content-center">
-            {/* Avatar column (hidden in checkout) */}
+
+            {/* Avatar column */}
             {!isCheckout && (
-              <div className="col-lg-4 col-md-5">
+              <div className="col-lg-4 col-12">
                 <div className="profile-avatar-card">
                   {loading ? (
-                    <div style={{ width: "100%", aspectRatio: "3/4", background: "#162236" }} />
+                    <div style={{
+                      width: "100%",
+                      aspectRatio: "3/4",
+                      background: "#162236"
+                    }} />
                   ) : (
                     <img
                       src={
@@ -286,7 +358,7 @@ export default function Profile({ title }) {
             )}
 
             {/* Info card */}
-            <div className={isCheckout ? "col-12" : "col-lg-8 col-md-7"}>
+            <div className={isCheckout ? "col-12" : "col-lg-8 col-12"}>
               <div className="profile-info-card">
                 <div className="profile-info-header">
                   <h6 className="profile-info-header-title">
@@ -319,6 +391,7 @@ export default function Profile({ title }) {
                 )}
               </div>
             </div>
+
           </div>
         </div>
       </div>
