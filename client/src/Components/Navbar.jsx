@@ -305,14 +305,14 @@ export default function Navbar() {
               <div className="dropdown">
                 <button className="btn p-0 border-0 bg-transparent dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown">
                   <img
-                    src={data.pic ? `${process.env.REACT_APP_BACKEND_SERVER}/${data.pic}` : "/img/noimage.jpg"}
+                    src={data.pic ? data.pic : "/img/noimage.jpg"}
                     className="sk-avatar" alt="User"
                   />
                 </button>
                 <ul className="dropdown-menu sk-dropdown dropdown-menu-end">
                   <div className="sk-dropdown-header">
                     <img
-                      src={data.pic ? `${process.env.REACT_APP_BACKEND_SERVER}/${data.pic}` : "/img/noimage.jpg"}
+                      src={data.pic ? data.pic : "/img/noimage.jpg"}
                       alt="User"
                     />
                     <span className="user-name">{localStorage.getItem("name") || "Guest User"}</span>
@@ -365,7 +365,7 @@ export default function Navbar() {
 
         <div className="sk-drawer-user">
           <img
-            src={data.pic ? `${process.env.REACT_APP_BACKEND_SERVER}/${data.pic}` : "/img/noimage.jpg"}
+            src={data.pic ? data.pic : "/img/noimage.jpg"}
             alt="User"
           />
           <div>

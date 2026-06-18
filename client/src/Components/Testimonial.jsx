@@ -70,7 +70,7 @@ export default function Testimonial() {
                     <p className="t-message">{item.message}</p>
                     <div className="t-profile">
                       <img
-                        src={`${process.env.REACT_APP_BACKEND_SERVER}/${item.pic}`}
+                        src={item.pic}
                         className="t-avatar"
                         alt={item.name}
                       />

@@ -1,5 +1,5 @@
 const User = require("../models/User")
-const fs = require("fs")
+const { deleteFromCloudinary } = require("../cloudinaryMethods");
 const mailer = require("../mailer/index")
 const passwordValidator = require('password-validator')
 const bcrypt = require("bcrypt")
@@ -19,13 +19,13 @@ schema
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function buildErrorMessage(error) {
     let msg = {}
-    error.keyValue?.username  && (msg.username = "User with this Username already exists")
-    error.keyValue?.email     && (msg.email    = "User with this Email Address already exists")
-    error.errors?.name        && (msg.name     = error.errors.name.message)
-    error.errors?.username    && (msg.username = error.errors.username.message)
-    error.errors?.email       && (msg.email    = error.errors.email.message)
-    error.errors?.phone       && (msg.phone    = error.errors.phone.message)
-    error.errors?.password    && (msg.password = error.errors.password.message)
+    error.keyValue?.username && (msg.username = "User with this Username already exists")
+    error.keyValue?.email && (msg.email = "User with this Email Address already exists")
+    error.errors?.name && (msg.name = error.errors.name.message)
+    error.errors?.username && (msg.username = error.errors.username.message)
+    error.errors?.email && (msg.email = error.errors.email.message)
+    error.errors?.phone && (msg.phone = error.errors.phone.message)
+    error.errors?.password && (msg.password = error.errors.password.message)
     return msg
 }
 
@@ -43,12 +43,12 @@ async function createRecord(req, res) {
 
         try {
             let data = new User(req.body)
-            data.role     = "Buyer"      // public registration is always Buyer
+            data.role = "Buyer"      // public registration is always Buyer
             data.password = hash
             await data.save()
             res.send({ result: "Done", data })
         } catch (error) {
-            try { fs.unlinkSync(req.file.path) } catch (_) {}
+            if (req.file) await deleteFromCloudinary(req.file.path);
             const errorMessage = buildErrorMessage(error)
             if (Object.keys(errorMessage).length === 0)
                 return res.status(500).send({ result: "Fail", reason: "Internal Server Error" })
@@ -81,13 +81,13 @@ async function adminCreateRecord(req, res) {
             // Delivery Boy extra fields
             if (req.body.role === "Delivery Boy") {
                 data.vehicleNumber = req.body.vehicleNumber || ""
-                data.vehicleType   = req.body.vehicleType   || ""
+                data.vehicleType = req.body.vehicleType || ""
             }
 
             await data.save()
             res.send({ result: "Done", data })
         } catch (error) {
-            try { fs.unlinkSync(req.file?.path) } catch (_) {}
+            if (req.file) await deleteFromCloudinary(req.file.path);
             const errorMessage = buildErrorMessage(error)
             if (Object.keys(errorMessage).length === 0)
                 return res.status(500).send({ result: "Fail", reason: "Internal Server Error" })
@@ -130,7 +130,7 @@ async function getSingleRecord(req, res) {
     try {
         let data = await User.findOne({ _id: req.params._id })
         if (data) res.send({ result: "Done", data })
-        else       res.status(404).send({ result: "Fail", reason: "Record Not Found" })
+        else res.status(404).send({ result: "Fail", reason: "Record Not Found" })
     } catch (error) {
         res.status(500).send({ result: "Fail", reason: "Internal Server Error" })
     }
@@ -138,56 +138,80 @@ async function getSingleRecord(req, res) {
 
 // ── UPDATE user ───────────────────────────────────────────────────────────────
 async function updateRecord(req, res) {
-    try {
-        let data = await User.findOne({ _id: req.params._id })
-        if (!data) return res.status(404).send({ result: "Fail", reason: "Record Not Found" })
+    let data = await User.findById(req.params._id);
 
-        data.name    = req.body.name    ?? data.name
-        data.username= req.body.username?? data.username
-        data.email   = req.body.email   ?? data.email
-        data.phone   = req.body.phone   ?? data.phone
-        data.address = req.body.address ?? data.address
-        data.pin     = req.body.pin     ?? data.pin
-        data.city    = req.body.city    ?? data.city
-        data.state   = req.body.state   ?? data.state
-        data.active  = req.body.active  ?? data.active
-
-        // Allow role update only by admin routes (middleware should guard this)
-        if (req.body.role) data.role = req.body.role
-
-        // Delivery Boy specific fields
-        if (data.role === "Delivery Boy") {
-            data.vehicleNumber = req.body.vehicleNumber ?? data.vehicleNumber
-            data.vehicleType   = req.body.vehicleType   ?? data.vehicleType
-        }
-
-        if (await data.save() && req.file) {
-            try { fs.unlinkSync(data.pic) } catch (_) {}
-            data.pic = req.file.path
-            await data.save()
-        }
-
-        res.send({ result: "Done", data })
-    } catch (error) {
-        try { fs.unlinkSync(req.file?.path) } catch (_) {}
-        const errorMessage = buildErrorMessage(error)
-        if (Object.keys(errorMessage).length === 0)
-            return res.status(500).send({ result: "Fail", reason: "Internal Server Error" })
-        res.status(400).send({ result: "Fail", reason: errorMessage })
+    if (!data) {
+        return res.status(404).send({
+            result: "Fail",
+            reason: "Record Not Found"
+        });
     }
+
+    const oldPic = data.pic;
+
+    data.name = req.body.name ?? data.name;
+    data.username = req.body.username ?? data.username;
+    data.email = req.body.email ?? data.email;
+    data.phone = req.body.phone ?? data.phone;
+    data.address = req.body.address ?? data.address;
+    data.pin = req.body.pin ?? data.pin;
+    data.city = req.body.city ?? data.city;
+    data.state = req.body.state ?? data.state;
+    data.active = req.body.active ?? data.active;
+
+    if (req.body.role) {
+        data.role = req.body.role;
+    }
+
+    if (data.role === "Delivery Boy") {
+        data.vehicleNumber = req.body.vehicleNumber ?? data.vehicleNumber;
+        data.vehicleType = req.body.vehicleType ?? data.vehicleType;
+    }
+
+    if (req.file) {
+        data.pic = req.file.path;
+    }
+
+    await data.save();
+
+    if (req.file && oldPic) {
+        await deleteFromCloudinary(oldPic);
+    }
+
+    res.send({
+        result: "Done",
+        data
+    });
 }
 
 // ── DELETE user ───────────────────────────────────────────────────────────────
 async function deleteRecord(req, res) {
     try {
-        let data = await User.findOne({ _id: req.params._id })
-        if (!data) return res.status(404).send({ result: "Fail", reason: "Record Not Found" })
+        let data = await User.findById(req.params._id);
 
-        try { fs.unlinkSync(data.pic) } catch (_) {}
-        await data.deleteOne()
-        res.send({ result: "Done", data })
+        if (!data) {
+            return res.status(404).send({
+                result: "Fail",
+                reason: "Record Not Found"
+            });
+        }
+
+        if (data.pic) {
+            await deleteFromCloudinary(data.pic);
+        }
+
+        await data.deleteOne();
+
+        res.send({
+            result: "Done",
+            data
+        });
+
     } catch (error) {
-        res.status(500).send({ result: "Fail", reason: "Internal Server Error" })
+        res.status(500).send({
+            result: "Fail",
+            reason: "Internal Server Error"
+        });
     }
 }
 
@@ -205,8 +229,8 @@ async function login(req, res) {
         const passwordMatch = await bcrypt.compare(req.body.password, data.password)
         if (!passwordMatch) return res.status(401).send({ result: "Fail", reason: "Invalid Username or Password" })
 
-        const isBuyer      = data.role === "Buyer"
-        const isDeliveryBoy= data.role === "Delivery Boy"
+        const isBuyer = data.role === "Buyer"
+        const isDeliveryBoy = data.role === "Delivery Boy"
         let key = isBuyer
             ? process.env.JWT_SECRET_KEY_BUYER
             : isDeliveryBoy
@@ -290,7 +314,7 @@ async function forgetPassword3(req, res) {
         bcrypt.hash(req.body.password, 12, async (error, hash) => {
             if (error) return res.status(500).send({ result: "Fail", reason: "Internal Server Error" })
             data.password = hash
-            data.otp      = "-234567"   // invalidate OTP after use
+            data.otp = "-234567"   // invalidate OTP after use
             await data.save()
             res.send({ result: "Done", message: "Password has been reset successfully." })
         })

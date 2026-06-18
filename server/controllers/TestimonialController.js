@@ -1,5 +1,5 @@
 const Testimonial = require("../models/Testimonial")
-const fs = require("fs")
+const { deleteFromCloudinary }        = require("../cloudinaryMethods");
 
 async function createRecord(req, res) {
     try {
@@ -14,9 +14,7 @@ async function createRecord(req, res) {
         })
     } catch (error) {
 
-        try {
-            fs.unlinkSync(req.file.path)
-        } catch (error) { }
+        if (req.file) await deleteFromCloudinary(req.file.path);
 
         let errorMessage = {}
         error.errors?.name ? errorMessage.name = error.errors.name.message : null
@@ -78,68 +76,66 @@ async function getSingleRecord(req, res) {
     }
 }
 
+// ✅ Correct
 async function updateRecord(req, res) {
     try {
-        let data = await Testimonial.findOne({ _id: req.params._id })
-        if (data) {
-            data.name = req.body.name ?? data.name
-            data.message = req.body.message ?? data.message
-            data.active = req.body.active ?? data.active
-            if (await data.save() && req.file) {
-                try {
-                    fs.unlinkSync(data.pic)
-                } catch (error) { }
-                data.pic = req.file.path
-                await data.save()
-            }
+        let data = await Testimonial.findById(req.params._id);
 
-            res.send({
-                result: "Done",
-                data: data
-            })
+        if (!data) {
+            return res.status(404).send({ result: "Fail", reason: "Record Not Found" });
         }
-        else
-            res.status(404).send({
-                result: "Fail",
-                reason: "Record Not Found"
-            })
+
+        const oldPic = data.pic;
+
+        data.name    = req.body.name    ?? data.name;
+        data.message = req.body.message ?? data.message;
+        data.active  = req.body.active  ?? data.active;
+
+        if (req.file) {
+            data.pic = req.file.path;
+        }
+
+        await data.save();
+
+        if (req.file && oldPic) {
+            await deleteFromCloudinary(oldPic);  // delete OLD pic after save
+        }
+
+        res.send({ result: "Done", data });
+
     } catch (error) {
-        try {
-            fs.unlinkSync(req.file.path)
-        } catch (error) { }
-
-
-        res.status(500).send({
-            result: "Fail",
-            reason: "Internal Server Error"
-        })
+        if (req.file) await deleteFromCloudinary(req.file.path);
+        res.status(500).send({ result: "Fail", reason: "Internal Server Error" });
     }
 }
 
 async function deleteRecord(req, res) {
     try {
-        let data = await Testimonial.findOne({ _id: req.params._id })
-        if (data) {
-            try {
-                fs.unlinkSync(data.pic)
-            } catch (error) { }
-            await data.deleteOne()
-            res.send({
-                result: "Done",
-                data: data
-            })
-        }
-        else
-            res.status(404).send({
+        let data = await Testimonial.findById(req.params._id);
+
+        if (!data) {
+            return res.status(404).send({
                 result: "Fail",
                 reason: "Record Not Found"
-            })
+            });
+        }
+
+        if (data.pic) {
+            await deleteFromCloudinary(data.pic);
+        }
+
+        await data.deleteOne();
+
+        res.send({
+            result: "Done",
+            data
+        });
+
     } catch (error) {
-        // console.log(error)
         res.status(500).send({
             result: "Fail",
             reason: "Internal Server Error"
-        })
+        });
     }
 }
 

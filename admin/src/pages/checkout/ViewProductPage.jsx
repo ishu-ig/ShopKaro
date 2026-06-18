@@ -1,82 +1,123 @@
 // ViewProductPage.jsx
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { Link, useParams } from 'react-router-dom';
-import { getCheckout } from '../../Redux/ActionCreators/CheckoutActionCreators';
+import React, { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { getCheckout } from "../../Redux/ActionCreators/CheckoutActionCreators";
 
 export function ViewProductPage() {
-    const { _id } = useParams();
-    const CheckoutStateData = useSelector(state => state.CheckoutStateData);
-    const dispatch = useDispatch();
-    const [order, setOrder] = useState(null);
+  const { _id } = useParams();
+  const CheckoutStateData = useSelector((state) => state.CheckoutStateData);
+  const dispatch = useDispatch();
+  const [order, setOrder] = useState(null);
 
-    useEffect(() => { dispatch(getCheckout()); }, [dispatch]);
+  const orders = Array.isArray(CheckoutStateData) ? CheckoutStateData : CheckoutStateData?.data ?? [];
 
-    useEffect(() => {
-        if (CheckoutStateData.length > 0) {
-            const found = CheckoutStateData.find(o => o._id === _id);
-            setOrder(found || null);
-        }
-    }, [CheckoutStateData, _id]);
+  useEffect(() => { dispatch(getCheckout()); }, [dispatch]);
 
-    if (!order) return (
-        <div className="d-flex align-items-center justify-content-center" style={{ minHeight: "60vh" }}>
-            <div className="text-center"><div className="spinner-border text-primary mb-3"></div><p className="text-muted">Loading items...</p></div>
-        </div>
-    );
+  useEffect(() => {
+    if (orders.length > 0) {
+      const found = orders.find((o) => o._id === _id);
+      setOrder(found || null);
+    }
+  }, [orders, _id]);
 
-    const subtotal = order?.products?.reduce((sum, i) => sum + (i?.total || 0), 0);
-
+  if (!order) {
     return (
-        <div className="fade-in-up">
-            <div className="page-header mb-4">
-                <div>
-                    <h5><i className="fas fa-boxes me-2"></i>Order Items</h5>
-                    <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.6)", marginTop: "2px" }}>
-                        {order?.products?.length} item(s) · Order #{order?._id?.slice(-8)}
-                    </div>
-                </div>
-                <Link to="/checkout" className="text-white-50"><i className="fas fa-arrow-left"></i></Link>
-            </div>
-
-            <div className="table-card">
-                <div className="table-responsive">
-                    <table className="table">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Product Name</th>
-                                <th>Qty</th>
-                                <th>Unit Price</th>
-                                <th>Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {order?.products?.map((item, idx) => (
-                                <tr key={item?._id}>
-                                    <td style={{ color: "var(--text-muted)", fontWeight: 600 }}>{idx + 1}</td>
-                                    <td style={{ fontWeight: 600 }}>{item?.product?.name || "N/A"}</td>
-                                    <td>
-                                        <span style={{ background: "var(--primary-light)", color: "var(--primary)", padding: "3px 10px", borderRadius: "20px", fontSize: "13px", fontWeight: 600 }}>
-                                            ×{item?.qty}
-                                        </span>
-                                    </td>
-                                    <td>₹{item?.product?.finalPrice || 0}</td>
-                                    <td style={{ fontWeight: 700, color: "var(--primary)" }}>₹{item?.total || 0}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                        <tfoot>
-                            <tr style={{ background: "var(--bg)" }}>
-                                <td colSpan={4} style={{ fontWeight: 700, textAlign: "right", padding: "14px 16px" }}>Order Total</td>
-                                <td style={{ fontWeight: 700, fontSize: "16px", color: "var(--primary)", padding: "14px 16px" }}>₹{subtotal}</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
+      <main className="dashboard-content">
+        <div className="container-fluid px-3 px-lg-4 py-4 d-flex align-items-center justify-content-center" style={{ minHeight: "60vh" }}>
+          <div className="text-center">
+            <div className="spinner-border text-primary mb-3"></div>
+            <p className="text-muted">Loading items...</p>
+          </div>
         </div>
+      </main>
     );
+  }
+
+  const subtotal = order.products?.reduce((sum, i) => sum + (i?.total || 0), 0) ?? 0;
+  const itemCount = order.products?.length ?? 0;
+
+  return (
+    <main className="dashboard-content">
+      <div className="container-fluid px-3 px-lg-4 py-4">
+
+        <div className="page-heading">
+          <div className="page-heading-copy">
+            <span className="page-icon">
+              <i className="bi bi-boxes" aria-hidden="true"></i>
+            </span>
+            <div>
+              <p className="eyebrow mb-1">Management</p>
+              <h1 className="h3 mb-1">Order Items</h1>
+              <p className="text-muted mb-0">
+                {itemCount} item{itemCount !== 1 ? "s" : ""} · Order #{order._id?.slice(-8)}
+              </p>
+            </div>
+          </div>
+          <div className="heading-actions">
+            <Link className="btn btn-outline-secondary btn-sm" to="/checkout">
+              <i className="bi bi-arrow-left" aria-hidden="true"></i> Back to Orders
+            </Link>
+          </div>
+        </div>
+
+        <section className="panel mt-3">
+          <div className="panel-header">
+            <div>
+              <h2 className="h5 mb-1 section-title">
+                <i className="bi bi-table" aria-hidden="true"></i>
+                <span>Items in this Order</span>
+              </h2>
+              <p className="text-muted mb-0">Products purchased in this order.</p>
+            </div>
+          </div>
+
+          <div className="table-responsive">
+            <table className="table align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Product Name</th>
+                  <th>Qty</th>
+                  <th>Unit Price</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {itemCount > 0 ? (
+                  order.products.map((item, idx) => (
+                    <tr key={item._id ?? idx}>
+                      <td className="text-muted">{idx + 1}</td>
+                      <td className="fw-semibold">{item.product?.name ?? "N/A"}</td>
+                      <td>
+                        <span className="badge text-bg-primary-subtle text-primary-emphasis">
+                          ×{item.qty}
+                        </span>
+                      </td>
+                      <td>₹{item.product?.finalPrice ?? 0}</td>
+                      <td className="fw-semibold text-success">₹{item.total ?? 0}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="text-center text-muted py-4">No items in this order.</td>
+                  </tr>
+                )}
+              </tbody>
+              {itemCount > 0 && (
+                <tfoot>
+                  <tr className="table-light">
+                    <td colSpan="4" className="text-end fw-bold">Order Total</td>
+                    <td className="fw-bold text-success">₹{subtotal}</td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
 }
 
 export default ViewProductPage;

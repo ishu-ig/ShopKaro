@@ -1,5 +1,5 @@
 const Product = require("../models/Product")
-const fs = require("fs")
+const { deleteFromCloudinary }        = require("../cloudinaryMethods");
 
 async function createRecord(req, res) {
     try {
@@ -18,9 +18,11 @@ async function createRecord(req, res) {
         })
     } catch (error) {
 
-        try {
-            Array.from(req.files).forEach(x => fs.unlinkSync(x.path))
-        } catch (error) { }
+       if (req.files) {
+    await Promise.all(
+        req.files.map(file => deleteFromCloudinary(file.path))
+    );
+}
 
         let errorMessage = {}
         error.errors?.name ? errorMessage.name = error.errors.name.message : null
@@ -98,90 +100,102 @@ async function getSingleRecord(req, res) {
 
 async function updateRecord(req, res) {
     try {
-        let data = await Product.findOne({ _id: req.params._id })
-        if (data) {
-            data.name = req.body.name ?? data.name
-            data.maincategory = req.body.maincategory ?? data.maincategory
-            data.subcategory = req.body.subcategory ?? data.subcategory
-            data.brand = req.body.brand ?? data.brand
-            data.color = req.body.color ?? data.color
-            data.size = req.body.size ?? data.size
-            data.basePrice = req.body.basePrice ?? data.basePrice
-            data.discount = req.body.discount ?? data.discount
-            data.finalPrice = req.body.finalPrice ?? data.finalPrice
-            data.stock = req.body.stock ?? data.stock
-            data.stockQuantity = req.body.stockQuantity ?? data.stockQuantity
-            data.description = req.body.description ?? data.description
-            data.active = req.body.active ?? data.active
+        let data = await Product.findById(req.params._id);
 
-            data.pic.forEach((x, index) => {
-                if (!req.body.oldPics.includes(x)) {
-                    try {
-                        fs.unlink(x, error => {
-                            error ? console.log(error) : data.pic.splice(index, 1)
-                        })
-                    } catch (error) {
-                        console.log("error", error)
-                    }
-                }
-            })
-            if ( req.files) {
-                data.pic = req.body.oldPics?(req.body.oldPics?.split(",").filter(x => x !== "").concat(Array.from(req.files).map(x => x.path))):Array.from(req.files)
-                await data.save()
-            }
-            let finalData = await Product.findOne({ _id: data._id })
-                .populate("maincategory", ["name"])
-                .populate("subcategory", ["name"])
-                .populate("brand", ["name"])
-
-            res.send({
-                result: "Done",
-                data: finalData
-            })
-        }
-        else
-            res.status(404).send({
+        if (!data) {
+            return res.status(404).send({
                 result: "Fail",
                 reason: "Record Not Found"
-            })
+            });
+        }
+
+        data.name          = req.body.name          ?? data.name;
+        data.maincategory  = req.body.maincategory  ?? data.maincategory;
+        data.subcategory   = req.body.subcategory   ?? data.subcategory;
+        data.brand         = req.body.brand         ?? data.brand;
+        data.color         = req.body.color         ?? data.color;
+        data.size          = req.body.size          ?? data.size;
+        data.basePrice     = req.body.basePrice     ?? data.basePrice;
+        data.discount      = req.body.discount      ?? data.discount;
+        data.finalPrice    = req.body.finalPrice    ?? data.finalPrice;
+        data.stock         = req.body.stock         ?? data.stock;
+        data.stockQuantity = req.body.stockQuantity ?? data.stockQuantity;
+        data.description   = req.body.description   ?? data.description;
+        data.active        = req.body.active        ?? data.active;
+
+        // Parse oldPics safely (sent as JSON string from frontend)
+        let oldPics = [];
+        if (req.body.oldPics) {
+            try {
+                oldPics = JSON.parse(req.body.oldPics);
+            } catch {
+                oldPics = req.body.oldPics.split(",").filter(x => x !== "");
+            }
+        }
+
+        // Delete removed pics from Cloudinary
+        const picsToDelete = data.pic.filter(x => !oldPics.includes(x));
+        if (picsToDelete.length) {
+            await Promise.all(picsToDelete.map(pic => deleteFromCloudinary(pic)));
+        }
+
+        // Merge kept pics + newly uploaded pics
+        const newPics = req.files ? Array.from(req.files).map(x => x.path) : [];
+        data.pic = [...oldPics, ...newPics];
+
+        await data.save();
+
+        const finalData = await Product.findById(data._id)
+            .populate("maincategory", ["name"])
+            .populate("subcategory", ["name"])
+            .populate("brand", ["name"]);
+
+        res.send({
+            result: "Done",
+            data: finalData
+        });
+
     } catch (error) {
-        console.log(error)
-        try {
-            Array.from(req.files).forEach(x => fs.unlinkSync(x.path))
-        } catch (error) { }
-
-
+        console.log(error);
+        if (req.files) {
+            await Promise.all(Array.from(req.files).map(x => deleteFromCloudinary(x.path)));
+        }
         res.status(500).send({
             result: "Fail",
             reason: "Internal Server Error"
-        })
+        });
     }
 }
 
 async function deleteRecord(req, res) {
     try {
-        let data = await Product.findOne({ _id: req.params._id })
-        if (data) {
-            try {
-                data.pic.forEach(x => fs.unlinkSync(x))
-            } catch (error) { }
-            await data.deleteOne()
-            res.send({
-                result: "Done",
-                data: data
-            })
-        }
-        else
-            res.status(404).send({
+        let data = await Product.findById(req.params._id);
+
+        if (!data) {
+            return res.status(404).send({
                 result: "Fail",
                 reason: "Record Not Found"
-            })
+            });
+        }
+
+        if (data.pic?.length) {
+            await Promise.all(
+                data.pic.map(pic => deleteFromCloudinary(pic))
+            );
+        }
+
+        await data.deleteOne();
+
+        res.send({
+            result: "Done",
+            data
+        });
+
     } catch (error) {
-        // console.log(error)
         res.status(500).send({
             result: "Fail",
             reason: "Internal Server Error"
-        })
+        });
     }
 }
 

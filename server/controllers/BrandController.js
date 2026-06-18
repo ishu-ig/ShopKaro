@@ -1,5 +1,5 @@
 const Brand = require("../models/Brand")
-const fs = require("fs")
+const { deleteFromCloudinary }        = require("../cloudinaryMethods");
 
 async function createRecord(req, res) {
     try {
@@ -13,10 +13,7 @@ async function createRecord(req, res) {
             data: data
         })
     } catch (error) {
-
-        try {
-            fs.unlinkSync(req.file.path)
-        } catch (error) { }
+        if (req.file) await deleteFromCloudinary(req.file.path);
 
         let errorMessage = {}
         error.keyValue ? errorMessage.name = "Brand With This Name Already Exist" : null
@@ -80,75 +77,82 @@ async function getSingleRecord(req, res) {
 
 async function updateRecord(req, res) {
     try {
-        let data = await Brand.findOne({ _id: req.params._id })
-        if (data) {
-            data.name = req.body.name ?? data.name
-            data.active = req.body.active ?? data.active
-            if (await data.save() && req.file) {
-                try {
-                    fs.unlinkSync(data.pic)
-                } catch (error) { }
-                data.pic = req.file.path
-                await data.save()
-            }
-            
-            res.send({
-                result: "Done",
-                data: data
-            })
-        }
-        else
-            res.status(404).send({
+        let data = await Brand.findById(req.params._id);
+
+        if (!data) {
+            return res.status(404).send({
                 result: "Fail",
                 reason: "Record Not Found"
-            })
+            });
+        }
+
+        const oldPic = data.pic;
+
+        data.name = req.body.name ?? data.name;
+        data.active = req.body.active ?? data.active;
+
+        if (req.file) {
+            data.pic = req.file.path;
+        }
+
+        await data.save();
+
+        // Delete old image after successful save
+        if (req.file && oldPic) {
+            await deleteFromCloudinary(oldPic);
+        }
+
+        res.send({
+            result: "Done",
+            data
+        });
+
     } catch (error) {
-        try {
-            fs.unlinkSync(req.file.path)
-        } catch (error) { }
-
-        let errorMessage = {}
-        error.keyValue ? errorMessage.name = "Brand With This Name Already Exist" : null
-
-        if (Object.values(errorMessage).length === 0) {
-            res.status(500).send({
-                result: "Fail",
-                reason: "Internal Server Error"
-            })
+        if (req.file) {
+            await deleteFromCloudinary(req.file.path);
         }
-        else {
-            res.status(400).send({
-                result: "Fail",
-                reason: errorMessage
-            })
-        }
+
+        let errorMessage = {};
+
+        if (error.keyValue)
+            errorMessage.name = "Brand With This Name Already Exist";
+
+        res.status(Object.keys(errorMessage).length ? 400 : 500).send({
+            result: "Fail",
+            reason: Object.keys(errorMessage).length
+                ? errorMessage
+                : "Internal Server Error"
+        });
     }
 }
 
 async function deleteRecord(req, res) {
     try {
-        let data = await Brand.findOne({ _id: req.params._id })
-        if (data){
-            try {
-                fs.unlinkSync(data.pic)
-            } catch (error) {}
-            await data.deleteOne()
-            res.send({
-                result: "Done",
-                data: data
-            })
-        }
-        else
-            res.status(404).send({
+        let data = await Brand.findById(req.params._id);
+
+        if (!data) {
+            return res.status(404).send({
                 result: "Fail",
                 reason: "Record Not Found"
-            })
+            });
+        }
+
+        if (data.pic) {
+            await deleteFromCloudinary(data.pic);
+        }
+
+        await data.deleteOne();
+
+        res.send({
+            result: "Done",
+            data
+        });
+
     } catch (error) {
-        // console.log(error)
         res.status(500).send({
             result: "Fail",
             reason: "Internal Server Error"
-        })
+        });
     }
 }
 

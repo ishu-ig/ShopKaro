@@ -55,7 +55,7 @@ export default function CategorySlider({ title, data }) {
               <SwiperSlide key={item.id || item._id}>
                 <div className="sk-cat-card">
                   <img
-                    src={`${process.env.REACT_APP_BACKEND_SERVER}/${item.pic}`}
+                    src={item.pic}
                     alt={item.name}
                     loading="lazy"
                   />

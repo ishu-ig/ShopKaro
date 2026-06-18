@@ -54,7 +54,7 @@ export default function ProductSlider({ title, data }) {
                   <div className="ps-card">
                     <div className="ps-img-wrap">
                       <img
-                        src={`${process.env.REACT_APP_BACKEND_SERVER}/${item.pic[0]}`}
+                        src={item.pic[0]}
                         alt={item.name}
                         className="ps-img"
                       />

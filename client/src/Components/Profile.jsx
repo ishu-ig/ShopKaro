@@ -342,7 +342,7 @@ export default function Profile({ title }) {
                     <img
                       src={
                         data.pic
-                          ? `${process.env.REACT_APP_BACKEND_SERVER}/${data.pic}`
+                          ? data.pic
                           : "/img/noimage.jpg"
                       }
                       className="profile-avatar-img"

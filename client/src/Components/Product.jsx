@@ -23,7 +23,7 @@ export default function Product({ title, data }) {
                   <div className="sk-pcard-img-wrap">
                     <Link to={`/product/${item._id}`}>
                       <img
-                        src={`${process.env.REACT_APP_BACKEND_SERVER}/${item.pic[0]}`}
+                        src={item.pic[0]}
                         alt={item.name}
                         loading="lazy"
                       />

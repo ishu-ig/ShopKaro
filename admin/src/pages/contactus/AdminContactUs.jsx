@@ -1,115 +1,239 @@
-import React, { useEffect, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
-import $ from 'jquery';
-import 'datatables.net-dt/css/dataTables.dataTables.min.css';
-import 'datatables.net';
-import { deleteContactUs, getContactUs, updateContactUs } from "../../Redux/ActionCreators/ContactUsActionCreators"
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  getContactUs,
+  deleteContactUs,
+  updateContactUs,
+} from "../../Redux/ActionCreators/ContactUsActionCreators";
 
 export default function AdminContactUs() {
-    const [flag, setFlag] = useState(false)
-    const ContactUsStateData = useSelector(state => state.ContactUsStateData)
-    const dispatch = useDispatch()
+  let ContactUsStateData = useSelector((state) => state.ContactUsStateData);
+  let dispatch = useDispatch();
+  let [flag, setFlag] = useState(false);
+  let [search, setSearch] = useState("");
 
-    function deleteRecord(_id) {
-        if (window.confirm("Are you sure you want to delete this query?")) {
-            dispatch(deleteContactUs({ _id }))
-            getAPIData()
+  function deleteRecord(_id) {
+    if (window.confirm("Are you sure you want to delete this item?")) {
+      dispatch(deleteContactUs({ _id: _id }));
+      setFlag(!flag);
+    }
+  }
+
+  function updateRecord(_id) {
+    if (window.confirm("Are You Sure to Update the Status : ")) {
+      let item = ContactUsStateData.find((x) => x._id === _id);
+      if (!item) return;
+      dispatch(updateContactUs({ ...item, active: !item.active }));
+      setFlag(!flag);
+    }
+  }
+
+  function getAPIData() {
+    dispatch(getContactUs());
+  }
+
+  useEffect(() => {
+    getAPIData();
+  }, [flag]);
+
+  const filteredData = ContactUsStateData
+    ? ContactUsStateData.filter(
+        (item) =>
+          item.name.toLowerCase().includes(search.toLowerCase()) ||
+          item.email?.toLowerCase().includes(search.toLowerCase()) ||
+          item.subject?.toLowerCase().includes(search.toLowerCase())
+      )
+    : [];
+
+  return (
+    <>
+      <style>{`
+        .act-strip {
+          display: inline-flex;
+          align-items: center;
+          gap: 2px;
+          background: #f8f9fa;
+          border: 1px solid #dee2e6;
+          border-radius: 8px;
+          padding: 3px;
         }
-    }
-
-    function updateRecord(_id) {
-        if (window.confirm("Are you sure you want to update the status?")) {
-            const item = ContactUsStateData.find(x => x._id === _id)
-            const index = ContactUsStateData.findIndex(x => x._id === _id)
-            dispatch(updateContactUs({ ...item, active: !item.active }))
-            ContactUsStateData[index].active = !item.active
-            setFlag(!flag)
+        .act-btn {
+          display: inline-flex; align-items: center; justify-content: center;
+          width: 30px; height: 30px; border-radius: 6px;
+          border: none; background: transparent; cursor: pointer;
+          font-size: 0.88rem; color: #6c757d;
+          transition: background .13s, color .13s, transform .1s;
+          text-decoration: none; position: relative;
         }
-    }
+        .act-btn:hover { transform: scale(1.1); }
+        .act-btn-edit:hover   { background: #cfe2ff; color: #0d6efd; }
+        .act-btn-on:hover     { background: #d1e7dd; color: #198754; }
+        .act-btn-off:hover    { background: #fff3cd; color: #856404; }
+        .act-btn-del:hover    { background: #f8d7da; color: #dc3545; }
+        .act-sep {
+          width: 1px; height: 16px;
+          background: #dee2e6; flex-shrink: 0;
+        }
+        .act-btn::after {
+          content: attr(data-tip);
+          position: absolute; bottom: calc(100% + 6px); left: 50%;
+          transform: translateX(-50%);
+          background: #212529; color: #fff;
+          font-size: 0.67rem; font-weight: 600;
+          padding: 3px 7px; border-radius: 4px; white-space: nowrap;
+          pointer-events: none; z-index: 20;
+          opacity: 0; transition: opacity .12s;
+        }
+        .act-btn:hover::after { opacity: 1; }
+        .cu-message {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          max-width: 240px;
+        }
+      `}</style>
 
-    function getAPIData() {
-        dispatch(getContactUs())
-        const time = setTimeout(() => {
-            if (!$.fn.DataTable.isDataTable('#DataTable')) {
-                $('#DataTable').DataTable({ responsive: true, order: [[5, 'desc']] })
-            }
-        }, 500)
-        return time
-    }
-
-    useEffect(() => {
-        const time = getAPIData()
-        return () => clearTimeout(time)
-    }, [ContactUsStateData.length])
-
-    return (
-        <div className="fade-in-up">
-            <div className="page-header mb-4">
-                <h5 className='text-light bg-primary'><i className="fas fa-headset me-2"></i>Customer Queries</h5>
-                <span style={{ fontSize: "14px", background: "rgba(255,255,255,0.15)", padding: "4px 12px", borderRadius: "20px" }}>
-                    {ContactUsStateData.length} queries
-                </span>
+      <main className="dashboard-content">
+        <div className="container-fluid px-3 px-lg-4 py-4">
+          <div className="page-heading">
+            <div className="page-heading-copy">
+              <span className="page-icon">
+                <i className="bi bi-envelope" aria-hidden="true"></i>
+              </span>
+              <div>
+                <p className="eyebrow mb-1">Management</p>
+                <h1 className="h3 mb-1">Contact Us</h1>
+                <p className="text-muted mb-0">
+                  Review and manage customer queries.
+                </p>
+              </div>
             </div>
+          </div>
 
-            <div className="table-card">
-                <div className="table-responsive">
-                    <table id='DataTable' className="table" style={{ width: "100%" }}>
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Phone</th>
-                                <th>Subject</th>
-                                <th>Date</th>
-                                <th>Status</th>
-                                <th>View</th>
-                                <th>Delete</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {ContactUsStateData.map((item) => (
-                                <tr key={item._id}>
-                                    <td style={{ fontFamily: "monospace", fontSize: "12px", color: "var(--text-muted)", maxWidth: "100px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                        {item._id}
-                                    </td>
-                                    <td style={{ fontWeight: 600 }}>{item.name}</td>
-                                    <td style={{ fontSize: "13px" }}>{item.email}</td>
-                                    <td style={{ fontSize: "13px", whiteSpace: "nowrap" }}>{item.phone}</td>
-                                    <td style={{ maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.subject}</td>
-                                    <td style={{ fontSize: "12px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-                                        {new Date(item.createdAt).toLocaleDateString()}
-                                    </td>
-                                    <td>
-                                        <span
-                                            className={`badge-status ${item.active ? "success" : "danger"}`}
-                                            onClick={() => updateRecord(item._id)}
-                                            style={{ cursor: "pointer" }}
-                                            title="Click to toggle status"
-                                        >
-                                            <i className={`fas fa-${item.active ? "check-circle" : "times-circle"}`}></i>
-                                            {item.active ? "Pending" : "Resolved"}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <Link to={`/contactus/view/${item._id}`} className='btn btn-primary btn-sm text-light'>
-                                            <i className='fas fa-eye'></i>
-                                        </Link>
-                                    </td>
-                                    <td>
-                                        {!item.active && localStorage.getItem("role") === "Super Admin" ? (
-                                            <button className='btn btn-danger btn-sm' onClick={() => deleteRecord(item._id)}>
-                                                <i className='fas fa-trash'></i>
-                                            </button>
-                                        ) : <span style={{ color: "var(--border)" }}>—</span>}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+          <section className="panel mt-3">
+            <div className="panel-header">
+              <div>
+                <h2 className="h5 mb-1 section-title">
+                  <i className="bi bi-table" aria-hidden="true"></i>
+                  <span>Query List</span>
+                </h2>
+                <p className="text-muted mb-0">
+                  Search, review, and manage customer queries.
+                </p>
+              </div>
+              <div className="ms-auto" style={{ minWidth: 220 }}>
+                <div className="input-group input-group-sm">
+                  <span className="input-group-text bg-white">
+                    <i className="bi bi-search text-muted"></i>
+                  </span>
+                  <input
+                    type="text"
+                    className="form-control border-start-0"
+                    placeholder="Search queries..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                  {search && (
+                    <button
+                      className="btn btn-outline-secondary"
+                      type="button"
+                      onClick={() => setSearch("")}
+                      title="Clear search"
+                    >
+                      <i className="bi bi-x"></i>
+                    </button>
+                  )}
                 </div>
+              </div>
             </div>
+
+            <div className="table-responsive">
+              <table className="table align-middle mb-0" id="contactUsTable">
+                <thead>
+                  <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Phone</th>
+                    <th scope="col">Subject</th>
+                    <th scope="col">Message</th>
+                    <th scope="col">Status</th>
+                    <th scope="col" className="text-end">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredData.length > 0 ? (
+                    filteredData.map((item, index) => (
+                      <tr key={item._id}>
+                        <td>{index + 1}</td>
+                        <td>{item.name}</td>
+                        <td>{item.email}</td>
+                        <td>{item.phone}</td>
+                        <td>{item.subject}</td>
+                        <td>
+                          <div className="cu-message text-muted">{item.message}</div>
+                        </td>
+                        <td>
+                          <span
+                            className={`badge ${item.active ? "text-bg-success" : "text-bg-secondary"}`}
+                          >
+                            {item.active ? "Active" : "Resolved"}
+                          </span>
+                        </td>
+                        <td className="text-end">
+                          <div className="act-strip">
+                            <Link
+                              className="act-btn act-btn-edit"
+                              to={`/contactus/view/${item._id}`}
+                              data-tip="View"
+                            >
+                              <i className="bi bi-eye"></i>
+                            </Link>
+
+                            <span className="act-sep"></span>
+
+                            <button
+                              className={`act-btn ${item.active ? "act-btn-off" : "act-btn-on"}`}
+                              onClick={() => updateRecord(item._id)}
+                              data-tip={item.active ? "Mark Resolved" : "Mark Active"}
+                            >
+                              <i
+                                className={`bi ${item.active ? "bi-pause-fill" : "bi-play-fill"}`}
+                              ></i>
+                            </button>
+
+                            <span className="act-sep"></span>
+
+                            {!item.active && (
+                              <button
+                                className="act-btn act-btn-del"
+                                onClick={() => deleteRecord(item._id)}
+                                data-tip="Delete"
+                              >
+                                <i className="bi bi-trash3-fill"></i>
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="8" className="text-center text-muted py-4">
+                        {search
+                          ? `No queries found for "${search}"`
+                          : "No queries available."}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
         </div>
-    )
+      </main>
+    </>
+  );
 }

@@ -106,7 +106,7 @@ export default function OrderPage() {
                           {/* Product image */}
                           {prod.product?.pic?.[0] ? (
                             <img
-                              src={`${process.env.REACT_APP_BACKEND_SERVER}/${prod.product.pic[0].replace(/\\/g, '/')}`}
+                              src={prod.product.pic[0].replace(/\\/g, '/')}
                               alt={prod.product?.name}
                               style={{ width:44, height:44, borderRadius:8, objectFit:'cover', flexShrink:0, border:'1px solid rgba(200,64,10,0.12)' }}
                               onError={(e) => {

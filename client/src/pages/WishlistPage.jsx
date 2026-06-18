@@ -62,13 +62,13 @@ export default function WishlistPage() {
                                         <tr key={item._id}>
                                             <td className="wl-img-cell">
                                                 <Link
-                                                    to={`${process.env.REACT_APP_BACKEND_SERVER}/${item.product?.pic}`}
+                                                    to={item.product?.pic}
                                                     target="_blank"
                                                     rel="noreferrer"
                                                     className="wl-img-link"
                                                 >
                                                     <img
-                                                        src={`${process.env.REACT_APP_BACKEND_SERVER}/${item.product?.pic}`}
+                                                        src={item.product?.pic}
                                                         alt={item.product?.name}
                                                         className="wl-img"
                                                     />

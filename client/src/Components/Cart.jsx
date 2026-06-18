@@ -653,13 +653,13 @@ export default function Cart({ title, data }) {
 
                   {/* Thumbnail */}
                   <Link
-                    to={`${process.env.REACT_APP_BACKEND_SERVER}/${item.product?.pic}`}
+                    to={item.product?.pic}
                     target="_blank" rel="noreferrer"
                     style={{ flexShrink: 0 }}
                   >
                     <div style={{ position: 'relative' }}>
                       <img
-                        src={`${process.env.REACT_APP_BACKEND_SERVER}/${item.product?.pic}`}
+                        src={item.product?.pic}
                         alt={item.product?.name}
                         style={{
                           width: 72, height: 72,

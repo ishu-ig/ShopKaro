@@ -2963,3 +2963,48 @@ h1, h2, h3, h4, .brand-font {
 .sk-active-filter-remove:hover {
   color: #fff;
 }
+
+.sk-description {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.85;
+  overflow: hidden;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Constrain anything Quill injects */
+.sk-description img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+.sk-description p {
+  margin-bottom: 0.75rem;
+}
+
+.sk-description ul,
+.sk-description ol {
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.sk-description a {
+  color: #C8400A;
+  word-break: break-all;
+}
+
+.sk-description blockquote {
+  border-left: 3px solid #C8400A;
+  padding-left: 1rem;
+  color: #7A6E65;
+  margin: 0 0 0.75rem;
+}
+
+.sk-description table {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  display: block;
+}
