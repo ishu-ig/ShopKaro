@@ -11,8 +11,7 @@ import { getMaincategory } from "../Redux/ActionCreators/MaincategoryActionCreat
 import { getSubcategory }  from "../Redux/ActionCreators/SubcategoryActionCreators";
 import { getBrand }        from "../Redux/ActionCreators/BrandActionCreators";
 import { getProduct }      from "../Redux/ActionCreators/ProductActionCreators";
-import { getCart }         from "../Redux/ActionCreators/CartActionCreators";
-import { getWishlist }     from "../Redux/ActionCreators/WishlistActionCreators";
+import { getBanner }         from "../Redux/ActionCreators/BannerActionCreators";
 import { getCheckout }     from "../Redux/ActionCreators/CheckoutActionCreators";
 import { getNewsletter }   from "../Redux/ActionCreators/NewsletterActionCreators";
 import { getContactUs }    from "../Redux/ActionCreators/ContactUsActionCreators";
@@ -49,8 +48,7 @@ const SAMPLE = {
         { name: "MacBook Pro",      brand: { name: "Apple"   }, maincategory: { name: "Electronics" }, stock: true,  stockQuantity: 3,   basePrice: 129999, discount: 5,  finalPrice: 123499 },
         { name: "Denim Jeans",      brand: { name: "Nike"    }, maincategory: { name: "Fashion"     }, stock: false, stockQuantity: 0,   basePrice: 1999,   discount: 20, finalPrice: 1599   },
     ],
-    carts:     [{ qty: 2, total: 151998 }, { qty: 1, total: 7649 }, { qty: 3, total: 8997 }],
-    wishlists: [{ _id: "w1" }, { _id: "w2" }, { _id: "w3" }, { _id: "w4" }],
+    Banners:     [{ qty: 2, total: 151998 }, { qty: 1, total: 7649 }, { qty: 3, total: 8997 }],
     checkouts: [
         { user: { name: "Rahul Sharma"  }, paymentMode: "UPI",  subtotal: 75999, shipping: 0,  total: 75999, orderStatus: "Delivered",       paymentStatus: "Done",    createdAt: "2025-02-10" },
         { user: { name: "Priya Mehta"   }, paymentMode: "COD",  subtotal: 53999, shipping: 99, total: 54098, orderStatus: "Processing",      paymentStatus: "Pending", createdAt: "2025-03-15" },
@@ -136,8 +134,7 @@ export default function Home() {
         subcategories:  useSelector(s => s.SubcategoryStateData),
         brands:         useSelector(s => s.BrandStateData),
         products:       useSelector(s => s.ProductStateData),
-        carts:          useSelector(s => s.CartStateData),
-        wishlists:      useSelector(s => s.WishlistStateData),
+        Banners:          useSelector(s => s.BannerStateData),
         checkouts:      useSelector(s => s.CheckoutStateData),
         newsletters:    useSelector(s => s.NewsletterStateData),
         contacts:       useSelector(s => s.ContactUsStateData),
@@ -149,8 +146,7 @@ export default function Home() {
         dispatch(getSubcategory());
         dispatch(getBrand());
         dispatch(getProduct());
-        dispatch(getCart());
-        dispatch(getWishlist());
+        dispatch(getBanner());
         dispatch(getCheckout());
         dispatch(getNewsletter());
         dispatch(getContactUs());
@@ -254,7 +250,7 @@ export default function Home() {
     const statCards = [
         { label: "Total Products", value: D.products.length,   icon: "bi-box-seam",  variant: "metric-primary", to: "/product"   },
         { label: "Total Orders",   value: D.checkouts.length,  icon: "bi-bag-check", variant: "metric-success", to: "/checkout"  },
-        { label: "Cart Items",     value: D.carts.length,      icon: "bi-cart3",     variant: "metric-warning", to: "/cart"      },
+        { label: "Banner Items",     value: D.Banners.length,      icon: "bi-Banner3",     variant: "metric-warning", to: "/Banner"      },
         { label: "Queries",        value: D.contacts.length,   icon: "bi-headset",   variant: "metric-danger",  to: "/contactUs" },
     ];
 
@@ -273,7 +269,7 @@ export default function Home() {
         { label: "Add Brand",      icon: "bi-patch-plus",   to: "/brand/create",        color: "#ffc107" },
         { label: "Add Sub-Cat.",   icon: "bi-diagram-3",    to: "/subcategory/create",  color: "#0dcaf0" },
         { label: "View Orders",    icon: "bi-bag-check",    to: "/checkout",            color: "#6f42c1" },
-        { label: "View Cart",      icon: "bi-cart3",        to: "/cart",                color: "#14b8a6" },
+        { label: "View Banner",      icon: "bi-Banner3",        to: "/Banner",                color: "#14b8a6" },
         { label: "View Messages",  icon: "bi-headset",      to: "/contactUs",           color: "#dc3545" },
         { label: "Testimonials",   icon: "bi-chat-quote",   to: "/testimonial",         color: "#ec4899" },
     ];
@@ -812,7 +808,6 @@ export default function Home() {
                             <div className="mt-3 pt-3" style={{ borderTop: "1px solid var(--bs-border-color)" }}>
                                 {[
                                     { icon: "bi-envelope-paper", color: "text-primary",   label: "Newsletter Subscribers", val: D.newsletters.length,   to: "/newsletter"  },
-                                    { icon: "bi-heart",          color: "text-danger",    label: "Wishlisted Items",       val: D.wishlists.length,      to: "/wishlist"    },
                                     { icon: "bi-star",           color: "text-warning",   label: "Testimonials",          val: D.testimonials.length,   to: "/testimonial" },
                                 ].map((r, i) => (
                                     <div key={i} className="d-flex justify-content-between align-items-center mb-2">
