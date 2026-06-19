@@ -120,7 +120,7 @@ export default function AdminContactUs() {
                   <span>Query List</span>
                 </h2>
                 <p className="text-muted mb-0">
-                  Search, review, and manage customer queries.
+                  Search, review, and manage customer queries carefully.
                 </p>
               </div>
               <div className="ms-auto" style={{ minWidth: 220 }}>
