@@ -55,6 +55,9 @@ import AdminUpdateUser from './pages/user/AdminUpdateUser';
 // contactus 
 import AdminContactUs from "./pages/contactus/AdminContactUs";
 import AdminShowQuery from "./pages/contactus/AdminShowQuery";
+import AdminBanner from "./pages/banner/AdminBanner";
+import AdminCreateBanner from "./pages/banner/AdminCreateBanner";
+import AdminUpdateBanner from "./pages/banner/AdminUpdateBanner";
 
 
 // FIX: All public routes listed here must match route paths exactly
@@ -184,6 +187,11 @@ function Shell() {
             path="/subcategory/update/:_id"
             element={<AdminUpdateSubcategory />}
           />
+          {/* Brand Routes */}
+          <Route path="/banner" element={<AdminBanner />} />
+          <Route path="/banner/create" element={<AdminCreateBanner />} />
+          <Route path="/banner/update/:_id" element={<AdminUpdateBanner />} />
+
 
           {/* Brand Routes */}
           <Route path="/brand" element={<AdminBrand />} />

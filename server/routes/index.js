@@ -14,6 +14,7 @@ const CheckoutRouter = require("./CheckoutRoutes")
 const NewsletterRouter = require("./NewsletterRoutes")
 const ContactUsRouter = require("./ContactUsRoutes")
 const InvoiceRouter = require("./InvoiceRoutes")
+const BannerRouter = require("./BannerRoutes")
 
 Router.use("/maincategory", MaincategoryRouter)
 Router.use("/subcategory", SubcategoryRouter)
@@ -26,6 +27,7 @@ Router.use("/wishlist", WishlistRouter)
 Router.use("/checkout", CheckoutRouter)
 Router.use("/newsletter", NewsletterRouter)
 Router.use("/contactus", ContactUsRouter)
+Router.use("/banner",BannerRouter )
 Router.use("/invoice", InvoiceRouter)
 
 // ── Serve generated PDF invoices as static files ──────────────────────────────

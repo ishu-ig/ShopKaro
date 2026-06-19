@@ -9,6 +9,7 @@ import WishlistReducer from "./WishlistReducer"
 import CheckoutReducer from "./CheckoutReducer"
 import NewsletterReducer from "./NewsletterReducer"
 import ContactUsReducer from "./ContactUsReducer"
+import BannerReducer from "./BannerReducer"
 
 export default combineReducers({
     MaincategoryStateData: MaincategoryReducer,
@@ -21,4 +22,5 @@ export default combineReducers({
     CheckoutStateData: CheckoutReducer,
     NewsletterStateData: NewsletterReducer,
     ContactUsStateData: ContactUsReducer,
+    BannerStateData: BannerReducer,
 })

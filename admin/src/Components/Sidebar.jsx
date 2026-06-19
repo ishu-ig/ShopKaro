@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 
 const navLinks = [
   { to: "/",             icon: "bi-speedometer2",   label: "Dashboard"     },
+  { to: "/banner", icon: "bi-layer-backward", label: "Banner" },
   { to: "/maincategory", icon: "bi-layer-backward", label: "Main Category" },
   { to: "/subcategory",  icon: "bi-diagram-3",      label: "Sub Category"  },
   { to: "/brand",        icon: "bi-patch-check",    label: "Brands"        },
