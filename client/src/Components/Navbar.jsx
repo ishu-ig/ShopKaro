@@ -188,37 +188,59 @@ export default function Navbar() {
         /* Desktop dropdown */
         .sk-dropdown {
           background: var(--sk-navy-light); border: 1px solid var(--sk-line);
-          border-radius: 12px; overflow: hidden;
-          min-width: 215px; padding: 0; margin: 0; list-style: none;
-          box-shadow: 0 16px 40px rgba(0,0,0,.5);
+          border-radius: 14px; overflow: hidden;
+          min-width: 225px; padding: 6px 0; margin: 0; list-style: none;
+          box-shadow: 0 20px 48px rgba(0,0,0,.55), 0 0 0 1px rgba(201,162,39,.05);
           position: relative;
         }
         .sk-dropdown::before {
           content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
           background: linear-gradient(90deg, transparent, var(--sk-gold), transparent);
         }
+        .sk-dropdown.show {
+          animation: skDropdownIn .16s ease-out;
+        }
+        @keyframes skDropdownIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
         .sk-dropdown li { list-style: none; margin: 0; padding: 0; }
         .sk-dropdown-header {
-          padding: 15px 16px; background: rgba(201,162,39,.08);
+          padding: 16px; margin-bottom: 6px; background: rgba(201,162,39,.08);
           border-bottom: 1px solid var(--sk-line);
-          display: flex; align-items: center; gap: 10px;
+          display: flex; align-items: center; gap: 11px;
         }
-        .sk-dropdown-header img { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--sk-gold); object-fit: cover; }
-        .sk-dropdown-header .user-name { font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 700; color: var(--sk-ivory); }
+        .sk-dropdown-header img { width: 38px; height: 38px; border-radius: 50%; border: 2px solid var(--sk-gold); object-fit: cover; }
+        .sk-dropdown-header .user-name { font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 700; color: var(--sk-ivory); line-height: 1.3; }
+        .sk-dropdown-header .user-role {
+          font-family: 'Manrope', sans-serif; font-size: 10.5px; font-weight: 600;
+          letter-spacing: .07em; text-transform: uppercase; color: var(--sk-gold);
+          margin-top: 2px;
+        }
         .sk-dropdown-item {
           display: flex; align-items: center; gap: 11px;
-          padding: 11px 16px; color: var(--sk-muted);
+          padding: 9px 12px; color: var(--sk-muted);
           font-family: 'Manrope', sans-serif;
           text-decoration: none; font-size: 13px;
-          transition: all .2s; width: 100%;
+          transition: all .2s; width: calc(100% - 12px);
+          margin: 1px 6px; border-radius: 9px;
         }
-        .sk-dropdown-item i { width: 14px; color: var(--sk-gold); }
+        .sk-dropdown-item i {
+          width: 26px; height: 26px; flex: none;
+          display: inline-flex; align-items: center; justify-content: center;
+          border-radius: 7px; font-size: 12px;
+          background: rgba(201,162,39,.1); color: var(--sk-gold);
+          transition: background .2s;
+        }
         .sk-dropdown-item:hover { background: rgba(255,255,255,.05); color: var(--sk-ivory); }
+        .sk-dropdown-item:hover i { background: rgba(201,162,39,.2); }
         .sk-dropdown-item.danger { color: #e8746a; }
-        .sk-dropdown-item.danger i { color: #e8746a; }
+        .sk-dropdown-item.danger i { color: #e8746a; background: rgba(231,76,60,.1); }
         .sk-dropdown-item.danger:hover { background: rgba(231,76,60,.1); }
+        .sk-dropdown-item.danger:hover i { background: rgba(231,76,60,.2); }
         .sk-dropdown-item.success { color: #4fd383; }
-        .sk-dropdown-item.success i { color: #4fd383; }
+        .sk-dropdown-item.success i { color: #4fd383; background: rgba(79,211,131,.1); }
+        .sk-dropdown-item.success:hover i { background: rgba(79,211,131,.2); }
 
         /* ---------- MOBILE QUICK ICONS (left of hamburger) ---------- */
         .sk-mobile-icons {
@@ -354,7 +376,7 @@ export default function Navbar() {
           .sk-mobile-icons { display: flex !important; }
         }
         @media (min-width: 992px) {
-          .sk-hamburger, .sk-overlay, .sk-drawer, .sk-mobile-icons { display: none !important; }
+          .sk-hamburger, .sk-overlay, .sk-drawer, .sk-mobile-icons, .sk-mobile-controls { display: none !important; }
         }
       `}</style>
 
@@ -427,7 +449,10 @@ export default function Navbar() {
                       src={data.pic ? data.pic : "/img/noimage.jpg"}
                       alt="User"
                     />
-                    <span className="user-name">{localStorage.getItem("name") || "Guest User"}</span>
+                    <div>
+                      <div className="user-name">{localStorage.getItem("name") || "Guest User"}</div>
+                      <div className="user-role">ShopKaro Member</div>
+                    </div>
                   </li>
                   {dropdownLinks.map((item) => (
                     <li key={item.to}>
@@ -452,7 +477,7 @@ export default function Navbar() {
             </div>
 
             {/* Mobile quick icons + Hamburger */}
-            <div className="d-flex align-items-end gap-1">
+            <div className="sk-mobile-controls d-flex align-items-end gap-1">
               {/* Mobile quick icons (left of hamburger) */}
               <div className="sk-mobile-icons">
                 <Link to="/wishlist" className="sk-icon-btn" title="Wishlist">
