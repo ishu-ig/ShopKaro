@@ -108,6 +108,17 @@ export default function AdminCheckoutShow() {
     ? "text-bg-warning"
     : "text-bg-info";
 
+  // Resolve the assigned delivery boy's details — handles both a populated
+  // object (data.deliveryBoy is {_id, name, phone, email}) and a plain ID
+  // string (data.deliveryBoy is just an _id), falling back to the fetched
+  // deliveryBoys list to look up details in the latter case.
+  const assignedDeliveryBoy = (() => {
+    const db = data.deliveryBoy;
+    if (!db) return null;
+    if (typeof db === "object") return db;
+    return deliveryBoys.find((d) => d._id === db) || { _id: db };
+  })();
+
   return (
     <main className="dashboard-content">
       <style>{`
@@ -213,7 +224,7 @@ export default function AdminCheckoutShow() {
             </div>
           )}
 
-          <div className="col-12 col-lg-6">
+          <div className={assignedDeliveryBoy ? "col-12 col-lg-4" : "col-12 col-lg-6"}>
             <div className="panel h-100">
               <h2 className="h5 mb-3 section-title">
                 <i className="bi bi-person" aria-hidden="true"></i>
@@ -235,7 +246,36 @@ export default function AdminCheckoutShow() {
             </div>
           </div>
 
-          <div className="col-12 col-lg-6">
+          {assignedDeliveryBoy && (
+            <div className="col-12 col-lg-4">
+              <div className="panel h-100">
+                <h2 className="h5 mb-3 section-title">
+                  <i className="bi bi-truck" aria-hidden="true"></i>
+                  <span>Delivery Boy</span>
+                </h2>
+                <div className="d-flex flex-column gap-2">
+                  {[
+                    { icon: "bi-person",    val: assignedDeliveryBoy.name },
+                    { icon: "bi-telephone", val: assignedDeliveryBoy.phone },
+                    { icon: "bi-envelope",  val: assignedDeliveryBoy.email },
+                  ].filter((r) => r.val).map(({ icon, val }) => (
+                    <div key={icon} className="detail-row">
+                      <i className={`bi ${icon} text-primary`}></i>
+                      <span>{val}</span>
+                    </div>
+                  ))}
+                  {!assignedDeliveryBoy.name && (
+                    <div className="text-muted small">
+                      <i className="bi bi-info-circle me-1"></i>
+                      Delivery boy assigned (ID: {assignedDeliveryBoy._id}), but details aren't loaded yet.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className={assignedDeliveryBoy ? "col-12 col-lg-4" : "col-12 col-lg-6"}>
             <div className="panel h-100">
               <h2 className="h5 mb-3 section-title">
                 <i className="bi bi-file-earmark-text" aria-hidden="true"></i>
