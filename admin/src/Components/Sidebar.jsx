@@ -11,6 +11,7 @@ const navLinks = [
   { to: "/checkout",     icon: "bi-bag-check",      label: "Orders"        },
   { to: "/testimonial",  icon: "bi-chat-quote",     label: "Testimonial"   },
   { to: "/newsletter",   icon: "bi-envelope-paper", label: "Newsletter"    },
+    { to: "/user",        icon: "bi-patch-check",    label: "Users"        },
   { to: "/contactUs",    icon: "bi-headset",        label: "Queries"       },
 ];
 

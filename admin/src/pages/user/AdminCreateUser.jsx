@@ -229,6 +229,7 @@ export default function AdminCreateUser() {
                                     >
                                         <option value="Admin">Admin</option>
                                         <option value="SuperAdmin">Super Admin</option>
+                                        <option value="Delivery Boy">Delivery Boy</option>
                                     </select>
                                 </div>
 
