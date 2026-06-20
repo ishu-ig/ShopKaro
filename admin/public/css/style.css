@@ -1346,6 +1346,15 @@ html[data-theme="dark"] .text-bg-secondary {
     display: none;
   }
 
+  /* Belt-and-suspenders: explicitly hide the profile name in CSS within
+     this breakpoint range so it can never force navbar-actions to grow,
+     even if the d-lg-inline utility class is overridden or missing.
+     Scoped to max-width 767.98px only — laptop/desktop (≥768px here,
+     and the separate ≥992px lg rule) is completely unaffected. */
+  .profile-name {
+    display: none !important;
+  }
+
   .page-heading-copy {
     align-items: flex-start;
   }
