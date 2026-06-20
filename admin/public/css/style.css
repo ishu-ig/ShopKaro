@@ -1320,7 +1320,7 @@ html[data-theme="dark"] .text-bg-secondary {
 
 @media (max-width: 767.98px) {
   .navbar-actions {
-    gap: 0.5rem;
+    gap: 0.4rem;
   }
 
   .icon-button,
@@ -1330,8 +1330,20 @@ html[data-theme="dark"] .text-bg-secondary {
     height: 40px;
   }
 
+  /* Profile button: drop the gap reserved for the (already hidden) name
+     label and tighten padding so the avatar-only button doesn't add
+     extra width to the navbar-actions group. */
   .profile-button {
     padding: 0.3rem;
+    gap: 0;
+  }
+
+  /* Bootstrap's .dropdown-toggle::after caret is decorative here — the
+     name text next to it is already hidden below lg via d-none d-lg-inline,
+     so the caret was just adding dead width that overflowed the navbar
+     on narrow screens. Hide it only at this breakpoint. */
+  .profile-button.dropdown-toggle::after {
+    display: none;
   }
 
   .page-heading-copy {
