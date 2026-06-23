@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import formValidator from "../FormValidator/formValidator";
-import { createContactUs } from "../Redux/ActionCreartors/ContactUsActionCreators";
+import { createContactUs } from "../Redux/ActionCreators/ContactUsActionCreators";
 
 const CONTACT_CARDS = [
   { icon: "fa-map-marker-alt", label: "Address",   value: "A-43 Sector-16, Noida",  href: "https://www.google.com/maps?q=A-43+Sector-16+Noida", color: '#C8400A' },

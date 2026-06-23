@@ -3,10 +3,10 @@ import HeroSection from '../Components/HeroSection';
 import Product from '../Components/Product';
 import { Link, useSearchParams } from 'react-router-dom';
 
-import { getMaincategory } from "../Redux/ActionCreartors/MaincategoryActionCreators";
-import { getSubcategory } from "../Redux/ActionCreartors/SubcategoryActionCreators";
-import { getBrand } from "../Redux/ActionCreartors/BrandActionCreators";
-import { getProduct } from "../Redux/ActionCreartors/ProductActionCreators";
+import { getMaincategory } from "../Redux/ActionCreators/MaincategoryActionCreators";
+import { getSubcategory } from "../Redux/ActionCreators/SubcategoryActionCreators";
+import { getBrand } from "../Redux/ActionCreators/BrandActionCreators";
+import { getProduct } from "../Redux/ActionCreators/ProductActionCreators";
 import { useDispatch, useSelector } from 'react-redux';
 
 export default function ShopPage() {
@@ -120,6 +120,8 @@ export default function ShopPage() {
 
   return (
     <>
+      <HeroSection title="Shop" />
+
       {/* Mobile Filter Overlay */}
       {sidebarOpen && (
         <div
@@ -170,10 +172,6 @@ export default function ShopPage() {
       </div>
 
       <div className="sk-shop-page">
-        <div className="d-none d-lg-block">
-          <HeroSection title="Shop" />
-        </div>
-
         <div className="container py-4">
           <div className="row g-4">
 

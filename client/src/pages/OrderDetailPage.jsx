@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { getCheckout } from "../Redux/ActionCreartors/CheckoutActionCreators";
+import { getCheckout } from "../Redux/ActionCreators/CheckoutActionCreators";
 
 const STATUS_STEPS = [
   "Ordered",

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useRazorpay } from "react-razorpay";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
-import { getCheckout } from "../Redux/ActionCreartors/CheckoutActionCreators";
+import { getCheckout } from "../Redux/ActionCreators/CheckoutActionCreators";
 import HeroSection from "../Components/HeroSection";
 
 const styles = `

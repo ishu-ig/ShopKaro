@@ -5,7 +5,7 @@ import "swiper/css/effect-coverflow";
 import "swiper/css/pagination";
 import { EffectCoverflow, Pagination, Autoplay } from "swiper/modules";
 import { useDispatch, useSelector } from "react-redux";
-import { getTestimonial } from "../Redux/ActionCreartors/TestimonialActionCreators";
+import { getTestimonial } from "../Redux/ActionCreators/TestimonialActionCreators";
 
 const trustItems = [
   { icon: 'fa-headset',         title: '24/7 Support',          desc: 'Always here when you need us, day or night.' },

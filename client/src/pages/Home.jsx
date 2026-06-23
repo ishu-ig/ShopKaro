@@ -8,11 +8,11 @@ import Testimonial from '../Components/Testimonial'
 import CategorySlider from '../Components/CategorySlider'
 import { Link } from 'react-router-dom'
 
-import { getMaincategory } from "../Redux/ActionCreartors/MaincategoryActionCreators"
-import { getSubcategory } from "../Redux/ActionCreartors/SubcategoryActionCreators"
-import { getBrand } from "../Redux/ActionCreartors/BrandActionCreators"
-import { getProduct } from "../Redux/ActionCreartors/ProductActionCreators"
-import { getBanner } from "../Redux/ActionCreartors/BannerActionCreators"
+import { getMaincategory } from "../Redux/ActionCreators/MaincategoryActionCreators"
+import { getSubcategory } from "../Redux/ActionCreators/SubcategoryActionCreators"
+import { getBrand } from "../Redux/ActionCreators/BrandActionCreators"
+import { getProduct } from "../Redux/ActionCreators/ProductActionCreators"
+import { getBanner } from "../Redux/ActionCreators/BannerActionCreators"
 import { useDispatch, useSelector } from 'react-redux'
 
 export default function Home() {

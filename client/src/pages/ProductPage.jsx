@@ -10,15 +10,15 @@ import { Pagination, Autoplay, Thumbs } from "swiper/modules";
 import HeroSection from "../Components/HeroSection";
 import ProductSlider from "../Components/ProductSlider";
 
-import { getProduct } from "../Redux/ActionCreartors/ProductActionCreators";
+import { getProduct } from "../Redux/ActionCreators/ProductActionCreators";
 import {
   getCart,
   createCart,
-} from "../Redux/ActionCreartors/CartActionCreators";
+} from "../Redux/ActionCreators/CartActionCreators";
 import {
   getWishlist,
   createWishlist,
-} from "../Redux/ActionCreartors/WishlistActionCreators";
+} from "../Redux/ActionCreators/WishlistActionCreators";
 
 
 

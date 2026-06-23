@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import HeroSection from '../Components/HeroSection';
 import { useDispatch, useSelector } from 'react-redux';
-import { deleteWishlist, getWishlist } from '../Redux/ActionCreartors/WishlistActionCreators';
+import { deleteWishlist, getWishlist } from '../Redux/ActionCreators/WishlistActionCreators';
 import { Link } from 'react-router-dom';
 
 export default function WishlistPage() {

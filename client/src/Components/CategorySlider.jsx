@@ -4,7 +4,7 @@ import "swiper/css";
 import "swiper/css/pagination";
 import { FreeMode, Autoplay } from "swiper/modules";
 import { Link } from "react-router-dom";
-import { getMaincategory } from "../Redux/ActionCreartors/MaincategoryActionCreators";
+import { getMaincategory } from "../Redux/ActionCreators/MaincategoryActionCreators";
 import { useDispatch, useSelector } from "react-redux";
 
 export default function CategorySlider({ title, data }) {

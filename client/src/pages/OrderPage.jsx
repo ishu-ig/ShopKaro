@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import HeroSection from '../Components/HeroSection';
 import { useDispatch, useSelector } from 'react-redux';
-import { getCheckout, updateCheckout } from '../Redux/ActionCreartors/CheckoutActionCreators';
-import { updateProduct } from '../Redux/ActionCreartors/ProductActionCreators';
+import { getCheckout, updateCheckout } from '../Redux/ActionCreators/CheckoutActionCreators';
+import { updateProduct } from '../Redux/ActionCreators/ProductActionCreators';
 import { Link, useNavigate } from 'react-router-dom';
 
 const STATUS_COLOR = {
