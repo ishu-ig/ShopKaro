@@ -30,6 +30,8 @@ export default function Profile({ title }) {
           }
         );
         response = await response.json();
+        // addresses + defaultAddress now come embedded on the user record
+        // itself — no separate /api/address call needed here.
         if (response.result === "Done") setData(response.data);
         else navigate("/login");
       } catch (error) {
@@ -42,14 +44,20 @@ export default function Profile({ title }) {
 
   const fields = [
     { label: "Full Name", value: data.name },
-    { label: "Username", value: data.username },
+    ...(!isCheckout ? [{ label: "Username", value: data.username }] : []),
     { label: "Email", value: data.email },
     { label: "Phone", value: data.phone },
-    { label: "Address", value: data.address },
-    { label: "Pin Code", value: data.pin },
-    { label: "City", value: data.city },
-    { label: "State", value: data.state },
   ];
+
+  const addresses = data.addresses || [];
+  const defaultAddress = data.defaultAddress || null;
+  const otherCount = Math.max(addresses.length - (defaultAddress ? 1 : 0), 0);
+
+  const addressLine = defaultAddress
+    ? [defaultAddress.address, defaultAddress.city, defaultAddress.state]
+        .filter(Boolean)
+        .join(", ") + (defaultAddress.pin ? ` – ${defaultAddress.pin}` : "")
+    : null;
 
   return (
     <>
@@ -248,6 +256,79 @@ export default function Profile({ title }) {
           font-weight: 400;
         }
 
+        /* ── Address section ── */
+        .profile-address-section {
+          padding: 20px 28px;
+          border-top: 8px solid #f7f4ef;
+        }
+        .profile-address-section-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 14px;
+        }
+        .profile-address-section-title {
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 1.5px;
+          text-transform: uppercase;
+          color: #888;
+          margin: 0;
+        }
+        .profile-address-count {
+          font-size: 11px;
+          font-weight: 700;
+          color: #c9a84c;
+          background: rgba(201,168,76,0.12);
+          padding: 3px 10px;
+          border-radius: 50px;
+        }
+        .profile-address-card {
+          background: #faf8f4;
+          border: 1px solid #f0ece4;
+          border-radius: 14px;
+          padding: 14px 16px;
+          margin-bottom: 12px;
+        }
+        .profile-address-top {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 6px;
+        }
+        .profile-address-label {
+          font-size: 13px;
+          font-weight: 700;
+          color: #0d1b2a;
+        }
+        .profile-address-badge {
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+          color: #a07830;
+          background: rgba(201,168,76,0.18);
+          padding: 2px 9px;
+          border-radius: 50px;
+        }
+        .profile-address-text {
+          font-size: 13px;
+          color: #666;
+          line-height: 1.6;
+          margin: 0;
+        }
+        .profile-address-more {
+          font-size: 12px;
+          color: #999;
+          margin: 0 0 12px;
+        }
+        .profile-address-empty {
+          font-size: 13px;
+          color: #999;
+          font-style: italic;
+          margin: 0;
+        }
+
         /* ── Footer ── */
         .profile-info-footer {
           padding: 20px 28px;
@@ -372,7 +453,7 @@ export default function Profile({ title }) {
 
                 <div className="profile-fields">
                   {loading
-                    ? Array(8).fill(null).map((_, i) => (
+                    ? Array(4).fill(null).map((_, i) => (
                         <div key={i} className="profile-field">
                           <div className="profile-skeleton" style={{ width: 70 }} />
                           <div className="profile-skeleton" style={{ width: 140 }} />
@@ -380,6 +461,43 @@ export default function Profile({ title }) {
                       ))
                     : fields.map((f) => <Field key={f.label} {...f} />)}
                 </div>
+
+                {/* ── Delivery address(es) — display only, no add/manage actions ── */}
+                {!loading && (
+                  <div className="profile-address-section">
+                    <div className="profile-address-section-head">
+                      <p className="profile-address-section-title">
+                        {isCheckout ? "Deliver to" : "Delivery Addresses"}
+                      </p>
+                      {addresses.length > 0 && (
+                        <span className="profile-address-count">
+                          {addresses.length} saved
+                        </span>
+                      )}
+                    </div>
+
+                    {defaultAddress ? (
+                      <>
+                        <div className="profile-address-card">
+                          <div className="profile-address-top">
+                            <span className="profile-address-label">{defaultAddress.label}</span>
+                            <span className="profile-address-badge">Default</span>
+                          </div>
+                          <p className="profile-address-text">{addressLine}</p>
+                        </div>
+                        {otherCount > 0 && (
+                          <p className="profile-address-more">
+                            +{otherCount} other saved address{otherCount > 1 ? "es" : ""}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="profile-address-empty">
+                        You haven't saved a delivery address yet.
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {!isCheckout && (
                   <div className="profile-info-footer">

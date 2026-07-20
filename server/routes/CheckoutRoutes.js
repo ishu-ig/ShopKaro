@@ -1,5 +1,5 @@
 const CheckoutRouter = require("express").Router()
-const { verifyAdmin, verifyBoth } = require("../middleware/authentication")
+const { verifyFour } = require("../middleware/authentication")
 const {
     createRecord,
     getRecord,
@@ -9,16 +9,18 @@ const {
     deleteRecord,
     order,
     verifyOrder,
+    verifyDelivery,
 } = require("../controllers/CheckoutController")
 
-CheckoutRouter.post("",verifyBoth, createRecord)
-CheckoutRouter.get("",verifyAdmin, getRecord)
-CheckoutRouter.get("/user/:userid",verifyBoth, getUserRecord)
-CheckoutRouter.get("/single/:_id",verifyBoth, getSingleRecord)
-CheckoutRouter.put("/:_id", verifyBoth, updateRecord)
-CheckoutRouter.delete("/:_id",verifyBoth, deleteRecord)
-CheckoutRouter.post("/order",verifyBoth, order)
-CheckoutRouter.post("/verify",verifyBoth, verifyOrder)
+CheckoutRouter.post("",verifyFour, createRecord)
+CheckoutRouter.get("",verifyFour, getRecord)
+CheckoutRouter.get("/user/:userid",verifyFour, getUserRecord)
+CheckoutRouter.get("/single/:_id", getSingleRecord)
+CheckoutRouter.put("/:_id", verifyFour, updateRecord)
+CheckoutRouter.delete("/:_id",verifyFour, deleteRecord)
+CheckoutRouter.post("/order",verifyFour, order)
+CheckoutRouter.post("/verify",verifyFour, verifyOrder)
+CheckoutRouter.put("/verify-delivery/:_id", verifyFour, verifyDelivery)
 
 
 

@@ -4,100 +4,163 @@ import { useDispatch, useSelector } from "react-redux";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import formValidator from "../../FormValidators/formValidator";
-import imageValidator from "../../FormValidators/imageValidator";
 import { createProduct } from "../../Redux/ActionCreators/ProductActionCreators";
 import { getMaincategory } from "../../Redux/ActionCreators/MaincategoryActionCreators";
 import { getSubcategory } from "../../Redux/ActionCreators/SubcategoryActionCreators";
 import { getBrand } from "../../Redux/ActionCreators/BrandActionCreators";
+import { getShop } from "../../Redux/ActionCreators/ShopActionCreators";
 
 const checklist = [
   {
     dot: "bg-success",
     title: "Name & categorize",
-    body: "Use a clear title and pick the right category, subcategory, and brand.",
+    body: "Use a clear product name and pick the right category, subcategory, and brand.",
   },
   {
     dot: "bg-primary",
-    title: "Set pricing & stock",
-    body: "Base price, discount, and stock quantity drive the final price shown.",
+    title: "Add variants",
+    body: "Add at least one variant with a color and size — stock quantity keeps the count accurate.",
   },
   {
     dot: "bg-warning",
-    title: "Upload images",
-    body: "Add one or more photos — the first acts as the cover image.",
+    title: "Upload variant images",
+    body: "Add one or more photos per variant — the first acts as that variant's cover image.",
   },
 ];
 
+// Some APIs (or raw Mongo exports) return ObjectId refs wrapped as { $oid: "..." }
+// instead of plain strings. This normalizes either shape to a plain string id.
+function toIdString(id) {
+  if (id && typeof id === "object" && "$oid" in id) return id.$oid;
+  return id;
+}
+
+function makeEmptyVariant() {
+  return {
+    key: `${Date.now()}-${Math.random().toString(36).slice(2)}`, // client-only React key
+    color: "",
+    size: "",
+    stockQuantity: 0,
+    stock: true,
+    price: "", // REQUIRED per variant — there's no product-level basePrice in the schema
+    sku: "",
+    files: [], // File[] chosen for this variant's images
+  };
+}
+
 export default function AdminCreateProduct() {
+  const SIZE_OPTIONS = ["Free Size", "XS", "S", "M", "L", "XL", "XXL"];
   const [data, setData] = useState({
     name: "",
     maincategory: "",
     subcategory: "",
     brand: "",
-    color: "",
-    size: "",
-    basePrice: 0,
-    discount: 0,
-    finalPrice: 0,
-    stock: true,
-    stockQuantity: 0,
+    shop: "", // optional — Product.shop is not a required field on the schema
+    discount: 0, // common discount, applied to every variant's own price
     description: "",
-    pic: [],
     active: true,
+    variants: [makeEmptyVariant()],
   });
 
   const [error, setError] = useState({
     name: "Name Field is Mandatory",
-    color: "Color Field is Mandatory",
-    size: "Size Field is Mandatory",
-    basePrice: "Base Price Field is Mandatory",
-    discount: "Discount Field is Mandatory",
-    stockQuantity: "Stock Quantity Field is Mandatory",
-    pic: "Pic Field is Mandatory",
+    maincategory: "Main Category is Mandatory",
+    subcategory: "Sub Category is Mandatory",
+    brand: "Brand is Mandatory",
+    variants: "At Least One Variant (Color, Size & Price) Is Mandatory",
   });
 
   const [show, setShow] = useState(false);
   const navigate = useNavigate();
 
-  const MaincategoryStateData = useSelector(
-    (state) => state.MaincategoryStateData,
-  );
-  const SubcategoryStateData = useSelector(
-    (state) => state.SubcategoryStateData,
-  );
+  const MaincategoryStateData = useSelector((state) => state.MaincategoryStateData);
+  const SubcategoryStateData = useSelector((state) => state.SubcategoryStateData);
   const BrandStateData = useSelector((state) => state.BrandStateData);
+  const ShopStateData = useSelector((state) => state.ShopStateData);
   const dispatch = useDispatch();
 
+  useEffect(() => { dispatch(getMaincategory()); }, [MaincategoryStateData.length]);
+  useEffect(() => { dispatch(getSubcategory()); }, [SubcategoryStateData.length]);
+  useEffect(() => { dispatch(getBrand()); }, [BrandStateData.length]);
+  useEffect(() => { dispatch(getShop()); }, [ShopStateData.length]);
+
+  // Whenever the selected main category changes, clear any previously
+  // picked subcategory since it may not belong to the new main category.
   useEffect(() => {
-    dispatch(getMaincategory());
-  }, [MaincategoryStateData.length]);
-  useEffect(() => {
-    dispatch(getSubcategory());
-  }, [SubcategoryStateData.length]);
-  useEffect(() => {
-    dispatch(getBrand());
-  }, [BrandStateData.length]);
+    setData((old) => ({ ...old, subcategory: "" }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.maincategory]);
+
+  const maincategoryOptions = (MaincategoryStateData || []).filter((x) => x?.active);
+
+  // Subcategories scoped to the currently selected main category. If a
+  // subcategory doesn't carry maincategory info, it's shown regardless —
+  // we can't filter what we don't know.
+  const subcategoryOptions = (SubcategoryStateData || [])
+    .filter((x) => x?.active)
+    .filter((x) => {
+      const mc = toIdString(typeof x.maincategory === "object" ? x.maincategory?._id : x.maincategory);
+      return !mc || mc === data.maincategory;
+    });
+
+  const brandOptions = (BrandStateData || []).filter((x) => x?.active);
+  const shopOptions = (ShopStateData || []).filter((x) => x?.active);
 
   function getInputData(e) {
     const name = e.target.name;
-    const value = e.target.files ? e.target.files : e.target.value;
+    const value = e.target.value;
 
-    if (name !== "active") {
-      setError((old) => ({
-        ...old,
-        [name]: e.target.files ? imageValidator(e) : formValidator(e),
-      }));
+    if (name !== "active" && name !== "shop") {
+      setError((old) => ({ ...old, [name]: formValidator(e) }));
     }
 
     setData((old) => ({
       ...old,
-      [name]:
-        name === "active" || name === "stock"
-          ? value === "1"
-            ? true
-            : false
-          : value,
+      [name]: name === "active" ? value === "1" : value,
     }));
+  }
+
+  function getVariantData(index, field, value) {
+    setData((old) => {
+      const variants = old.variants.map((v, i) =>
+        i === index ? { ...v, [field]: value } : v
+      );
+
+      // Re-validate off this same freshly computed array (avoids a stale
+      // one-keystroke-behind snapshot of data.variants). Price is required
+      // per variant since there's no product-level basePrice to fall back on.
+      const hasValidVariant = variants.some(
+        (v) => v.color.trim() !== "" && v.size.trim() !== "" && parseFloat(v.price) > 0
+      );
+      setError((oldError) => ({
+        ...oldError,
+        variants: hasValidVariant
+          ? ""
+          : "At Least One Variant (Color, Size & Price) Is Mandatory",
+      }));
+
+      return { ...old, variants };
+    });
+  }
+
+  function getVariantFiles(index, fileList) {
+    setData((old) => {
+      const variants = old.variants.map((v, i) =>
+        i === index ? { ...v, files: Array.from(fileList || []) } : v
+      );
+      return { ...old, variants };
+    });
+  }
+
+  function addVariant() {
+    setData((old) => ({ ...old, variants: [...old.variants, makeEmptyVariant()] }));
+  }
+
+  function removeVariant(index) {
+    setData((old) => {
+      if (old.variants.length <= 1) return old; // keep at least one row
+      return { ...old, variants: old.variants.filter((_, i) => i !== index) };
+    });
   }
 
   function postSubmit(e) {
@@ -108,32 +171,48 @@ export default function AdminCreateProduct() {
       return;
     }
 
-    const bp = parseInt(data.basePrice);
-    const d = parseInt(data.discount);
-    const fp = parseInt(bp - (bp * d) / 100);
-    const stockQuantity = parseInt(data.stockQuantity);
+    // Only send variants that have color, size, AND a valid price — the
+    // schema has no product-level basePrice, so each variant's own price
+    // is the base that the common discount gets applied to.
+    const validVariants = data.variants.filter(
+      (v) => v.color.trim() !== "" && v.size.trim() !== "" && parseFloat(v.price) > 0
+    );
+
+    const discount = Number(data.discount) || 0; // common discount, applied to every variant's own price
+
+    const cleanedVariants = validVariants.map((v) => {
+      const variantPrice = parseFloat(v.price) || 0;
+      const variantFinalPrice =
+        Math.round((variantPrice - (variantPrice * discount) / 100) * 100) / 100;
+
+      return {
+        color: v.color,
+        size: v.size,
+        stockQuantity: Number(v.stockQuantity) || 0,
+        stock: !!v.stock,
+        price: variantPrice,
+        finalPrice: variantFinalPrice, // required by VariantSchema
+        sku: v.sku || "",
+        imageCount: v.files.length, // tells the backend how many uploaded files belong to this variant
+      };
+    });
 
     const formData = new FormData();
     formData.append("name", data.name);
-    formData.append(
-      "maincategory",
-      data.maincategory ? data.maincategory : MaincategoryStateData[0]?._id,
-    );
-    formData.append(
-      "subcategory",
-      data.subcategory ? data.subcategory : SubcategoryStateData[0]?._id,
-    );
-    formData.append("brand", data.brand ? data.brand : BrandStateData[0]?._id);
-    formData.append("color", data.color);
-    formData.append("size", data.size);
-    formData.append("basePrice", bp);
-    formData.append("discount", d);
-    formData.append("finalPrice", fp);
-    formData.append("stock", data.stock);
-    formData.append("stockQuantity", stockQuantity);
+    formData.append("maincategory", data.maincategory || maincategoryOptions[0]?._id || "");
+    formData.append("subcategory", data.subcategory || subcategoryOptions[0]?._id || "");
+    formData.append("brand", data.brand || brandOptions[0]?._id || "");
+    if (data.shop) formData.append("shop", data.shop); // optional on the schema — omit entirely if not picked
+    formData.append("discount", discount); // real ProductSchema field
     formData.append("description", data.description);
     formData.append("active", data.active);
-    Array.from(data.pic).forEach((x) => formData.append("pic", x));
+    formData.append("variants", JSON.stringify(cleanedVariants));
+
+    // Flatten variant image files IN VARIANT ORDER — the backend slices
+    // req.files sequentially per variant using each variant's imageCount.
+    validVariants.forEach((v) => {
+      v.files.forEach((file) => formData.append("pic", file));
+    });
 
     dispatch(createProduct(formData));
     navigate("/product");
@@ -151,7 +230,7 @@ export default function AdminCreateProduct() {
               <p className="eyebrow mb-1">Management</p>
               <h1 className="h3 mb-1">Add Product</h1>
               <p className="text-muted mb-0">
-                Create a new product with category, pricing, stock, and images.
+                Create a new product with category, brand, pricing, and variants.
               </p>
             </div>
           </div>
@@ -191,15 +270,15 @@ export default function AdminCreateProduct() {
               </div>
 
               <div className="row g-3">
+                {/* Name */}
                 <div className="col-12">
-                  <label className="form-label" htmlFor="name">
-                    Name
-                  </label>
+                  <label className="form-label" htmlFor="name">Name</label>
                   <input
                     className={`form-control ${show && error.name ? "is-invalid" : ""}`}
                     id="name"
                     type="text"
                     name="name"
+                    value={data.name}
                     onChange={getInputData}
                     placeholder="Enter Product Name"
                   />
@@ -208,213 +287,262 @@ export default function AdminCreateProduct() {
                   )}
                 </div>
 
-                <div className="col-md-4">
-                  <label className="form-label" htmlFor="maincategory">
-                    Main Category
-                  </label>
+                {/* Shop — optional; Admin can attach a product to any active shop */}
+                <div className="col-md-6">
+                  <label className="form-label" htmlFor="shop">Shop (optional)</label>
                   <select
                     className="form-select"
-                    id="maincategory"
-                    name="maincategory"
+                    id="shop"
+                    name="shop"
+                    value={data.shop}
                     onChange={getInputData}
                   >
-                    {MaincategoryStateData?.filter((x) => x.active).map(
-                      (item) => (
-                        <option key={item._id} value={item._id}>
-                          {item.name}
-                        </option>
-                      ),
-                    )}
-                  </select>
-                </div>
-
-                <div className="col-md-4">
-                  <label className="form-label" htmlFor="subcategory">
-                    Subcategory
-                  </label>
-                  <select
-                    className="form-select"
-                    id="subcategory"
-                    name="subcategory"
-                    onChange={getInputData}
-                  >
-                    {SubcategoryStateData?.filter((x) => x.active).map(
-                      (item) => (
-                        <option key={item._id} value={item._id}>
-                          {item.name}
-                        </option>
-                      ),
-                    )}
-                  </select>
-                </div>
-
-                <div className="col-md-4">
-                  <label className="form-label" htmlFor="brand">
-                    Brand
-                  </label>
-                  <select
-                    className="form-select"
-                    id="brand"
-                    name="brand"
-                    onChange={getInputData}
-                  >
-                    {BrandStateData?.filter((x) => x.active).map((item) => (
-                      <option key={item._id} value={item._id}>
-                        {item.name}
-                      </option>
+                    <option value="">No shop</option>
+                    {shopOptions.map((item) => (
+                      <option key={item._id} value={item._id}>{item.name}</option>
                     ))}
                   </select>
                 </div>
 
+                {/* Brand */}
                 <div className="col-md-6">
-                  <label className="form-label" htmlFor="color">
-                    Color
-                  </label>
-                  <input
-                    className={`form-control ${show && error.color ? "is-invalid" : ""}`}
-                    id="color"
-                    type="text"
-                    name="color"
+                  <label className="form-label" htmlFor="brand">Brand</label>
+                  <select
+                    className={`form-select ${show && error.brand ? "is-invalid" : ""}`}
+                    id="brand"
+                    name="brand"
+                    value={data.brand}
                     onChange={getInputData}
-                    placeholder="Enter Product Color"
-                  />
-                  {show && error.color && (
-                    <div className="text-danger small mt-1">{error.color}</div>
+                  >
+                    <option value="" disabled>Select Brand</option>
+                    {brandOptions.map((item) => (
+                      <option key={item._id} value={item._id}>{item.name}</option>
+                    ))}
+                  </select>
+                  {show && error.brand && (
+                    <div className="text-danger small mt-1">{error.brand}</div>
                   )}
                 </div>
 
+                {/* Main Category — global category list */}
                 <div className="col-md-6">
-                  <label className="form-label" htmlFor="size">
-                    Size
-                  </label>
-                  <input
-                    className={`form-control ${show && error.size ? "is-invalid" : ""}`}
-                    id="size"
-                    type="text"
-                    name="size"
+                  <label className="form-label" htmlFor="maincategory">Main Category</label>
+                  <select
+                    className={`form-select ${show && error.maincategory ? "is-invalid" : ""}`}
+                    id="maincategory"
+                    name="maincategory"
+                    value={data.maincategory}
                     onChange={getInputData}
-                    placeholder="Enter Product Size"
-                  />
-                  {show && error.size && (
-                    <div className="text-danger small mt-1">{error.size}</div>
+                  >
+                    <option value="" disabled>Select Main Category</option>
+                    {maincategoryOptions.map((item) => (
+                      <option key={item._id} value={item._id}>{item.name}</option>
+                    ))}
+                  </select>
+                  {show && error.maincategory && (
+                    <div className="text-danger small mt-1">{error.maincategory}</div>
                   )}
                 </div>
 
-                <div className="col-md-4">
-                  <label className="form-label" htmlFor="basePrice">
-                    Base Price
-                  </label>
-                  <input
-                    className={`form-control ${show && error.basePrice ? "is-invalid" : ""}`}
-                    id="basePrice"
-                    type="number"
-                    name="basePrice"
+                {/* Sub Category — scoped to the selected main category */}
+                <div className="col-md-6">
+                  <label className="form-label" htmlFor="subcategory">Sub Category</label>
+                  <select
+                    className={`form-select ${show && error.subcategory ? "is-invalid" : ""}`}
+                    id="subcategory"
+                    name="subcategory"
+                    value={data.subcategory}
                     onChange={getInputData}
-                    placeholder="Enter Base Price"
-                  />
-                  {show && error.basePrice && (
-                    <div className="text-danger small mt-1">
-                      {error.basePrice}
-                    </div>
+                  >
+                    <option value="" disabled>
+                      {data.maincategory ? "Select Sub Category" : "Select a main category first"}
+                    </option>
+                    {subcategoryOptions.map((item) => (
+                      <option key={item._id} value={item._id}>{item.name}</option>
+                    ))}
+                  </select>
+                  {show && error.subcategory && (
+                    <div className="text-danger small mt-1">{error.subcategory}</div>
                   )}
                 </div>
 
+                {/* Discount — common to every variant, used to derive each variant's finalPrice */}
                 <div className="col-md-4">
-                  <label className="form-label" htmlFor="discount">
-                    Discount (%)
-                  </label>
+                  <label className="form-label" htmlFor="discount">Discount (%)</label>
                   <input
-                    className={`form-control ${show && error.discount ? "is-invalid" : ""}`}
+                    className="form-control"
                     id="discount"
                     type="number"
                     name="discount"
+                    min="0"
+                    max="100"
+                    value={data.discount}
                     onChange={getInputData}
                     placeholder="Enter Discount"
                   />
-                  {show && error.discount && (
-                    <div className="text-danger small mt-1">
-                      {error.discount}
-                    </div>
-                  )}
+                  <div className="text-muted small mt-1">
+                    This discount is applied to every variant when computing its final price.
+                  </div>
                 </div>
 
-                <div className="col-md-4">
-                  <label className="form-label" htmlFor="stockQuantity">
-                    Stock Quantity
-                  </label>
-                  <input
-                    className={`form-control ${show && error.stockQuantity ? "is-invalid" : ""}`}
-                    id="stockQuantity"
-                    type="number"
-                    name="stockQuantity"
-                    onChange={getInputData}
-                    placeholder="Enter Stock Quantity"
-                  />
-                  {show && error.stockQuantity && (
-                    <div className="text-danger small mt-1">
-                      {error.stockQuantity}
-                    </div>
+                {/* Variants */}
+                <div className="col-12">
+                  <div className="d-flex align-items-center justify-content-between mb-2">
+                    <label className="form-label d-block mb-0">
+                      Variants <span className="text-muted small">({data.variants.length})</span>
+                    </label>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-primary"
+                      onClick={addVariant}
+                    >
+                      <i className="bi bi-plus-lg" aria-hidden="true"></i> Add Variant
+                    </button>
+                  </div>
+                  <div className="row g-3">
+                    {data.variants.map((variant, index) => (
+                      <div className="col-12" key={variant.key}>
+                        <div className="border rounded p-3">
+                          {/* Header row: variant label on the left, Stock toggle + Remove pinned top-right */}
+                          <div className="d-flex align-items-center justify-content-between mb-3">
+                            <span className="fw-semibold small text-muted">
+                              Variant {index + 1}
+                            </span>
+                            <div className="d-flex align-items-center gap-3">
+                              <div className="form-check form-switch mb-0">
+                                <input
+                                  className="form-check-input"
+                                  type="checkbox"
+                                  role="switch"
+                                  id={`variant-stock-${index}`}
+                                  checked={variant.stock}
+                                  onChange={(e) => getVariantData(index, "stock", e.target.checked)}
+                                />
+                                <label
+                                  className="form-check-label small text-muted"
+                                  htmlFor={`variant-stock-${index}`}
+                                >
+                                  {variant.stock ? "In Stock" : "Out of Stock"}
+                                </label>
+                              </div>
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-danger"
+                                onClick={() => removeVariant(index)}
+                                disabled={data.variants.length <= 1}
+                              >
+                                <i className="bi bi-trash3" aria-hidden="true"></i> Remove
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="row g-2 align-items-end">
+                            <div className="col-md-3">
+                              <label className="form-label small">Color</label>
+                              <input
+                                className={`form-control ${
+                                  show && error.variants && !variant.color ? "is-invalid" : ""
+                                }`}
+                                type="text"
+                                placeholder="e.g. Red"
+                                value={variant.color}
+                                onChange={(e) => getVariantData(index, "color", e.target.value)}
+                              />
+                            </div>
+                            <div className="col-md-3">
+                              <label className="form-label small">Size</label>
+                              <select
+                                className={`form-select ${
+                                  show && error.variants && !variant.size ? "is-invalid" : ""
+                                }`}
+                                value={variant.size}
+                                onChange={(e) => getVariantData(index, "size", e.target.value)}
+                              >
+                                <option value="" disabled>Select Size</option>
+                                {SIZE_OPTIONS.map((sizeOption) => (
+                                  <option key={sizeOption} value={sizeOption}>{sizeOption}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="col-md-3">
+                              <label className="form-label small">Stock Qty</label>
+                              <input
+                                className="form-control"
+                                type="number"
+                                min="0"
+                                value={variant.stockQuantity}
+                                onChange={(e) =>
+                                  getVariantData(index, "stockQuantity", e.target.value)
+                                }
+                              />
+                            </div>
+                            <div className="col-md-3">
+                              <label className="form-label small">Price (₹)</label>
+                              <input
+                                className={`form-control ${
+                                  show && error.variants && !(parseFloat(variant.price) > 0) ? "is-invalid" : ""
+                                }`}
+                                type="number"
+                                min="0"
+                                placeholder="Required"
+                                value={variant.price}
+                                onChange={(e) => getVariantData(index, "price", e.target.value)}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="row g-2 align-items-end mt-1">
+                            <div className="col-md-5">
+                              <label className="form-label small">SKU</label>
+                              <input
+                                className="form-control"
+                                type="text"
+                                placeholder="optional"
+                                value={variant.sku}
+                                onChange={(e) => getVariantData(index, "sku", e.target.value)}
+                              />
+                            </div>
+                            <div className="col-md-7">
+                              <label className="form-label small">Images</label>
+                              <input
+                                className="form-control"
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={(e) => getVariantFiles(index, e.target.files)}
+                              />
+                              {variant.files.length > 0 && (
+                                <div className="text-muted small mt-1">
+                                  {variant.files.length} file(s) selected
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {show && error.variants && (
+                    <div className="text-danger small mt-1">{error.variants}</div>
                   )}
                 </div>
+            
 
+                {/* Description */}
                 <div className="col-12">
                   <label className="form-label">Description</label>
                   <ReactQuill
                     theme="snow"
                     value={data.description}
-                    onChange={(value) =>
-                      setData((old) => ({ ...old, description: value }))
-                    }
+                    onChange={(value) => setData((old) => ({ ...old, description: value }))}
                     className="quill-editor"
-                    style={{color: "var(--admin-text);"}}
+                    style={{ color: "var(--admin-text)" }}
                   />
                 </div>
 
-                <div className="col-md-6">
-                  <label className="form-label" htmlFor="pic">
-                    Upload Images
-                  </label>
-                  <input
-                    className={`form-control ${show && error.pic ? "is-invalid" : ""}`}
-                    id="pic"
-                    type="file"
-                    name="pic"
-                    multiple
-                    onChange={getInputData}
-                  />
-                  {show &&
-                    error.pic &&
-                    (typeof error.pic === "string" ? (
-                      <div className="text-danger small mt-1">{error.pic}</div>
-                    ) : (
-                      error.pic.map((err, index) => (
-                        <div key={index} className="text-danger small mt-1">
-                          {err}
-                        </div>
-                      ))
-                    ))}
-                </div>
-
+                {/* Status */}
                 <div className="col-md-3">
-                  <label className="form-label" htmlFor="stock">
-                    In Stock
-                  </label>
-                  <select
-                    className="form-select"
-                    id="stock"
-                    name="stock"
-                    value={data.stock ? "1" : "0"}
-                    onChange={getInputData}
-                  >
-                    <option value="1">Yes</option>
-                    <option value="0">No</option>
-                  </select>
-                </div>
-
-                <div className="col-md-3">
-                  <label className="form-label" htmlFor="active">
-                    Status
-                  </label>
+                  <label className="form-label" htmlFor="active">Status</label>
                   <select
                     className="form-select"
                     id="active"
@@ -429,14 +557,8 @@ export default function AdminCreateProduct() {
               </div>
 
               <div className="d-flex flex-wrap justify-content-end gap-2 mt-4">
-                <Link className="btn btn-outline-secondary" to="/product">
-                  Cancel
-                </Link>
-                <button
-                  className="btn btn-primary"
-                  type="button"
-                  onClick={postSubmit}
-                >
+                <Link className="btn btn-outline-secondary" to="/product">Cancel</Link>
+                <button className="btn btn-primary" type="button" onClick={postSubmit}>
                   <i className="bi bi-check-circle" aria-hidden="true"></i>{" "}
                   Create Product
                 </button>

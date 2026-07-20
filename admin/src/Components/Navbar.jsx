@@ -21,26 +21,51 @@ function applyTheme(theme) {
   localStorage.setItem(THEME_KEY, theme);
 }
 
+// Same three-role mapping as Sidebar.jsx / ProfilePage.jsx, kept local to
+// this file on purpose. "Admin" -> /api/user, "DeliveryBoy" -> /api/deliveryBoy,
+// "shop" -> /api/shop.
+function apiPathForRole(role) {
+  switch (role) {
+    case "Admin":
+      return "user";
+    case "DeliveryBoy":
+      return "deliveryBoy";
+
+    case "shop":
+      return "shop";
+
+    default:
+      return null;
+  }
+}
+
 export default function Navbar({ toggleSidebar }) {
-  const navigate = useNavigate();                        // ✅ was missing
-    const [data, setData] = useState(null);
-  
-    useEffect(() => {
-      (async () => {
-        try {
-          let response = await fetch(
-            `${process.env.REACT_APP_BACKEND_SERVER}/api/user/${localStorage.getItem("userid")}`,
-            { headers: { Authorization: localStorage.getItem("token") } }
-          );
-          response = await response.json();
-          if (response.data) setData(response.data);
-          else navigate("/login");
-        } catch {
+  const navigate = useNavigate();
+  const [data, setData] = useState(null);
+
+  const rawRole = localStorage.getItem("role"); // exact casing: "Admin" | "DeliveryBoy" | "shop"
+  const userId = localStorage.getItem("userid");
+
+  useEffect(() => {
+    (async () => {
+      try {
+        if (!rawRole || !userId) {
           navigate("/login");
+          return;
         }
-      })();
-    }, [navigate]);
- 
+
+        let response = await fetch(
+          `${process.env.REACT_APP_BACKEND_SERVER}/api/${apiPathForRole(rawRole)}/${userId}`,
+          { headers: { Authorization: localStorage.getItem("token") } }
+        );
+        response = await response.json();
+        if (response.data) setData(response.data);
+        else navigate("/login");
+      } catch {
+        navigate("/login");
+      }
+    })();
+  }, [navigate, rawRole, userId]);
 
   // Apply saved / preferred theme on first render
   useEffect(() => {
@@ -56,6 +81,8 @@ export default function Navbar({ toggleSidebar }) {
     localStorage.clear();
     navigate("/login");
   }
+
+  const name = data?.name || localStorage.getItem("name") || "Admin";
 
   return (
     <nav className="navbar admin-navbar navbar-expand bg-white">
@@ -132,15 +159,23 @@ export default function Navbar({ toggleSidebar }) {
                             ? `${data.pic}`
                             : "https://i.pravatar.cc/100"
                     }
-                alt="Admin"
+                alt={name}
               />
               <span className="profile-name d-none d-sm-inline">
-                {localStorage.getItem("name") || "Admin Hasan"}
+                {name}
               </span>
             </button>
             <ul className="dropdown-menu dropdown-menu-end">
-              <li><Link className="dropdown-item" to="/profile">Profile</Link></li>
-              <li><Link className="dropdown-item" to="/settings">Account settings</Link></li>
+              <li>
+                <Link className="dropdown-item" to={`/${rawRole}/${userId}/profile`}>
+                  Profile
+                </Link>
+              </li>
+              <li>
+                <Link className="dropdown-item" to={`/${rawRole}/setting`}>
+                  Account settings
+                </Link>
+              </li>
               <li><hr className="dropdown-divider" /></li>
               <li>
                 <button

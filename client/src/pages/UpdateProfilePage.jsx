@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import HeroSection from '../Components/HeroSection';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import formValidator from '../FormValidator/formValidator';
 import imageValidator from '../FormValidator/imageValidator';
 
@@ -40,10 +40,14 @@ export default function UpdateProfilePage() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
+  // Only account fields live on the user record now. Delivery addresses
+  // live entirely in the Address collection and are managed from the
+  // saved-addresses page — this form no longer edits them directly.
   const [data, setData] = useState({
-    name: "", phone: "", address: "",
-    city: "", state: "", pin: "", pic: ""
+    name: "", phone: "", pic: ""
   });
+  const [defaultAddress, setDefaultAddress] = useState(null);
+  const [addressCount, setAddressCount] = useState(0);
   const [errorMessage, setErrorMessage] = useState({
     name: "", phone: "", pic: "",
   });
@@ -82,10 +86,6 @@ export default function UpdateProfilePage() {
       formData.append("_id", data._id);
       formData.append("name", data.name);
       formData.append("phone", data.phone);
-      formData.append("address", data.address);
-      formData.append("pin", data.pin);
-      formData.append("city", data.city);
-      formData.append("state", data.state);
       formData.append("pic", data.pic);
 
       let response = await fetch(
@@ -125,6 +125,10 @@ export default function UpdateProfilePage() {
           if (response.data?.pic) {
             setPreviewUrl(response.data.pic);
           }
+          // addresses + defaultAddress come embedded on this same response —
+          // no separate /api/address call needed.
+          setDefaultAddress(response.data?.defaultAddress || null);
+          setAddressCount((response.data?.addresses || []).length);
         }
       } catch {
         alert("Internal Server Error");
@@ -133,6 +137,12 @@ export default function UpdateProfilePage() {
   }, []);
 
   const hasErrors = show && Object.values(errorMessage).some(x => x !== "");
+
+  const defaultAddressLine = defaultAddress
+    ? [defaultAddress.address, defaultAddress.city, defaultAddress.state]
+        .filter(Boolean)
+        .join(", ") + (defaultAddress.pin ? ` – ${defaultAddress.pin}` : "")
+    : null;
 
   return (
     <>
@@ -263,98 +273,111 @@ export default function UpdateProfilePage() {
                     </div>
                   </div>
 
-                  {/* Address */}
-                  <div className="mb-3">
-                    <label style={labelStyle}>Address</label>
-                    <textarea
-                      name="address"
-                      value={data.address}
-                      placeholder="Street / Locality / Area"
+                  {/* Photo */}
+                  <div className="mb-4">
+                    <label style={labelStyle}>Profile Photo</label>
+                    <div
+                      style={{
+                        border: `1.5px dashed ${show && errorMessage.pic ? '#f43f5e' : 'rgba(200,64,10,0.3)'}`,
+                        borderRadius: 12,
+                        padding: '10px 14px',
+                        cursor: 'pointer',
+                        background: 'rgba(200,64,10,0.02)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        transition: 'border-color 0.2s',
+                      }}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <i className="fa fa-cloud-upload-alt" style={{ color: '#C8400A', fontSize: '1.1rem' }}></i>
+                      <span style={{ fontSize: '0.83rem', color: '#7A6E65' }}>
+                        {data.pic && typeof data.pic === 'object' ? data.pic.name : 'Click to upload photo'}
+                      </span>
+                    </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      name="pic"
                       onChange={getInputData}
-                      rows={3}
-                      style={{ ...inputStyle(false, show), resize: 'vertical', lineHeight: 1.6 }}
-                      onFocus={e => e.target.style.borderColor = '#C8400A'}
-                      onBlur={e => e.target.style.borderColor = 'rgba(200,64,10,0.2)'}
+                      style={{ display: 'none' }}
+                      accept="image/*"
                     />
+                    {show && errorMessage.pic && (
+                      <p style={errorStyle}><i className="fa fa-times-circle"></i>{errorMessage.pic}</p>
+                    )}
                   </div>
 
-                  {/* City + State */}
-                  <div className="row g-3 mb-3">
-                    <div className="col-md-6">
-                      <label style={labelStyle}>City</label>
-                      <input
-                        type="text"
-                        name="city"
-                        value={data.city}
-                        placeholder="e.g. Meerut"
-                        onChange={getInputData}
-                        style={inputStyle(false, show)}
-                        onFocus={e => e.target.style.borderColor = '#C8400A'}
-                        onBlur={e => e.target.style.borderColor = 'rgba(200,64,10,0.2)'}
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <label style={labelStyle}>State</label>
-                      <input
-                        type="text"
-                        name="state"
-                        value={data.state}
-                        placeholder="e.g. Uttar Pradesh"
-                        onChange={getInputData}
-                        style={inputStyle(false, show)}
-                        onFocus={e => e.target.style.borderColor = '#C8400A'}
-                        onBlur={e => e.target.style.borderColor = 'rgba(200,64,10,0.2)'}
-                      />
-                    </div>
-                  </div>
+                  {/* Divider */}
+                  <div style={{ height: 1, background: 'rgba(200,64,10,0.08)', marginBottom: 24 }} />
 
-                  {/* Pin + Photo */}
-                  <div className="row g-3 mb-4">
-                    <div className="col-md-6">
-                      <label style={labelStyle}>Pin Code</label>
-                      <input
-                        type="number"
-                        name="pin"
-                        value={data.pin}
-                        placeholder="e.g. 250001"
-                        onChange={getInputData}
-                        style={inputStyle(false, show)}
-                        onFocus={e => e.target.style.borderColor = '#C8400A'}
-                        onBlur={e => e.target.style.borderColor = 'rgba(200,64,10,0.2)'}
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <label style={labelStyle}>Profile Photo</label>
-                      <div
-                        style={{
-                          border: `1.5px dashed ${show && errorMessage.pic ? '#f43f5e' : 'rgba(200,64,10,0.3)'}`,
-                          borderRadius: 12,
-                          padding: '10px 14px',
-                          cursor: 'pointer',
-                          background: 'rgba(200,64,10,0.02)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 10,
-                          transition: 'border-color 0.2s',
-                        }}
-                        onClick={() => fileInputRef.current?.click()}
-                      >
-                        <i className="fa fa-cloud-upload-alt" style={{ color: '#C8400A', fontSize: '1.1rem' }}></i>
-                        <span style={{ fontSize: '0.83rem', color: '#7A6E65' }}>
-                          {data.pic && typeof data.pic === 'object' ? data.pic.name : 'Click to upload photo'}
+                  {/* Delivery addresses — read-only summary, managed on /address */}
+                  <div style={{ marginBottom: 24 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                      <label style={{ ...labelStyle, marginBottom: 0 }}>Delivery Addresses</label>
+                      {addressCount > 0 && (
+                        <span style={{
+                          fontSize: '0.7rem', fontWeight: 700, color: '#C8400A',
+                          background: 'rgba(200,64,10,0.1)', padding: '3px 10px', borderRadius: 50,
+                        }}>
+                          {addressCount} saved
                         </span>
-                      </div>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        name="pic"
-                        onChange={getInputData}
-                        style={{ display: 'none' }}
-                        accept="image/*"
-                      />
-                      {show && errorMessage.pic && (
-                        <p style={errorStyle}><i className="fa fa-times-circle"></i>{errorMessage.pic}</p>
                       )}
+                    </div>
+
+                    {defaultAddress ? (
+                      <div style={{
+                        border: '1px solid rgba(200,64,10,0.15)', borderRadius: 12,
+                        padding: '12px 16px', marginBottom: 12, background: '#FFFBF7',
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                          <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1C1009' }}>
+                            {defaultAddress.label}
+                          </span>
+                          <span style={{
+                            fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase',
+                            color: '#C8400A', background: 'rgba(200,64,10,0.1)', padding: '2px 8px', borderRadius: 50,
+                          }}>
+                            Default
+                          </span>
+                        </div>
+                        <p style={{ margin: 0, fontSize: '0.83rem', color: '#7A6E65', lineHeight: 1.5 }}>
+                          {defaultAddressLine}
+                        </p>
+                      </div>
+                    ) : (
+                      <p style={{ fontSize: '0.85rem', color: '#7A6E65', marginBottom: 12 }}>
+                        You haven't saved a delivery address yet.
+                      </p>
+                    )}
+
+                    <div className="d-flex gap-2 flex-wrap">
+                      <Link
+                        to="/address"
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 8,
+                          padding: '9px 18px', borderRadius: 50,
+                          border: '1.5px solid rgba(200,64,10,0.2)', color: '#7A6E65',
+                          fontSize: '0.82rem', fontWeight: 700, textDecoration: 'none',
+                          transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = '#C8400A'; e.currentTarget.style.color = '#C8400A'; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(200,64,10,0.2)'; e.currentTarget.style.color = '#7A6E65'; }}
+                      >
+                        <i className="fa fa-plus" style={{ fontSize: 11 }}></i> Add address
+                      </Link>
+                      <Link
+                        to="/address"
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 8,
+                          padding: '9px 18px', borderRadius: 50,
+                          background: 'linear-gradient(135deg, #C8400A, #E86834)', color: '#fff',
+                          fontSize: '0.82rem', fontWeight: 700, textDecoration: 'none',
+                          boxShadow: '0 6px 16px rgba(200,64,10,0.25)',
+                        }}
+                      >
+                        <i className="fa fa-map-marker-alt" style={{ fontSize: 11 }}></i> Manage addresses
+                      </Link>
                     </div>
                   </div>
 

@@ -29,18 +29,22 @@ export default function AdminCheckoutShow() {
   useEffect(() => {
     async function fetchDeliveryBoys() {
       try {
-        let res = await fetch(`${process.env.REACT_APP_BACKEND_SERVER}/api/user`, {
+        let res = await fetch(`${process.env.REACT_APP_BACKEND_SERVER}/api/deliveryBoy`, {
           headers: { authorization: localStorage.getItem("token") },
         });
         res = await res.json();
         const list = Array.isArray(res) ? res : res.data || [];
-        setDeliveryBoys(list.filter((u) => u.role === "Delivery Boy" && u.active));
+        // FIX: DeliveryController.createRecord hardcodes role as "DeliveryBoy"
+        // (no space) — this filter was checking "Delivery Boy" (with a space),
+        // so it never matched anything and the dropdown was always empty.
+        setDeliveryBoys(list.filter((u) => u.role === "DeliveryBoy" && u.active));
       } catch (e) {
         console.error("Failed to fetch delivery boys", e);
       }
     }
     fetchDeliveryBoys();
   }, []);
+  
 
   useEffect(() => {
     const list = Array.isArray(CheckoutStateData) ? CheckoutStateData : CheckoutStateData?.data || [];
@@ -67,8 +71,16 @@ export default function AdminCheckoutShow() {
       dispatch(updateCheckout(updatedData));
       setData(updatedData);
       setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-      navigate("/checkout");
+      setTimeout(() => {
+        setSaved(false);
+
+        const path =
+          localStorage.getItem("role") === "shop"
+            ? `/resturentCheckout/resturent/${localStorage.getItem("userid")}`
+            : "/checkout";
+
+        navigate(path);
+      }, 10000);
     }
   }
 

@@ -3,10 +3,8 @@ import { CREATE_CART, CREATE_CART_RED, DELETE_CART, DELETE_CART_RED, GET_CART, G
 import { createRecord, deleteRecord, getRecord, updateRecord } from "./Service/ApiCallingService"
 // import { createMultipartRecord, deleteRecord, getRecord, updateMultipartRecord } from "./Service/ApiCallingService"
 
-
-function* createSaga(action) {                          //worker saga or executer saga
+function* createSaga(action) {
     let response = yield createRecord("cart", action.payload)
-    // let response = yield createMultipartRecord("cart", action.payload)
     yield put({ type: CREATE_CART_RED, payload: response.data })
 }
 
@@ -27,9 +25,9 @@ function* deleteSaga(action) {                          //worker saga or execute
 }
 
 
-export default function* cartSagas() {      
-    yield takeEvery(CREATE_CART, createSaga)    //watcher saga
-    yield takeEvery(GET_CART, getSaga)          //watcher saga
-    yield takeEvery(UPDATE_CART, updateSaga)    //watcher saga
-    yield takeEvery(DELETE_CART, deleteSaga)    //watcher saga
+export default function* cartSagas() {
+    yield takeEvery(CREATE_CART, createSaga)
+    yield takeEvery(GET_CART, getSaga)
+    yield takeEvery(UPDATE_CART, updateSaga)
+    yield takeEvery(DELETE_CART, deleteSaga)
 }

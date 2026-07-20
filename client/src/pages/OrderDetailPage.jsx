@@ -531,10 +531,11 @@ export default function OrderDetailPage() {
             { label: "Name",     value: order.user?.name },
             { label: "Email",    value: order.user?.email },
             { label: "Phone",    value: order.user?.phone },
-            { label: "Address",  value: order.user?.address },
-            { label: "City",     value: order.user?.city },
-            { label: "State",    value: order.user?.state },
-            { label: "Pincode",  value: order.user?.pin },
+            { label: "Address",  value: order.user?.defaultAddress?.address },
+            // { label: "Landmark", value: order.user?.defaultAddress?.landmark },
+            { label: "City",     value: order.user?.defaultAddress?.city },
+            { label: "State",    value: order.user?.defaultAddress?.state },
+            { label: "Pincode",  value: order.user?.defaultAddress?.pin },
           ].map((f) => (
             <InfoRow key={f.label} {...f} />
           ))}
@@ -708,9 +709,9 @@ export default function OrderDetailPage() {
                         minWidth: 0,
                       }}
                     >
-                      {prod.product?.pic?.[0] ? (
+                      {prod.variant?.pic?.[0] ? (
                         <img
-                          src={prod.product.pic[0].replace(/\\/g, "/")}
+                          src={prod.variant.pic[0].replace(/\\/g, "/")}
                           alt={prod.product?.name}
                           style={{
                             width: 52,
@@ -734,7 +735,7 @@ export default function OrderDetailPage() {
                           height: 52,
                           borderRadius: 10,
                           background: "rgba(200,64,10,0.08)",
-                          display: prod.product?.pic?.[0] ? "none" : "flex",
+                          display: prod.variant?.pic?.[0] ? "none" : "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           color: "#C8400A",
@@ -803,7 +804,7 @@ export default function OrderDetailPage() {
                             color: "#1C1009",
                           }}
                         >
-                          ₹{prod.product?.finalPrice?.toLocaleString()}
+                          ₹{prod.variant?.finalPrice?.toLocaleString()}
                         </div>
                       </div>
 

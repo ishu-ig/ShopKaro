@@ -1,338 +1,766 @@
-const User = require("../models/User")
+const mongoose = require("mongoose");
+const User = require("../models/User");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const twilio = require("twilio");
+
 const { deleteFromCloudinary } = require("../cloudinaryMethods");
-const mailer = require("../mailer/index")
-const passwordValidator = require('password-validator')
-const bcrypt = require("bcrypt")
-const jwt = require("jsonwebtoken")
 
-// ── Password policy ───────────────────────────────────────────────────────────
-const schema = new passwordValidator()
-schema
-    .is().min(8)
-    .is().max(100)
-    .has().uppercase(1)
-    .has().lowercase(1)
-    .has().digits(1)
-    .has().not().spaces()
-    .is().not().oneOf(['Passw0rd', 'Password123'])
+const {
+    login,
+    forgetPassword1,
+    forgetPassword2,
+    forgetPassword3,
+    checkEmail,
+    checkUsername
+} = require("../Login_ForgetPassword");
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function buildErrorMessage(error) {
-    let msg = {}
-    error.keyValue?.username && (msg.username = "User with this Username already exists")
-    error.keyValue?.email && (msg.email = "User with this Email Address already exists")
-    error.errors?.name && (msg.name = error.errors.name.message)
-    error.errors?.username && (msg.username = error.errors.username.message)
-    error.errors?.email && (msg.email = error.errors.email.message)
-    error.errors?.phone && (msg.phone = error.errors.phone.message)
-    error.errors?.password && (msg.password = error.errors.password.message)
-    return msg
+const schema = require("../Password");
+
+const client = twilio(
+    process.env.TWILIO_ACCOUNT_SID,
+    process.env.TWILIO_AUTH_TOKEN
+);
+
+
+// ======================================================
+// ROLE CONFIG
+// ======================================================
+
+const ALLOWED_ROLES = ["Buyer", "Admin"];
+
+
+// ======================================================
+// GET JWT SECRET KEY ACCORDING TO ROLE
+// ======================================================
+
+function getJwtSecretKey(role) {
+    switch (role) {
+        case "Admin":
+            return process.env.JWT_SECRET_KEY_ADMIN;
+
+        default:
+            return process.env.JWT_SECRET_KEY_BUYER;
+    }
 }
 
-// ── Public: Buyer self-registration ──────────────────────────────────────────
+
+// ======================================================
+// CREATE USER
+// ======================================================
+
 async function createRecord(req, res) {
-    if (!schema.validate(req.body.password)) {
-        return res.status(400).send({
-            result: "Fail",
-            reason: "Invalid Password. Must contain at least 1 uppercase, 1 lowercase, 1 digit, no spaces, and be 8–100 characters long."
-        })
-    }
-
-    bcrypt.hash(req.body.password, 12, async (error, hash) => {
-        if (error) return res.status(500).send({ result: "Fail", reason: "Internal Server Error" })
-
-        try {
-            let data = new User(req.body)
-            data.role = "Buyer"      // public registration is always Buyer
-            data.password = hash
-            await data.save()
-            res.send({ result: "Done", data })
-        } catch (error) {
-            if (req.file) await deleteFromCloudinary(req.file.path);
-            const errorMessage = buildErrorMessage(error)
-            if (Object.keys(errorMessage).length === 0)
-                return res.status(500).send({ result: "Fail", reason: "Internal Server Error" })
-            res.status(400).send({ result: "Fail", reason: errorMessage })
-        }
-    })
-}
-
-// ── Admin: create any role (Admin / Super Admin / Delivery Boy) ───────────────
-async function adminCreateRecord(req, res) {
-    if (!schema.validate(req.body.password)) {
-        return res.status(400).send({
-            result: "Fail",
-            reason: "Invalid Password. Must contain at least 1 uppercase, 1 lowercase, 1 digit, no spaces, and be 8–100 characters long."
-        })
-    }
-
-    const allowedRoles = ["Admin", "Super Admin", "Delivery Boy"]
-    if (!allowedRoles.includes(req.body.role)) {
-        return res.status(400).send({ result: "Fail", reason: "Invalid role specified." })
-    }
-
-    bcrypt.hash(req.body.password, 12, async (error, hash) => {
-        if (error) return res.status(500).send({ result: "Fail", reason: "Internal Server Error" })
-
-        try {
-            let data = new User(req.body)
-            data.password = hash
-
-            // Delivery Boy extra fields
-            if (req.body.role === "Delivery Boy") {
-                data.vehicleNumber = req.body.vehicleNumber || ""
-                data.vehicleType = req.body.vehicleType || ""
-            }
-
-            await data.save()
-            res.send({ result: "Done", data })
-        } catch (error) {
-            if (req.file) await deleteFromCloudinary(req.file.path);
-            const errorMessage = buildErrorMessage(error)
-            if (Object.keys(errorMessage).length === 0)
-                return res.status(500).send({ result: "Fail", reason: "Internal Server Error" })
-            res.status(400).send({ result: "Fail", reason: errorMessage })
-        }
-    })
-}
-
-// ── GET all users (optionally filter by role) ─────────────────────────────────
-// GET /api/user          → all users
-// GET /api/user?role=Delivery Boy  → only delivery boys
-async function getRecord(req, res) {
     try {
-        let filter = {}
-        if (req.query.role) filter.role = req.query.role
-        if (req.query.active !== undefined) filter.active = req.query.active === "true"
+        // Bug fix: `password` and `role` were referenced as bare
+        // identifiers below (not destructured from anywhere), which
+        // threw "ReferenceError: password is not defined" the first
+        // time this ran — never a Mongoose validation error at all.
+        const { password, role } = req.body;
 
-        let data = await User.find(filter).sort({ _id: -1 })
-        res.send({ result: "Done", count: data.length, data })
-    } catch (error) {
-        res.status(500).send({ result: "Fail", reason: "Internal Server Error" })
-    }
-}
-
-// ── GET delivery boys only (convenience endpoint) ─────────────────────────────
-async function getDeliveryBoys(req, res) {
-    try {
-        let data = await User
-            .find({ role: "Delivery Boy", active: true })
-            .select("name phone vehicleNumber vehicleType currentOrders totalDeliveries")
-            .sort({ name: 1 })
-        res.send({ result: "Done", count: data.length, data })
-    } catch (error) {
-        res.status(500).send({ result: "Fail", reason: "Internal Server Error" })
-    }
-}
-
-// ── GET single user ───────────────────────────────────────────────────────────
-async function getSingleRecord(req, res) {
-    try {
-        let data = await User.findOne({ _id: req.params._id })
-        if (data) res.send({ result: "Done", data })
-        else res.status(404).send({ result: "Fail", reason: "Record Not Found" })
-    } catch (error) {
-        res.status(500).send({ result: "Fail", reason: "Internal Server Error" })
-    }
-}
-
-// ── UPDATE user ───────────────────────────────────────────────────────────────
-async function updateRecord(req, res) {
-    let data = await User.findById(req.params._id);
-
-    if (!data) {
-        return res.status(404).send({
-            result: "Fail",
-            reason: "Record Not Found"
-        });
-    }
-
-    const oldPic = data.pic;
-
-    data.name = req.body.name ?? data.name;
-    data.username = req.body.username ?? data.username;
-    data.email = req.body.email ?? data.email;
-    data.phone = req.body.phone ?? data.phone;
-    data.address = req.body.address ?? data.address;
-    data.pin = req.body.pin ?? data.pin;
-    data.city = req.body.city ?? data.city;
-    data.state = req.body.state ?? data.state;
-    data.active = req.body.active ?? data.active;
-
-    if (req.body.role) {
-        data.role = req.body.role;
-    }
-
-    if (data.role === "Delivery Boy") {
-        data.vehicleNumber = req.body.vehicleNumber ?? data.vehicleNumber;
-        data.vehicleType = req.body.vehicleType ?? data.vehicleType;
-    }
-
-    if (req.file) {
-        data.pic = req.file.path;
-    }
-
-    await data.save();
-
-    if (req.file && oldPic) {
-        await deleteFromCloudinary(oldPic);
-    }
-
-    res.send({
-        result: "Done",
-        data
-    });
-}
-
-// ── DELETE user ───────────────────────────────────────────────────────────────
-async function deleteRecord(req, res) {
-    try {
-        let data = await User.findById(req.params._id);
-
-        if (!data) {
-            return res.status(404).send({
+        if (!password) {
+            return res.status(400).send({
                 result: "Fail",
-                reason: "Record Not Found"
+                reason: {
+                    password: "Password Is Mandatory"
+                }
+            });
+        }
+        const validationErrors = schema.validate(password, {
+            list: true
+        });
+
+        if (validationErrors.length > 0) {
+
+            const errorMessages = validationErrors.map((error) => {
+
+                switch (error) {
+
+                    case "min":
+                        return "Password must be at least 8 characters long.";
+
+                    case "max":
+                        return "Password must not exceed 100 characters.";
+
+                    case "uppercase":
+                        return "Password must contain at least one uppercase letter.";
+
+                    case "lowercase":
+                        return "Password must contain at least one lowercase letter.";
+
+                    case "digits":
+                        return "Password must contain at least one digit.";
+
+                    case "symbols":
+                        return "Password must contain at least one special character.";
+
+                    case "spaces":
+                        return "Password should not contain spaces.";
+
+                    case "oneOf":
+                        return "This password is too common. Please choose another one.";
+
+                    default:
+                        return "Invalid password.";
+                }
+            });
+
+            return res.status(400).send({
+                result: "Fail",
+                reason: {
+                    password: errorMessages
+                }
             });
         }
 
-        if (data.pic) {
-            await deleteFromCloudinary(data.pic);
+        const hash = await bcrypt.hash(password, 12);
+        const data = new User({
+            ...req.body,
+            password: hash,
+            role: ALLOWED_ROLES.includes(role)
+                ? role
+                : "Buyer",
+        });
+        if (req.file) {
+            data.pic = req.file.path;
+        }
+        await data.save();
+        // Never return hashed password
+        const userResponse = data.toObject();
+        delete userResponse.password;
+
+
+        return res.status(201).send({
+            result: "Done",
+            message: "User Created Successfully",
+            data: userResponse
+        });
+
+    } catch (error) {
+
+        console.log("Create User Error:", error);
+
+        if (req.file) {
+            try {
+                await deleteFromCloudinary(req.file.path);
+            } catch (cloudinaryError) {
+                console.log(
+                    "Cloudinary cleanup failed:",
+                    cloudinaryError
+                );
+            }
         }
 
-        await data.deleteOne();
 
-        res.send({
+        const errorMessage = {};
+
+        if (
+            error.code === 11000 &&
+            error.keyPattern
+        ) {
+
+            if (error.keyPattern.username) {
+                errorMessage.username =
+                    "User with this Username Already Exists.";
+            }
+
+            if (error.keyPattern.email) {
+                errorMessage.email =
+                    "User with this Email Address Already Exists.";
+            }
+
+            if (error.keyPattern.phone) {
+                errorMessage.phone =
+                    "User with this Contact Number Already Exists.";
+            }
+        }
+
+        if (error.keyValue?.username) {
+            errorMessage.username =
+                "User with this Username Already Exists.";
+        }
+
+        if (error.keyValue?.email) {
+            errorMessage.email =
+                "User with this Email Address Already Exists.";
+        }
+
+        if (error.keyValue?.phone) {
+            errorMessage.phone =
+                "User with this Contact Number Already Exists.";
+        }
+        if (error.errors?.name) {
+            errorMessage.name =
+                error.errors.name.message;
+        }
+
+        if (error.errors?.username) {
+            errorMessage.username =
+                error.errors.username.message;
+        }
+
+        if (error.errors?.email) {
+            errorMessage.email =
+                error.errors.email.message;
+        }
+
+        if (error.errors?.phone) {
+            errorMessage.phone =
+                error.errors.phone.message;
+        }
+
+        if (error.errors?.password) {
+            errorMessage.password =
+                error.errors.password.message;
+        }
+
+        if (error.errors?.role) {
+            errorMessage.role =
+                error.errors.role.message;
+        }
+
+
+        if (Object.keys(errorMessage).length > 0) {
+
+            return res.status(400).send({
+                result: "Fail",
+                reason: errorMessage
+            });
+        }
+        return res.status(500).send({
+            result: "Fail",
+            reason: "Internal Server Error"
+        });
+    }
+}
+async function getRecord(req, res) {
+    try {
+
+        const data = await User.find()
+            .select("-password -validOtp -otp")
+            .populate("addresses")
+            .populate("defaultAddress")
+            .sort({
+                _id: -1
+            });
+
+
+        return res.send({
             result: "Done",
+            count: data.length,
             data
         });
 
     } catch (error) {
-        res.status(500).send({
+
+        console.log("Get Users Error:", error);
+
+        return res.status(500).send({
             result: "Fail",
             reason: "Internal Server Error"
         });
     }
 }
 
-// ── LOGIN ─────────────────────────────────────────────────────────────────────
-async function login(req, res) {
+async function getSingleRecord(req, res) {
     try {
-        let data = await User.findOne({
-            $or: [{ username: req.body.username }, { email: req.body.username }]
-        })
 
-        if (!data) return res.status(401).send({ result: "Fail", reason: "Invalid Username or Password" })
+        const data = await User.findById(
+            req.params._id
+        )
+            .select("-password -validOtp -otp")
+            .populate("addresses")
+            .populate("defaultAddress");
 
-        if (!data.active) return res.status(403).send({ result: "Fail", reason: "Your account has been deactivated. Please contact admin." })
 
-        const passwordMatch = await bcrypt.compare(req.body.password, data.password)
-        if (!passwordMatch) return res.status(401).send({ result: "Fail", reason: "Invalid Username or Password" })
+        if (!data) {
 
-        const isBuyer = data.role === "Buyer"
-        const isDeliveryBoy = data.role === "Delivery Boy"
-        let key = isBuyer
-            ? process.env.JWT_SECRET_KEY_BUYER
-            : isDeliveryBoy
-                ? process.env.JWT_SECRET_KEY_DELIVERY
-                : process.env.JWT_SECRET_KEY_ADMIN
-
-        jwt.sign({ data }, key, { expiresIn: "15 Days" }, (error, token) => {
-            if (error) return res.status(500).send({ result: "Fail", reason: "Internal Server Error" })
-            res.send({ result: "Done", data, token })
-        })
-    } catch (error) {
-        res.status(500).send({ result: "Fail", reason: "Internal Server Error" })
-    }
-}
-
-// ── FORGET PASSWORD steps ─────────────────────────────────────────────────────
-async function forgetPassword1(req, res) {
-    try {
-        let data = await User.findOne({
-            $or: [{ username: req.body.username }, { email: req.body.username }]
-        })
-        if (!data) return res.status(404).send({ result: "Fail", reason: "User Not Found" })
-
-        let otp = Number(Number(Math.random().toString().slice(2, 8)).toString().padEnd(6, 1))
-        data.otp = otp
-        await data.save()
-
-        mailer.sendMail({
-            from: process.env.MAIL_SENDER,
-            to: data.email,
-            subject: `OTP for Password Reset : Team ${process.env.SITE_NAME}`,
-            html: `
-                <div style="font-family: Arial, sans-serif; max-width: 500px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; background-color: #f9f9f9;">
-                    <h2 style="text-align: center; color: #333;">Password Reset Request</h2>
-                    <p>Hello <strong>${data.name}</strong>,</p>
-                    <p>You have requested a password reset.</p>
-                    <div style="text-align: center; font-size: 18px; font-weight: bold; padding: 10px; background-color: #f3f3f3; border-radius: 5px;">
-                        Your OTP: <span style="color: #d32f2f; font-size: 22px;">${data.otp}</span>
-                    </div>
-                    <p style="color: #d32f2f; text-align: center; font-size: 14px;">Please do not share this OTP with anyone.</p>
-                    <p>This OTP is valid for a limited time.</p>
-                    <p>Regards,<br/><strong>Team ${process.env.SITE_NAME}</strong></p>
-                </div>
-            `
-        }, (error) => { if (error) console.log(error) })
-
-        res.send({ result: "Done", message: "OTP has been sent to your registered email address." })
-    } catch (error) {
-        console.log(error)
-        res.status(500).send({ result: "Fail", reason: "Internal Server Error" })
-    }
-}
-
-async function forgetPassword2(req, res) {
-    try {
-        let data = await User.findOne({
-            $or: [{ username: req.body.username }, { email: req.body.username }]
-        })
-        if (!data) return res.status(401).send({ result: "Fail", reason: "Unauthorized Activity" })
-        if (data.otp == req.body.otp) res.send({ result: "Done" })
-        else res.status(400).send({ result: "Fail", reason: "Invalid OTP" })
-    } catch (error) {
-        res.status(500).send({ result: "Fail", reason: "Internal Server Error" })
-    }
-}
-
-async function forgetPassword3(req, res) {
-    try {
-        let data = await User.findOne({
-            $or: [{ username: req.body.username }, { email: req.body.username }]
-        })
-        if (!data) return res.status(401).send({ result: "Fail", reason: "Unauthorized Activity" })
-
-        if (!schema.validate(req.body.password)) {
-            return res.status(400).send({
+            return res.status(404).send({
                 result: "Fail",
-                reason: "Invalid Password. Must contain at least 1 uppercase, 1 lowercase, 1 digit, no spaces, and be 8–100 characters long."
-            })
+                reason: "Record Not Found"
+            });
         }
 
-        bcrypt.hash(req.body.password, 12, async (error, hash) => {
-            if (error) return res.status(500).send({ result: "Fail", reason: "Internal Server Error" })
-            data.password = hash
-            data.otp = "-234567"   // invalidate OTP after use
-            await data.save()
-            res.send({ result: "Done", message: "Password has been reset successfully." })
-        })
+
+        return res.send({
+            result: "Done",
+            data
+        });
+
     } catch (error) {
-        res.status(500).send({ result: "Fail", reason: "Internal Server Error" })
+
+        console.log(
+            "Get Single User Error:",
+            error
+        );
+
+        return res.status(500).send({
+            result: "Fail",
+            reason: "Internal Server Error"
+        });
+    }
+}
+async function updateRecord(req, res) {
+    try {
+       const data = await User.findById(
+            req.params._id
+        );
+        if (!data) {
+            if (req.file) {
+                try {
+                    await deleteFromCloudinary(
+                        req.file.path
+                    );
+                } catch (error) {
+                    console.log(error);
+                }
+            }
+
+            return res.status(404).send({
+                result: "Fail",
+                reason: "Record Not Found"
+            });
+        }
+            data.name = req.body.name;
+            data.username = req.body.username;
+            data.email = req.body.email;
+            data.phone = req.body.phone;
+            data.active = req.body.active;
+        
+        let oldPic = null;
+
+        if (req.file) {
+            oldPic = data.pic;
+            data.pic =
+                req.file.path;
+        }
+        await data.save();
+        if (
+            req.file &&
+            oldPic
+        ) 
+            try {
+                await deleteFromCloudinary(
+                    oldPic
+                );
+
+            } catch (error) {
+                console.log(
+                    "Old image delete failed:",
+                    error
+                );
+            }
+
+        const userResponse =
+            data.toObject();
+
+        return res.send({
+            result: "Done",
+            message:
+                "User Updated Successfully",
+            data: userResponse
+        });
+
+    } catch (error) {
+        console.log(
+            "Update User Error:",
+            error
+        );
+        if (req.file) {
+
+            try {
+
+                await deleteFromCloudinary(
+                    req.file.path
+                );
+
+            } catch (cloudinaryError) {
+
+                console.log(
+                    "Cloudinary cleanup failed:",
+                    cloudinaryError
+                );
+            }
+        }
+        const errorMessage = {};
+        if (error.keyValue?.username) {
+            errorMessage.username =
+                "User with this Username Already Exists";
+        }
+        if (error.keyValue?.email) {
+            errorMessage.email =
+                "User with this Email Address Already Exists";
+        }
+        if (error.keyValue?.phone) {
+            errorMessage.phone =
+                "User with this Contact Number Already Exists";
+        }
+        if (error.errors?.name) {
+            errorMessage.name =
+                error.errors.name.message;
+        }
+        if (error.errors?.username) {
+            errorMessage.username =
+                error.errors.username.message;
+        }
+        if (error.errors?.email) {
+            errorMessage.email =
+                error.errors.email.message;
+        }
+        if (error.errors?.phone) {
+            errorMessage.phone =
+                error.errors.phone.message;
+        }
+        if (error.errors?.role) {
+            errorMessage.role =
+                error.errors.role.message;
+        }
+        if (
+            Object.keys(errorMessage).length
+        ) {
+            return res.status(400).send({
+                result: "Fail",
+                reason: errorMessage
+            });
+        }
+        return res.status(500).send({
+            result: "Fail",
+            reason: "Internal Server Error"
+        });
     }
 }
 
+async function deleteRecord(req, res) {
+    try {
+
+        if (
+            !mongoose.Types.ObjectId.isValid(
+                req.params._id
+            )
+        ) {
+
+            return res.status(400).send({
+                result: "Fail",
+                reason: "Invalid User Id"
+            });
+        }
+
+
+        const data = await User.findById(
+            req.params._id
+        );
+
+
+        if (!data) {
+
+            return res.status(404).send({
+                result: "Fail",
+                reason: "Record Not Found"
+            });
+        }
+
+
+        if (data.pic) {
+
+            try {
+
+                await deleteFromCloudinary(
+                    data.pic
+                );
+
+            } catch (error) {
+
+                console.log(
+                    "Cloudinary image delete failed:",
+                    error
+                );
+            }
+        }
+
+
+        await data.deleteOne();
+
+
+        return res.send({
+            result: "Done",
+            message:
+                "User Deleted Successfully",
+            data
+        });
+
+    } catch (error) {
+
+        console.log(
+            "Delete User Error:",
+            error
+        );
+
+
+        return res.status(500).send({
+            result: "Fail",
+            reason: "Internal Server Error"
+        });
+    }
+}
+
+
+async function otpSend(req, res) {
+    try {
+        const { phone } = req.body;
+        if (!phone) {
+
+            return res.status(400).json({
+                result: "Fail",
+                reason:
+                    "Phone Number Is Required"
+            });
+        }
+        if (!/^\d{10}$/.test(phone)) {
+
+            return res.status(400).json({
+                result: "Fail",
+                reason:
+                    "Please Enter A Valid 10-Digit Phone Number"
+            });
+        }
+        const data =
+            await User.findOne({
+                phone
+            });
+        if (!data) {
+
+            return res.status(404).json({
+                result: "Fail",
+                reason:
+                    "User Not Found"
+            });
+        }
+        if (!data.active) {
+
+            return res.status(403).json({
+                result: "Fail",
+                reason:
+                    "Your Account Is Inactive"
+            });
+        }
+        const otp =
+            Math.floor(
+                100000 +
+                Math.random() * 900000
+            ).toString();
+
+
+        data.validOtp = otp;
+
+        data.otpExpiresAt =
+            new Date(
+                Date.now() +
+                5 * 60 * 1000
+            );
+        await data.save();
+        await client.messages.create({
+            body:
+                `Your ${process.env.SITE_NAME || "application"} ` +
+                `verification code is ${otp}. ` +
+                `This code will expire in 5 minutes. ` +
+                `Please do not share it with anyone.`,
+            from:
+                process.env.TWILIO_PHONE_NUMBER,
+            to:
+                `+91${phone}`
+        });
+        return res.status(200).json({
+            result: "Done",
+            message:
+                "OTP Sent Successfully"
+        });
+
+    } catch (error) {
+
+        console.log(
+            "OTP Send Error:",
+            error
+        );
+        return res.status(500).json({
+            result: "Fail",
+            reason:
+                "Internal Server Error"
+        });
+    }
+}
+
+async function validateOtp(req, res) {
+    try {
+
+        const {
+            phone,
+            otp
+        } = req.body;
+        if (!phone || !otp) {
+            return res.status(400).send({
+                result: "Fail",
+                reason:
+                    "Phone Number And OTP Are Required"
+            });
+        }
+        const data =
+            await User.findOne({
+                phone
+            });
+        if (!data) {
+            return res.status(404).send({
+                result: "Fail",
+                reason:
+                    "User Not Found"
+            });
+        }
+        if (
+            !data.otpExpiresAt ||
+            data.otpExpiresAt <
+            new Date()
+        ) {
+
+            data.validOtp = "";
+            data.otpExpiresAt = null;
+
+            await data.save();
+
+
+            return res.status(400).send({
+                result: "Fail",
+                reason:
+                    "OTP Has Expired"
+            });
+        }
+        if (
+            !data.validOtp ||
+            data.validOtp !==
+            String(otp)
+        ) {
+            return res.status(400).send({
+                result: "Fail",
+                reason:
+                    "Invalid OTP"
+            });
+        }
+        if (!data.active) {
+
+            return res.status(403).send({
+                result: "Fail",
+                reason:
+                    "Your Account Is Inactive"
+            });
+        }
+        data.validOtp = "";
+        data.otpExpiresAt = null;
+        await data.save();
+        const key =
+            getJwtSecretKey(
+                data.role
+            );
+        if (!key) {
+            console.log(
+                `JWT secret missing for role: ${data.role}`
+            );
+            return res.status(500).send({
+                result: "Fail",
+                reason:
+                    "JWT Configuration Error"
+            });
+        }
+        const token =
+            jwt.sign(
+                {
+                    data: {
+                        _id:
+                            data._id,
+
+                        name:
+                            data.name,
+
+                        username:
+                            data.username,
+
+                        email:
+                            data.email,
+
+                        phone:
+                            data.phone,
+
+                        role:
+                            data.role
+                    }
+                },
+
+                key,
+
+                {
+                    expiresIn:
+                        "15d"
+                }
+            );
+
+
+        const userResponse =
+            data.toObject();
+        delete userResponse.password;
+        delete userResponse.validOtp;
+        delete userResponse.otp;
+        return res.send({
+            result: "Done",
+            message:
+                "OTP Verified Successfully",
+            data:
+                userResponse,
+            token
+        });
+
+    } catch (error) {
+
+        console.log(
+            "OTP Validation Error:",
+            error
+        );
+        return res.status(500).send({
+            result: "Fail",
+            reason:
+                "Internal Server Error"
+        });
+    }
+}
+
+
 module.exports = {
+
     createRecord,
-    adminCreateRecord,
     getRecord,
-    getDeliveryBoys,
     getSingleRecord,
     updateRecord,
     deleteRecord,
-    login,
-    forgetPassword1,
-    forgetPassword2,
-    forgetPassword3
-}
+
+    login: login(
+        User,
+        {
+            getSecretKey:
+                (user) =>
+                    getJwtSecretKey(
+                        user?.role
+                    )
+        }
+    ),
+
+    forgetPassword1:
+        forgetPassword1(User),
+
+    forgetPassword2:
+        forgetPassword2(User),
+
+    forgetPassword3:
+        forgetPassword3(User),
+
+    checkEmail:
+        checkEmail(User),
+
+    otpSend,
+    validateOtp,
+    checkUsername:checkUsername(User),
+};

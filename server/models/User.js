@@ -1,90 +1,93 @@
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
 
-const UserSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: [true, "Full Name is Mandatory"],
-        trim: true
-    },
-    username: {
-        type: String,
-        unique: true,
-        required: [true, "User Name is Mandatory"],
-        trim: true,
-        lowercase: true
-    },
-    email: {
-        type: String,
-        unique: true,
-        required: [true, "Email Address is Mandatory"],
-        trim: true,
-        lowercase: true
-    },
-    phone: {
-        type: String,
-        required: [true, "Phone Number is Mandatory"],
-        trim: true
-    },
-    password: {
-        type: String,
-        required: [true, "Password is Mandatory"]
-    },
-    role: {
-        type: String,
-        enum: ["Buyer", "Admin", "Super Admin", "Delivery Boy"],
-        default: "Buyer"
-    },
-    address: {
-        type: String,
-        default: ""
-    },
-    pin: {
-        type: String,
-        default: ""
-    },
-    city: {
-        type: String,
-        default: ""
-    },
-    state: {
-        type: String,
-        default: ""
-    },
-    otp: {
-        type: String,
-        default: "-234567"
-    },
-    pic: {
-        type: String,
-        default: ""
-    },
-    active: {
-        type: Boolean,
-        default: true
-    },
+const UserSchema = new mongoose.Schema(
+    {
+        name: {
+            type: String,
+            required: [true, "Full Name Is Mandatory"],
+            trim: true
+        },
 
-    // ── Delivery Boy specific fields ──────────────────────────────
-    vehicleNumber: {
-        type: String,
-        default: ""          // e.g. "UP14 AB 1234"
-    },
-    vehicleType: {
-        type: String,
-        enum: ["Bike", "Scooter", "Bicycle", "Van", ""],
-        default: ""
-    },
-    currentOrders: [
-        {
+        username: {
+            type: String,
+            unique: true,
+            required: [true, "Username Is Mandatory"],
+            trim: true
+        },
+
+        email: {
+            type: String,
+            unique: true,
+            required: [true, "Email Address Is Mandatory"],
+            trim: true,
+            lowercase: true
+        },
+
+        phone: {
+            type: String,
+            required: [true, "Contact Number Is Mandatory"],
+            unique: true,
+            sparse: true,
+            match: [/^\d{10}$/, "Phone number must be a valid 10-digit number"]
+        },
+
+        password: {
+            type: String,
+            required: [true, "Password Is Mandatory"]
+        },
+
+        // Option A: update the enum to match what the frontend now sends
+        role: {
+            type: String,
+            default: "Buyer",
+            enum: ["Buyer", "Admin"]   // lowercase d to match frontend
+        },
+
+        pic: {
+            type: String,
+            default: ""
+        },
+
+        // ── Saved addresses (customers) ────────────────────────────────────
+        addresses: [{
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Checkout"  // orders currently assigned
+            ref: "Address"
+        }],
+
+        defaultAddress: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Address",
+            default: null
+        },
+
+        // Phone verification OTP
+        validOtp: {
+            type: String,
+            default: ""
+        },
+
+        // Phone OTP expiry time
+        otpExpiresAt: {
+            type: Date,
+            default: null
+        },
+
+        // Password reset OTP
+        otp: {
+            type: String,
+            default: ""
+        },
+
+        active: {
+            type: Boolean,
+            default: true
         }
-    ],
-    totalDeliveries: {
-        type: Number,
-        default: 0           // lifetime delivery count
+    },
+    {
+        timestamps: true
     }
-}, { timestamps: true })
+);
 
-const User = new mongoose.model("User", UserSchema)
+const User = mongoose.model("User", UserSchema);
 
-module.exports = User
+module.exports = User;

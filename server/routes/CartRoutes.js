@@ -1,5 +1,5 @@
 const CartRouter = require("express").Router()
-const { verifyBoth } = require("../middleware/authentication")
+const { verifyThree } = require("../middleware/authentication")
 const {
     createRecord,
     getRecord,
@@ -8,11 +8,11 @@ const {
     deleteRecord,
 } = require("../controllers/CartController")
 
-CartRouter.post("",verifyBoth, createRecord)
-CartRouter.get("/:userid",verifyBoth, getRecord)
-CartRouter.get("/single/:_id",verifyBoth, getSingleRecord)
-CartRouter.put("/:_id",verifyBoth, updateRecord)
-CartRouter.delete("/:_id",verifyBoth, deleteRecord)
+CartRouter.post("",verifyThree, createRecord)
+CartRouter.get("/:userid",verifyThree, getRecord)
+CartRouter.get("/single/:_id",verifyThree, getSingleRecord)
+CartRouter.put("/:_id",verifyThree, updateRecord)
+CartRouter.delete("/:_id",verifyThree, deleteRecord)
 
 
 module.exports = CartRouter

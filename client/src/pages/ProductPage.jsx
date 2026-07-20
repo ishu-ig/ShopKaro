@@ -20,7 +20,7 @@ import {
   createWishlist,
 } from "../Redux/ActionCreators/WishlistActionCreators";
 
-
+const REVIEWS_PAGE_SIZE = 4;
 
 export default function ProductPage() {
   const { _id } = useParams();
@@ -32,13 +32,15 @@ export default function ProductPage() {
   const WishlistStateData =
     useSelector((state) => state.WishlistStateData) || [];
 
-  const [data, setData] = useState({ pic: [], reviews: [] });
+  const [data, setData] = useState({ variants: [], reviews: [] });
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [qty, setQty] = useState(1);
   const [thumbsSwiper, setThumbsSwiper] = useState(null);
   const [tab, setTab] = useState("description");
 
-  // Review form state
+  const [selectedVariant, setSelectedVariant] = useState(null);
+  const [visibleReviews, setVisibleReviews] = useState(REVIEWS_PAGE_SIZE);
+
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewLoading, setReviewLoading] = useState(false);
@@ -53,7 +55,11 @@ export default function ProductPage() {
     if (ProductStateData.length > 0) {
       const item = ProductStateData.find((x) => x._id === _id);
       if (item) {
-        setData({ ...item, reviews: item.reviews || [] });
+        setData({ ...item, reviews: item.reviews || [], variants: item.variants || [] });
+        setSelectedVariant(item.variants?.[0] || null);
+        setThumbsSwiper(null);
+        setQty(1);
+        setVisibleReviews(REVIEWS_PAGE_SIZE);
         setRelatedProducts(
           ProductStateData.filter(
             (x) =>
@@ -71,43 +77,88 @@ export default function ProductPage() {
     dispatch(getWishlist());
   }, [dispatch]);
 
-  const addToCart = () => {
-    const item = CartStateData.find(
-      (x) =>
-        x.product?._id === _id &&
-        x.user?._id === localStorage.getItem("userid"),
+  const colorOptions = [...new Set(data.variants.map((v) => v.color))];
+  const sizeOptions = [...new Set(data.variants.map((v) => v.size))];
+
+  const findVariant = (color, size) => {
+    return (
+      data.variants.find((v) => v.color === color && v.size === size) ||
+      data.variants.find((v) => v.color === color) ||
+      data.variants.find((v) => v.size === size) ||
+      data.variants[0] ||
+      null
     );
-    if (!item)
-      dispatch(
-        createCart({
-          user: localStorage.getItem("userid"),
-          product: data._id,
-          qty,
-          total: data.finalPrice * qty,
-        }),
-      );
-    navigate("/cart");
   };
 
+  const selectColor = (color) => {
+    const variant = findVariant(color, selectedVariant?.size);
+    setSelectedVariant(variant);
+    setQty(1);
+    setThumbsSwiper(null);
+  };
+
+  const selectSize = (size) => {
+    const variant = findVariant(selectedVariant?.color, size);
+    setSelectedVariant(variant);
+    setQty(1);
+    setThumbsSwiper(null);
+  };
+
+  // FIX: this was checking CartStateData to decide whether the item was
+  // already wishlisted — wrong array entirely, so a product already sitting
+  // in the wishlist could get re-added (and one already in the cart could
+  // silently be skipped). It should check WishlistStateData. Also dropped
+  // the stray console.log() calls that were being passed in as extra
+  // (unused) arguments to dispatch(), and qty/total, which aren't fields on
+  // the Wishlist schema (only user, product, variant).
   const addToWishlist = () => {
+    if (!selectedVariant) return;
     const item = WishlistStateData.find(
       (x) =>
         x.product?._id === _id &&
+        String(x.variant?._id || x.variant) === String(selectedVariant._id) &&
         x.user?._id === localStorage.getItem("userid"),
     );
-    if (!item)
+    if (!item) {
       dispatch(
         createWishlist({
           user: localStorage.getItem("userid"),
           product: data._id,
+          variant: selectedVariant._id,
         }),
       );
+    }
     navigate("/wishlist");
   };
 
-  const savings = data.basePrice - data.finalPrice;
+  const addToCart = () => {
+    if (!selectedVariant) return;
+    const item = CartStateData.find(
+      (x) =>
+        x.product?._id === _id &&
+        String(x.variant?._id || x.variant) === String(selectedVariant._id) &&
+        x.user?._id === localStorage.getItem("userid"),
+    );
+    if (!item) {
+      dispatch(
+        createCart({
+          user: localStorage.getItem("userid"),
+          product: data._id,
+          variant: selectedVariant._id,
+          qty,
+          total: selectedVariant.finalPrice * qty,
+        }),
+      );
+    }
+    navigate("/cart");
+  };
 
-  // Expected delivery: 4 days for online, 6 for COD (shown as a range on product page)
+
+  const basePrice = selectedVariant?.price ?? selectedVariant?.finalPrice ?? 0;
+  const finalPrice = selectedVariant?.finalPrice ?? 0;
+  const savings = basePrice - finalPrice;
+  const gallery = selectedVariant?.pic || [];
+
   const deliveryDate = (days) => {
     const d = new Date();
     d.setDate(d.getDate() + days);
@@ -153,6 +204,7 @@ export default function ProductPage() {
         setReviewComment("");
         setReviewRating(5);
         setReviewSuccess("Your review has been submitted!");
+        setVisibleReviews(REVIEWS_PAGE_SIZE);
       } else {
         setReviewError(json.reason || "Something went wrong.");
       }
@@ -166,11 +218,7 @@ export default function ProductPage() {
   return (
     <>
       {" "}
-      <div className="sk-pp">
-        <div className="d-none d-lg-block">
-          <HeroSection title={data.name || "Product"} />
-        </div>
-
+      <div className="sk-pp mt-5">
         <div className="container py-4">
           {/* Breadcrumb */}
           <div className="sk-breadcrumb">
@@ -196,36 +244,57 @@ export default function ProductPage() {
                 {data.discount > 0 && (
                   <div className="sk-discount-ribbon">{data.discount}% OFF</div>
                 )}
-                <Swiper
-                  slidesPerView={1}
-                  loop
-                  pagination={{ clickable: true }}
-                  autoplay={{ delay: 4000 }}
-                  thumbs={{
-                    swiper:
-                      thumbsSwiper && !thumbsSwiper.destroyed
-                        ? thumbsSwiper
-                        : null,
-                  }}
-                  modules={[Pagination, Autoplay, Thumbs]}
-                >
-                  {data.pic.map((item, index) => (
-                    <SwiperSlide key={index}>
-                      <img src={item} alt={data.name} />
-                    </SwiperSlide>
-                  ))}
-                </Swiper>
+                {gallery.length > 1 ? (
+                  <Swiper
+                    key={selectedVariant?._id || "no-variant"}
+                    slidesPerView={1}
+                    loop
+                    pagination={{ clickable: true }}
+                    autoplay={{ delay: 4000 }}
+                    thumbs={{
+                      swiper:
+                        thumbsSwiper && !thumbsSwiper.destroyed
+                          ? thumbsSwiper
+                          : null,
+                    }}
+                    modules={[Pagination, Autoplay, Thumbs]}
+                  >
+                    {gallery.map((item, index) => (
+                      <SwiperSlide key={index}>
+                        <img src={item} alt={data.name} />
+                      </SwiperSlide>
+                    ))}
+                  </Swiper>
+                ) : gallery.length === 1 ? (
+                  <img src={gallery[0]} alt={data.name} className="sk-gallery-single" />
+                ) : (
+                  <div className="sk-gallery-placeholder">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                      <rect x="2" y="4" width="20" height="16" rx="2" stroke="#c9a84c" strokeWidth="1.5" />
+                      <circle cx="8" cy="10" r="1.5" fill="#c9a84c" />
+                      <path
+                        d="M2 17l5-5 4 4 3-3 8 8"
+                        stroke="#c9a84c"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    <span>No image available</span>
+                  </div>
+                )}
               </div>
-              {data.pic.length > 1 && (
+              {gallery.length > 1 && (
                 <div className="sk-gallery-thumbs mt-2">
                   <Swiper
+                    key={`thumbs-${selectedVariant?._id || "no-variant"}`}
                     onSwiper={setThumbsSwiper}
                     slidesPerView={4}
                     spaceBetween={8}
                     watchSlidesProgress
                     modules={[Thumbs]}
                   >
-                    {data.pic.map((item, index) => (
+                    {gallery.map((item, index) => (
                       <SwiperSlide key={index}>
                         <img src={item} alt="" />
                       </SwiperSlide>
@@ -254,11 +323,11 @@ export default function ProductPage() {
 
                 <div className="sk-pp-pricing">
                   <span className="sk-pp-final">
-                    ₹{data.finalPrice?.toLocaleString()}
+                    ₹{finalPrice?.toLocaleString()}
                   </span>
-                  {data.basePrice > data.finalPrice && (
+                  {basePrice > finalPrice && (
                     <span className="sk-pp-original">
-                      ₹{data.basePrice?.toLocaleString()}
+                      ₹{basePrice?.toLocaleString()}
                     </span>
                   )}
                   {data.discount > 0 && (
@@ -268,33 +337,95 @@ export default function ProductPage() {
                   )}
                 </div>
 
+                {colorOptions.length > 0 && (
+                  <div className="sk-pp-meta-item" style={{ marginBottom: 14 }}>
+                    <span className="label" style={{ display: "block", marginBottom: 6 }}>
+                      Color
+                    </span>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      {colorOptions.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => selectColor(color)}
+                          className={`sk-variant-swatch ${
+                            selectedVariant?.color === color ? "active" : ""
+                          }`}
+                          style={{
+                            padding: "6px 14px",
+                            borderRadius: 20,
+                            border:
+                              selectedVariant?.color === color
+                                ? "2px solid #C8400A"
+                                : "1px solid #ddd",
+                            background:
+                              selectedVariant?.color === color
+                                ? "rgba(200,64,10,0.08)"
+                                : "#fff",
+                            fontSize: "0.82rem",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                          }}
+                        >
+                          {color}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {sizeOptions.length > 0 && (
+                  <div className="sk-pp-meta-item" style={{ marginBottom: 14 }}>
+                    <span className="label" style={{ display: "block", marginBottom: 6 }}>
+                      Size
+                    </span>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      {sizeOptions.map((size) => (
+                        <button
+                          key={size}
+                          type="button"
+                          onClick={() => selectSize(size)}
+                          className={`sk-variant-swatch ${
+                            selectedVariant?.size === size ? "active" : ""
+                          }`}
+                          style={{
+                            padding: "6px 14px",
+                            borderRadius: 20,
+                            border:
+                              selectedVariant?.size === size
+                                ? "2px solid #C8400A"
+                                : "1px solid #ddd",
+                            background:
+                              selectedVariant?.size === size
+                                ? "rgba(200,64,10,0.08)"
+                                : "#fff",
+                            fontSize: "0.82rem",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                          }}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="sk-pp-meta">
-                  {data.color && (
-                    <div className="sk-pp-meta-item">
-                      <span className="label">Color</span>
-                      <span className="value">{data.color}</span>
-                    </div>
-                  )}
-                  {data.size && (
-                    <div className="sk-pp-meta-item">
-                      <span className="label">Size</span>
-                      <span className="value">{data.size}</span>
-                    </div>
-                  )}
                   <div className="sk-pp-meta-item">
                     <span className="label">Availability</span>
                     <span
-                      className={`sk-stock-badge ${data.stock ? "in" : "out"}`}
+                      className={`sk-stock-badge ${selectedVariant?.stock ? "in" : "out"}`}
                     >
                       <i className="fa fa-circle" style={{ fontSize: 7 }} />
-                      {data.stock
-                        ? `In Stock (${data.stockQuantity} left)`
+                      {selectedVariant?.stock
+                        ? `In Stock (${selectedVariant.stockQuantity} left)`
                         : "Out of Stock"}
                     </span>
                   </div>
                 </div>
 
-                {data.stock && (
+                {selectedVariant?.stock && (
                   <>
                     <div className="sk-qty-wrap">
                       <div>
@@ -310,7 +441,7 @@ export default function ProductPage() {
                           <button
                             className="sk-qty-btn"
                             onClick={() =>
-                              qty < data.stockQuantity && setQty(qty + 1)
+                              qty < selectedVariant.stockQuantity && setQty(qty + 1)
                             }
                           >
                             +
@@ -320,15 +451,23 @@ export default function ProductPage() {
                       <div className="sk-qty-total">
                         Total &nbsp;
                         <strong>
-                          ₹{(data.finalPrice * qty).toLocaleString()}
+                          ₹{(finalPrice * qty).toLocaleString()}
                         </strong>
                       </div>
                     </div>
 
-                    <div className="sk-pp-actions">
+                    {/* FIX: forced position/z-index/pointer-events inline —
+                        inline styles win over any external stylesheet rule
+                        that might otherwise be causing something to sit on
+                        top of these buttons and intercept the click. */}
+                    <div
+                      className="sk-pp-actions"
+                      style={{ position: "relative", zIndex: 50, pointerEvents: "auto" }}
+                    >
                       <button
                         className="sk-pp-btn sk-pp-btn-primary"
                         onClick={addToCart}
+                        style={{ position: "relative", zIndex: 51, pointerEvents: "auto" }}
                       >
                         <i className="fa fa-shopping-cart" />
                         Add to Cart
@@ -336,6 +475,7 @@ export default function ProductPage() {
                       <button
                         className="sk-pp-btn sk-pp-btn-wish"
                         onClick={addToWishlist}
+                        style={{ position: "relative", zIndex: 51, pointerEvents: "auto" }}
                       >
                         <i className="fa fa-heart" />
                       </button>
@@ -358,7 +498,6 @@ export default function ProductPage() {
                   </div>
                 </div>
 
-                {/* Expected Delivery */}
                 <div
                   style={{
                     marginTop: 16,
@@ -439,14 +578,12 @@ export default function ProductPage() {
 
             {tab === "reviews" && (
               <div>
-                {/* Review list */}
                 {!data.reviews?.length ? (
                   <p style={{ fontSize: 13, color: "#bbb", marginBottom: 24 }}>
                     No reviews yet. Be the first to review this product.
                   </p>
                 ) : (
                   <div style={{ marginBottom: 28 }}>
-                    {/* Average rating summary */}
                     <div
                       style={{
                         display: "flex",
@@ -514,7 +651,7 @@ export default function ProductPage() {
                       </div>
                     </div>
 
-                    {data.reviews.map((rev, i) => (
+                    {data.reviews.slice(0, visibleReviews).map((rev, i) => (
                       <div
                         key={i}
                         className="sk-review-item"
@@ -610,10 +747,53 @@ export default function ProductPage() {
                         </p>
                       </div>
                     ))}
+
+                    {(visibleReviews < data.reviews.length || visibleReviews > REVIEWS_PAGE_SIZE) && (
+                      <div style={{ textAlign: "center", marginTop: 18, display: "flex", gap: 12, justifyContent: "center" }}>
+                        {visibleReviews < data.reviews.length && (
+                          <button
+                            type="button"
+                            onClick={() => setVisibleReviews((v) => v + REVIEWS_PAGE_SIZE)}
+                            style={{
+                              padding: "9px 22px",
+                              background: "#fff",
+                              color: "#C8400A",
+                              border: "1.5px solid #C8400A",
+                              borderRadius: 50,
+                              fontWeight: 700,
+                              fontSize: "0.84rem",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Show More Reviews
+                            <span style={{ color: "#a89b8f", fontWeight: 600, marginLeft: 6 }}>
+                              ({data.reviews.length - visibleReviews} left)
+                            </span>
+                          </button>
+                        )}
+                        {visibleReviews > REVIEWS_PAGE_SIZE && (
+                          <button
+                            type="button"
+                            onClick={() => setVisibleReviews(REVIEWS_PAGE_SIZE)}
+                            style={{
+                              padding: "9px 22px",
+                              background: "transparent",
+                              color: "#7A6E65",
+                              border: "1.5px solid #ddd",
+                              borderRadius: 50,
+                              fontWeight: 700,
+                              fontSize: "0.84rem",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Show Less
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {/* Review form */}
                 <div
                   style={{
                     background: "rgba(200,64,10,0.03)",
@@ -634,7 +814,6 @@ export default function ProductPage() {
                     Write a Review
                   </h6>
 
-                  {/* Star picker */}
                   <div style={{ marginBottom: 14 }}>
                     <div
                       style={{
@@ -665,7 +844,6 @@ export default function ProductPage() {
                     </div>
                   </div>
 
-                  {/* Comment box */}
                   <div style={{ marginBottom: 14 }}>
                     <div
                       style={{
@@ -700,7 +878,6 @@ export default function ProductPage() {
                     />
                   </div>
 
-                  {/* Feedback messages */}
                   {reviewError && (
                     <div
                       style={{

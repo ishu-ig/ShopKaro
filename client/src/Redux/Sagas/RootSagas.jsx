@@ -11,6 +11,7 @@ import checkoutSagas from "./CheckoutSagas"
 import newsletterSagas from "./NewsletterSagas"
 import contactUsSagas from "./ContactUsSagas"
 import bannerSagas from "./BannerSagas"
+import addressSagas from "./AddressSagas"
 export default function* RootSaga() {
     yield all([
         maincategorySagas(),
@@ -24,5 +25,6 @@ export default function* RootSaga() {
         newsletterSagas(),
         contactUsSagas(),
         bannerSagas(),
+        addressSagas()
     ])
 }

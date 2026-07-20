@@ -17,47 +17,61 @@ export default function Product({ title, data }) {
           )}
 
           <div className="row g-3 g-md-4">
-            {data.slice(0, visibleCount).map((item) => (
-              <div key={item?._id} className="col-6 col-md-4 col-lg-3">
-                <div className="sk-pcard">
-                  <div className="sk-pcard-img-wrap">
-                    <Link to={`/product/${item._id}`}>
-                      <img
-                        src={item.pic[0]}
-                        alt={item.name}
-                        loading="lazy"
-                      />
-                    </Link>
-                    {item.discount > 0 && (
-                      <span className="sk-pcard-badge">{item.discount}% Off</span>
-                    )}
-                    {/* Desktop hover overlay */}
-                    <div className="sk-pcard-overlay d-none d-md-flex">
-                      <div className="sk-pcard-overlay-content">
-                        <h6>{item.name}</h6>
-                        <div className="sk-pcard-overlay-price">
-                          <del>₹{item.basePrice}</del>
-                          <strong>₹{item.finalPrice}</strong>
-                          <span className="off">↓{item.discount}%</span>
+            {data.slice(0, visibleCount).map((item) => {
+              // Products no longer carry flat pic/price fields directly —
+              // those now live per-variant. Use the first variant as the
+              // representative one for the listing card.
+              const variant = item?.variants?.[0] || {};
+              const thumb = variant.pic?.[0];
+              const basePrice = variant.price ?? variant.finalPrice;
+              const finalPrice = variant.finalPrice;
+
+              return (
+                <div key={item?._id} className="col-6 col-md-4 col-lg-3">
+                  <div className="sk-pcard">
+                    <div className="sk-pcard-img-wrap">
+                      <Link to={`/product/${item._id}`}>
+                        <img
+                          src={thumb}
+                          alt={item.name}
+                          loading="lazy"
+                        />
+                      </Link>
+                      {item.discount > 0 && (
+                        <span className="sk-pcard-badge">{item.discount}% Off</span>
+                      )}
+                      {/* Desktop hover overlay */}
+                      <div className="sk-pcard-overlay d-none d-md-flex">
+                        <div className="sk-pcard-overlay-content">
+                          <h6>{item.name}</h6>
+                          <div className="sk-pcard-overlay-price">
+                            {basePrice > finalPrice && <del>₹{basePrice}</del>}
+                            <strong>₹{finalPrice}</strong>
+                            {item.discount > 0 && (
+                              <span className="off">↓{item.discount}%</span>
+                            )}
+                          </div>
+                          <Link to={`/product/${item._id}`} className="sk-pcard-overlay-btn">
+                            View Product
+                          </Link>
                         </div>
-                        <Link to={`/product/${item._id}`} className="sk-pcard-overlay-btn">
-                          View Product
-                        </Link>
+                      </div>
+                    </div>
+                    {/* Mobile info */}
+                    <div className="sk-pcard-info d-md-none">
+                      <div className="name">{item.name}</div>
+                      <div className="price">
+                        {basePrice > finalPrice && <del>₹{basePrice}</del>}
+                        <strong className="ms-1">₹{finalPrice}</strong>
+                        {item.discount > 0 && (
+                          <span className="off">{item.discount}% off</span>
+                        )}
                       </div>
                     </div>
                   </div>
-                  {/* Mobile info */}
-                  <div className="sk-pcard-info d-md-none">
-                    <div className="name">{item.name}</div>
-                    <div className="price">
-                      <del>₹{item.basePrice}</del>
-                      <strong className="ms-1">₹{item.finalPrice}</strong>
-                      <span className="off">{item.discount}% off</span>
-                    </div>
-                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Actions */}

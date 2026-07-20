@@ -20,45 +20,61 @@ import ProfilePage from "./pages/ProfilePage";
 import UpdateProfilePage from "./pages/UpdateProfilePage";
 import ForgetPasswordPage from "./pages/ForgetPassword";
 
-import AdminMaincategory from './pages/maincategory/AdminMaincategory';
-import AdminCreateMaincategory from './pages/maincategory/AdminCreateMaincategory';
-import AdminUpdateMaincategory from './pages/maincategory/AdminUpdateMaincategory';
+import AdminMaincategory from "./pages/maincategory/AdminMaincategory";
+import AdminCreateMaincategory from "./pages/maincategory/AdminCreateMaincategory";
+import AdminUpdateMaincategory from "./pages/maincategory/AdminUpdateMaincategory";
 
-import AdminSubcategory from './pages/subcategory/AdminSubcategory';
-import AdminCreateSubcategory from './pages/subcategory/AdminCreateSubcategory';
-import AdminUpdateSubcategory from './pages/subcategory/AdminUpdateSubcategory';
+import AdminSubcategory from "./pages/subcategory/AdminSubcategory";
+import AdminCreateSubcategory from "./pages/subcategory/AdminCreateSubcategory";
+import AdminUpdateSubcategory from "./pages/subcategory/AdminUpdateSubcategory";
 
 // FIX: Brand pages were referenced in routes below but never imported — added.
-import AdminBrand from './pages/brand/AdminBrand';
-import AdminCreateBrand from './pages/brand/AdminCreateBrand';
-import AdminUpdateBrand from './pages/brand/AdminUpdateBrand';
+import AdminBrand from "./pages/brand/AdminBrand";
+import AdminCreateBrand from "./pages/brand/AdminCreateBrand";
+import AdminUpdateBrand from "./pages/brand/AdminUpdateBrand";
 
-import AdminCreateProduct from './pages/product/AdminCreateProduct';
-import AdminUpdateProduct from './pages/product/AdminUpdateProduct';
-import AdminProduct from './pages/product/AdminProduct';
+import AdminCreateProduct from "./pages/product/AdminCreateProduct";
+import AdminUpdateProduct from "./pages/product/AdminUpdateProduct";
+import AdminProduct from "./pages/product/AdminProduct";
 
-import AdminTestimonial from './pages/testimonial/AdminTestiminial';
-import AdminCreateTestimonial from './pages/testimonial/AdminCreateTestimonial';
-import AdminUpdateTestimonial from './pages/testimonial/AdminUpdateTestimonial';
+import AdminTestimonial from "./pages/testimonial/AdminTestiminial";
+import AdminCreateTestimonial from "./pages/testimonial/AdminCreateTestimonial";
+import AdminUpdateTestimonial from "./pages/testimonial/AdminUpdateTestimonial";
 
-import AdminNewsletter from './pages/newsletter/AdminNewsletter';
+import AdminNewsletter from "./pages/newsletter/AdminNewsletter";
 
-import AdminCheckout from './pages/checkout/AdminCheckout';
-import AdminCheckoutShow from './pages/checkout/AdminShowCheckout';
+import AdminCheckout from "./pages/checkout/AdminCheckout";
+import AdminCheckoutShow from "./pages/checkout/AdminShowCheckout";
 // FIX: ViewProductPage (order items page) was used in a route but never imported — added.
-import ViewProductPage from './pages/checkout/ViewProductPage';
+import ViewProductPage from "./pages/checkout/ViewProductPage";
 
-import AdminUser from './pages/user/AdminUser';
-import AdminCreateUser from './pages/user/AdminCreateUser';
-import AdminUpdateUser from './pages/user/AdminUpdateUser';
+import AdminUser from "./pages/user/AdminUser";
+import AdminCreateUser from "./pages/user/AdminCreateUser";
+import AdminUpdateUser from "./pages/user/AdminUpdateUser";
 
-// contactus 
+// contactus
 import AdminContactUs from "./pages/contactus/AdminContactUs";
 import AdminShowQuery from "./pages/contactus/AdminShowQuery";
 import AdminBanner from "./pages/banner/AdminBanner";
 import AdminCreateBanner from "./pages/banner/AdminCreateBanner";
 import AdminUpdateBanner from "./pages/banner/AdminUpdateBanner";
-
+import ShopCreateProduct from "./pages/shopData/products/ShopCreateProduct";
+import ShopProduct from "./pages/shopData/products/ShopProduct";
+import ShopUpdateProduct from "./pages/shopData/products/ShopUpdateProduct";
+import ShopCheckout from "./pages/shopData/checkout/ShopCheckout";
+import AccountSetting from "./pages/shopData/AccountSetting";
+import ShopDashboard from "./pages/shopData/Dashboard";
+import ShopAddMaincategory from "./pages/shopData/maincategory/ShopAddMaincategory";
+import ShopMaincategory from "./pages/shopData/maincategory/ShopMaincategory";
+import ShopAddSubcategory from "./pages/shopData/subcategory/ShopAddSubcategory";
+import ShopSubcategory from "./pages/shopData/subcategory/ShopSubcategory";
+import AdminCreateShop from "./pages/shop/AdminCreateShop";
+import AdminShop from "./pages/shop/AdminShop";
+import AdminUpdateShop from "./pages/shop/AdminUpdateShop";
+import AssignedOrder from "./pages/deliveryBoyData/AssignedOrder";
+import OrderHistory from "./pages/deliveryBoyData/OrderHistory";
+import DeliveryConfirm from "./pages/deliveryBoyData/DeliveryConfirm";
+import DeliveryDashboard from "./pages/deliveryBoyData/DeliveryBoyDasboard";
 
 // FIX: All public routes listed here must match route paths exactly
 const publicRoutes = ["/login", "/register", "/forgot-password"];
@@ -163,8 +179,8 @@ function Shell() {
           {/* Dashboard */}
           {/* FIX: Removed duplicate "/" route — kept only one */}
           <Route path="/" element={<Home />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/update-profile" element={<UpdateProfilePage />} />
+          <Route path="/:role/:_id/profile" element={<ProfilePage />} />
+          <Route path="/:role/:_id/update-profile" element={<UpdateProfilePage />} />
 
           <Route path="/maincategory" element={<AdminMaincategory />} />
           <Route
@@ -192,7 +208,6 @@ function Shell() {
           <Route path="/banner/create" element={<AdminCreateBanner />} />
           <Route path="/banner/update/:_id" element={<AdminUpdateBanner />} />
 
-
           {/* Brand Routes */}
           <Route path="/brand" element={<AdminBrand />} />
           <Route path="/brand/create" element={<AdminCreateBrand />} />
@@ -205,7 +220,9 @@ function Shell() {
 
           {/* Testimonial Routes */}
           <Route path="/testimonial" element={<AdminTestimonial />} />
-          <Route path="/testimonial/create" element={<AdminCreateTestimonial />}
+          <Route
+            path="/testimonial/create"
+            element={<AdminCreateTestimonial />}
           />
           <Route
             path="/testimonial/update/:_id"
@@ -231,6 +248,44 @@ function Shell() {
           <Route path="/contactus/view/:_id" element={<AdminShowQuery />} />
 
           {/* FIX: Removed forgot-password from protected routes — it belongs in public only */}
+
+          <Route
+            path="/shop"
+            element={<AdminShop />}
+          />
+          <Route path="/shop/create" element={<AdminCreateShop />} />
+          <Route
+            path="/shop/update/:_id"
+            element={<AdminUpdateShop />}
+          />
+
+
+          <Route
+            path="/shopProduct/:role/:_id/create"
+            element={<ShopCreateProduct />}
+          />
+          <Route path="/shopProduct/:role/:_id" element={<ShopProduct />} />
+          <Route
+            path="/shopProduct/:role/:_id/update/:_productId"
+            element={<ShopUpdateProduct />}
+          />
+
+          {/* User Routes */}
+          <Route path="/shopMaincategory/:role/:_id/add" element={<ShopAddMaincategory />} />
+          <Route path="/shopMaincategory/:role/:_id" element={<ShopMaincategory />} />
+
+          {/* User Routes */}
+          <Route path="/shopSubcategory/:role/:_id/add" element={<ShopAddSubcategory />} />
+          <Route path="/shopSubcategory/:role/:_id" element={<ShopSubcategory />} />
+
+          <Route path="/shopCheckout/:role/:_id" element={<ShopCheckout />} />
+          <Route path="/:role/:_id" element={<ShopDashboard />} />
+          <Route path="/:role/setting" element={<AccountSetting />} />
+
+           <Route path="/:role/:_id/orders" element={<AssignedOrder />} />
+          <Route path="/:role/:_id/history" element={<OrderHistory />} />
+          <Route path="/deliveryBoy/:_id/order/:_orderId" element={<DeliveryConfirm />} />
+    <Route path="/deliveryBoy/:_id/dashboard" element={<DeliveryDashboard />} />
         </Routes>
 
         <Footer />

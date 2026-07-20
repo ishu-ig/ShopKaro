@@ -6,25 +6,26 @@ import { Link } from 'react-router-dom';
 
 export default function WishlistPage() {
     const [wishlist, setWishlist] = useState([]);
-    const WishlistStateData = useSelector(state => state.WishlistStateData);
+    const WishlistStateData = useSelector(state => state.WishlistStateData) || [];
     const dispatch = useDispatch();
 
     function deleteRecord(_id) {
         if (window.confirm("Remove this item from your wishlist?")) {
             dispatch(deleteWishlist({ _id }));
-            getAPIData();
         }
     }
 
-    function getAPIData() {
+    // FIX: previously this dispatched getWishlist() *inside* an effect that
+    // was keyed on WishlistStateData.length — fetching and depending on your
+    // own fetch result in the same effect. Fetch once on mount instead, and
+    // keep local `wishlist` state in sync with the store separately.
+    useEffect(() => {
         dispatch(getWishlist());
-        if (WishlistStateData.length) setWishlist(WishlistStateData);
-        else setWishlist([]);
-    }
+    }, [dispatch]);
 
     useEffect(() => {
-        getAPIData();
-    }, [WishlistStateData.length]);
+        setWishlist(WishlistStateData);
+    }, [WishlistStateData]);
 
     return (
         <>
@@ -35,7 +36,7 @@ export default function WishlistPage() {
                     <div className="wl-header">
                         <div className="wl-header-left">
                             <p className="wl-eyebrow">My Collection</p>
-                            <h1 className="wl-title">Wish<em>list</em></h1>
+                            <h1 className="wl-title text-dark">Wish<em>list</em></h1>
                             {wishlist.length > 0 && (
                                 <p className="wl-count">{wishlist.length} {wishlist.length === 1 ? "item" : "items"} saved</p>
                             )}
@@ -62,13 +63,13 @@ export default function WishlistPage() {
                                         <tr key={item._id}>
                                             <td className="wl-img-cell">
                                                 <Link
-                                                    to={item.product?.pic}
+                                                    to={item.variant?.pic?.[0]}
                                                     target="_blank"
                                                     rel="noreferrer"
                                                     className="wl-img-link"
                                                 >
                                                     <img
-                                                        src={item.product?.pic}
+                                                        src={item.variant?.pic?.[0]}
                                                         alt={item.product?.name}
                                                         className="wl-img"
                                                     />
@@ -79,18 +80,18 @@ export default function WishlistPage() {
                                                 <div className="wl-product-brand">{item.product?.brand?.name}</div>
                                             </td>
                                             <td>
-                                                <span className="wl-badge wl-badge-color">{item.product?.color || "—"}</span>
+                                                <span className="wl-badge wl-badge-color">{item.variant?.color || "—"}</span>
                                             </td>
                                             <td>
-                                                <span className="wl-badge wl-badge-size">{item.product?.size || "—"}</span>
+                                                <span className="wl-badge wl-badge-size">{item.variant?.size || "—"}</span>
                                             </td>
                                             <td>
-                                                <span className="wl-price">₹{item.product?.finalPrice?.toLocaleString()}</span>
+                                                <span className="wl-price">₹{item.variant?.finalPrice?.toLocaleString()}</span>
                                             </td>
                                             <td>
-                                                {item.product?.stockQuantity === 0
+                                                {item.variant?.stockQuantity === 0
                                                     ? <span className="wl-stock-out">Out of Stock</span>
-                                                    : <span className="wl-stock-ok">{item.product?.stockQuantity} left</span>
+                                                    : <span className="wl-stock-ok">{item.variant?.stockQuantity} left</span>
                                                 }
                                             </td>
                                             <td style={{textAlign: 'center'}}>

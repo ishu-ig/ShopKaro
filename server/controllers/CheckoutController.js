@@ -2,6 +2,51 @@ const Checkout = require("../models/Checkout")
 const mailer = require("../mailer/index")
 const Razorpay = require("razorpay")
 
+const PRODUCT_POPULATE = {
+    path: "products.product",
+    select: "name brand discount variants shop",
+    populate: [
+        { path: "brand", select: "name" },
+        { path: "shop", select: "name phone address city state pin" }
+    ]
+};
+
+const DELIVERY_OTP_LENGTH = 6;
+const DELIVERY_OTP_TTL_MINUTES = 10;
+
+function generateDeliveryOtp() {
+    // 6-digit numeric OTP, always DELIVERY_OTP_LENGTH digits (zero-padded)
+    const max = 10 ** DELIVERY_OTP_LENGTH;
+    return String(Math.floor(Math.random() * max)).padStart(DELIVERY_OTP_LENGTH, "0");
+}
+
+function sendDeliveryOtpEmail(toEmail, otp) {
+    mailer.sendMail({
+        from: process.env.MAIL_SENDER,
+        to: toEmail,
+        subject: `Delivery Confirmation Code - Team ${process.env.SITE_NAME}`,
+        html: `
+                <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9;">
+                    <h2 style="color: #28a745;">Hello,</h2>
+                    <p style="color: #555;">
+                        Your delivery partner is confirming your order has arrived. Please
+                        share this code with them to confirm receipt:
+                    </p>
+                    <p style="font-size: 28px; font-weight: bold; letter-spacing: 4px; color: #212529;">
+                        ${otp}
+                    </p>
+                    <p style="color: #555;">
+                        This code expires in ${DELIVERY_OTP_TTL_MINUTES} minutes. If you didn't
+                        expect this, please <a href="${process.env.SERVER}/contact" style="color: #007bff;">contact us</a>.
+                    </p>
+                    <p style="color: #555;">Best Regards, <br> Team ${process.env.SITE_NAME}</p>
+                </div>
+            `,
+    }, (error) => {
+        if (error) console.log("Error sending delivery OTP email:", error);
+    });
+}
+
 async function order(req, res) {
     try {
         const instance = new Razorpay({
@@ -52,21 +97,16 @@ async function createRecord(req, res) {
 
         await data.save()
         let finalData = await Checkout.findOne({ _id: data._id })
-            .populate("user", ["name", "username", "email", "phone", "address", "pin", "city", "state"])
-            .populate("deliveryBoy", ["name", "username", "email", "phone", "address", "pin", "city", "state"])
             .populate({
-                path: "products.product",
-                select: "name brand color size basePrice stockQuantity pic",
+                path: "user",
+                select: "name username email phone defaultAddress",
                 populate: {
-                    path: "brand",
-                    select: "-_id name"
-                },
-                options: {
-                    slice: {
-                        pic: 1
-                    }
+                    path: "defaultAddress",
+                    select: "address city state pin lat lng"
                 }
             })
+            .populate("deliveryBoy", ["name", "username", "email", "phone", "permanentLocation"])
+            .populate(PRODUCT_POPULATE)
 
         res.send({
             result: "Done",
@@ -97,21 +137,16 @@ async function createRecord(req, res) {
 async function getRecord(req, res) {
     try {
         let data = await Checkout.find().sort({ _id: -1 })
-            .populate("user", ["name", "username", "email", "phone", "address", "pin", "city", "state"])
-            .populate("deliveryBoy", ["name", "username", "email", "phone", "address", "pin", "city", "state"])
             .populate({
-                path: "products.product",
-                select: "name brand color size basePrice stockQuantity pic",
+                path: "user",
+                select: "name username email phone defaultAddress",
                 populate: {
-                    path: "brand",
-                    select: "-_id name"
-                },
-                options: {
-                    slice: {
-                        pic: 1
-                    }
+                    path: "defaultAddress",
+                    select: "address city state pin lat lng"
                 }
             })
+            .populate("deliveryBoy", ["name", "username", "email", "phone", "permanentLocation"])
+            .populate(PRODUCT_POPULATE)
         res.send({
             result: "Done",
             count: data.length,
@@ -129,21 +164,16 @@ async function getRecord(req, res) {
 async function getUserRecord(req, res) {
     try {
         let data = await Checkout.find({ user: req.params.userid }).sort({ _id: -1 })
-            .populate("user", ["name", "username", "email", "phone", "address", "pin", "city", "state"])
-            .populate("deliveryBoy", ["name", "username", "email", "phone", "address", "pin", "city", "state"])
             .populate({
-                path: "products.product",
-                select: "name brand color size basePrice stockQuantity pic",
+                path: "user",
+                select: "name username email phone defaultAddress",
                 populate: {
-                    path: "brand",
-                    select: "-_id name"
-                },
-                options: {
-                    slice: {
-                        pic: 1
-                    }
+                    path: "defaultAddress",
+                    select: "address city state pin lat lng"
                 }
             })
+            .populate("deliveryBoy", ["name", "username", "email", "phone", "permanentLocation"])
+            .populate(PRODUCT_POPULATE)
         res.send({
             result: "Done",
             count: data.length,
@@ -162,21 +192,16 @@ async function getUserRecord(req, res) {
 async function getSingleRecord(req, res) {
     try {
         let data = await Checkout.findOne({ _id: req.params._id })
-            .populate("user", ["name", "username", "email", "phone", "address", "pin", "city", "state"])
-            .populate("deliveryBoy", ["name", "username", "email", "phone", "address", "pin", "city", "state"])
             .populate({
-                path: "products.product",
-                select: "name brand color size basePrice stockQuantity pic",
+                path: "user",
+                select: "name username email phone defaultAddress",
                 populate: {
-                    path: "brand",
-                    select: "-_id name"
-                },
-                options: {
-                    slice: {
-                        pic: 1
-                    }
+                    path: "defaultAddress",
+                    select: "address city state pin lat lng"
                 }
             })
+            .populate("deliveryBoy", ["name", "username", "email", "phone", "permanentLocation"])
+            .populate(PRODUCT_POPULATE)
         if (data)
             res.send({
                 result: "Done",
@@ -199,77 +224,97 @@ async function getSingleRecord(req, res) {
 async function updateRecord(req, res) {
     try {
         let data = await Checkout.findOne({ _id: req.params._id })
+            .populate("user", ["email"])
         if (data) {
             let previousOrderStatus = data.orderStatus
-            data.orderStatus = req.body.orderStatus ?? data.orderStatus
+
+            // "Delivered" is never set directly. Instead we email the
+            // customer an OTP and hold the order at its current status
+            // until verifyDelivery confirms that code. Every other field/
+            // status update proceeds as normal.
+            const requestingDelivered =
+                req.body.orderStatus && req.body.orderStatus.toLowerCase() === "delivered"
+
+            data.orderStatus = (req.body.orderStatus && !requestingDelivered)
+                ? req.body.orderStatus
+                : data.orderStatus
             data.paymentMode = req.body.paymentMode ?? data.paymentMode
             data.paymentStatus = req.body.paymentStatus ?? data.paymentStatus,
-            data.deliveryBoy = req.body.deliveryBoy ?? data.deliveryBoy
+                data.deliveryBoy = req.body.deliveryBoy ?? data.deliveryBoy
             data.rppid = req.body.rppid ?? data.rppid
+
+            if (requestingDelivered) {
+                if (!data.user?.email) {
+                    return res.status(400).send({
+                        result: "Fail",
+                        reason: "Cannot send delivery OTP: customer email not found"
+                    })
+                }
+                data.deliveryOtp = generateDeliveryOtp()
+                data.deliveryOtpExpiry = new Date(Date.now() + DELIVERY_OTP_TTL_MINUTES * 60 * 1000)
+            }
+
             await data.save()
 
             let finalData = await Checkout.findOne({ _id: data._id })
-                .populate("user", ["name", "username", "email", "phone", "address", "pin", "city", "state"])
-                .populate("deliveryBoy", ["name", "username", "email", "phone", "address", "pin", "city", "state"])
                 .populate({
-                    path: "products.product",
-                    select: "name brand color size basePrice stockQuantity pic",
+                    path: "user",
+                    select: "name username email phone defaultAddress",
                     populate: {
-                        path: "brand",
-                        select: "-_id name"
-                    },
-                    options: {
-                        slice: {
-                            pic: 1
-                        }
+                        path: "defaultAddress",
+                        select: "address city state pin lat lng"
                     }
                 })
-                if (req.body.orderStatus && req.body.orderStatus !== previousOrderStatus) {
-                    let statusMessage = "";
-        
-                    // Customize email message based on the order status
-                    switch (req.body.orderStatus.toLowerCase()) {
-                        case "order is placed":
-                            statusMessage = "Your order has been shipped. It will reach you soon!";
-                            break;
-                        case "order is packed":
-                            statusMessage = "Your order has been packed. It will reach you soon!";
-                            break;
-                        case "out for delivery":
-                            statusMessage = "Your order is out for delivery. Please be ready to receive it.";
-                            break;
-                        case "delivered":
-                            statusMessage = "Your order has been successfully delivered. Thank you for choosing us!";
-                            break;
-                        default:
-                            statusMessage = `Your order status has been updated to: ${req.body.orderStatus}.`;
-                            break;
-                    }
-                    mailer.sendMail({
-                        from: process.env.MAIL_SENDER,
-                        to: finalData.user.email,
-                        subject: `Order Status Updated - Team ${process.env.SITE_NAME}`,
-                        html: `
-                                <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9;">
-                                    <h2 style="color: #28a745;">Hello,</h2>
-                                    <p style="color: #555;">
-                                    ${statusMessage}
-                                    </p>
-                                    <p style="color: #555;">
-                                        If you have any questions, please <a href="${process.env.SERVER}/contact" style="color: #007bff;">contact us</a>.
-                                    </p>
-                                    <p style="color: #555;">Best Regards, <br> Team ${process.env.SITE_NAME}</p>
-                                </div>
-                            `,
-                    }, (error) => {
-                        if (error) console.log("Error sending email:", error);
-                        // else console.log("Order status update email sent successfully.");
-                    });
-        
+                .populate("deliveryBoy", ["name", "username", "email", "phone", "permanentLocation"])
+                .populate(PRODUCT_POPULATE)
+
+            if (requestingDelivered) {
+                sendDeliveryOtpEmail(finalData.user.email, data.deliveryOtp)
+            }
+            else if (req.body.orderStatus && req.body.orderStatus !== previousOrderStatus) {
+                let statusMessage = "";
+
+                // Customize email message based on the order status
+                switch (req.body.orderStatus.toLowerCase()) {
+                    case "order is placed":
+                        statusMessage = "Your order has been shipped. It will reach you soon!";
+                        break;
+                    case "order is packed":
+                        statusMessage = "Your order has been packed. It will reach you soon!";
+                        break;
+                    case "out for delivery":
+                        statusMessage = "Your order is out for delivery. Please be ready to receive it.";
+                        break;
+                    default:
+                        statusMessage = `Your order status has been updated to: ${req.body.orderStatus}.`;
+                        break;
                 }
+                mailer.sendMail({
+                    from: process.env.MAIL_SENDER,
+                    to: finalData.user.email,
+                    subject: `Order Status Updated - Team ${process.env.SITE_NAME}`,
+                    html: `
+                            <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9;">
+                                <h2 style="color: #28a745;">Hello,</h2>
+                                <p style="color: #555;">
+                                ${statusMessage}
+                                </p>
+                                <p style="color: #555;">
+                                    If you have any questions, please <a href="${process.env.SERVER}/contact" style="color: #007bff;">contact us</a>.
+                                </p>
+                                <p style="color: #555;">Best Regards, <br> Team ${process.env.SITE_NAME}</p>
+                            </div>
+                        `,
+                }, (error) => {
+                    if (error) console.log("Error sending email:", error);
+                    // else console.log("Order status update email sent successfully.");
+                });
+
+            }
             res.send({
                 result: "Done",
-                data: finalData
+                data: finalData,
+                otpRequested: requestingDelivered || undefined
             })
         }
         else
@@ -280,6 +325,103 @@ async function updateRecord(req, res) {
     } catch (error) {
         console.log(error)
 
+        res.status(500).send({
+            result: "Fail",
+            reason: "Internal Server Error"
+        })
+    }
+}
+
+async function verifyDelivery(req, res) {
+    try {
+        let data = await Checkout.findOne({ _id: req.params._id })
+            .populate("user", ["email"])
+        if (!data) {
+            return res.status(404).send({
+                result: "Fail",
+                reason: "Record Not Found"
+            })
+        }
+
+        if (!data.deliveryOtp || !data.deliveryOtpExpiry) {
+            return res.status(400).send({
+                result: "Fail",
+                reason: "No delivery confirmation is pending for this order"
+            })
+        }
+
+        if (data.deliveryOtpExpiry < new Date()) {
+            return res.status(400).send({
+                result: "Fail",
+                reason: "OTP has expired. Please request a new one."
+            })
+        }
+
+        if (req.body.otp === undefined || req.body.otp === null || req.body.otp === "") {
+            console.log("verifyDelivery: no otp received in request body — check that express.json() (or equivalent body parser) runs before this route. req.body:", req.body)
+            return res.status(400).send({
+                result: "Fail",
+                reason: "OTP is required"
+            })
+        }
+
+        const submittedOtp = String(req.body.otp).trim()
+        const storedOtp = String(data.deliveryOtp).trim()
+
+        if (submittedOtp !== storedOtp) {
+            console.log(`verifyDelivery: OTP mismatch for order ${data._id} — submitted="${submittedOtp}" stored="${storedOtp}"`)
+            return res.status(400).send({
+                result: "Fail",
+                reason: "Invalid OTP"
+            })
+        }
+
+        let previousOrderStatus = data.orderStatus
+        data.orderStatus = "Delivered"
+        data.deliveryOtp = undefined
+        data.deliveryOtpExpiry = undefined
+        await data.save()
+
+        let finalData = await Checkout.findOne({ _id: data._id })
+            .populate({
+                path: "user",
+                select: "name username email phone defaultAddress",
+                populate: {
+                    path: "defaultAddress",
+                    select: "address city state pin lat lng"
+                }
+            })
+            .populate("deliveryBoy", ["name", "username", "email", "phone", "permanentLocation"])
+            .populate(PRODUCT_POPULATE)
+
+        if (previousOrderStatus !== "Delivered") {
+            mailer.sendMail({
+                from: process.env.MAIL_SENDER,
+                to: finalData.user.email,
+                subject: `Order Status Updated - Team ${process.env.SITE_NAME}`,
+                html: `
+                        <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9;">
+                            <h2 style="color: #28a745;">Hello,</h2>
+                            <p style="color: #555;">
+                            Your order has been successfully delivered. Thank you for choosing us!
+                            </p>
+                            <p style="color: #555;">
+                                If you have any questions, please <a href="${process.env.SERVER}/contact" style="color: #007bff;">contact us</a>.
+                            </p>
+                            <p style="color: #555;">Best Regards, <br> Team ${process.env.SITE_NAME}</p>
+                        </div>
+                    `,
+            }, (error) => {
+                if (error) console.log("Error sending email:", error);
+            });
+        }
+
+        res.send({
+            result: "Done",
+            data: finalData
+        })
+    } catch (error) {
+        console.log(error)
         res.status(500).send({
             result: "Fail",
             reason: "Internal Server Error"
@@ -318,6 +460,7 @@ module.exports = {
     getSingleRecord: getSingleRecord,
     updateRecord: updateRecord,
     deleteRecord: deleteRecord,
-    order : order,
-    verifyOrder : verifyOrder
+    order: order,
+    verifyOrder: verifyOrder,
+    verifyDelivery: verifyDelivery
 }

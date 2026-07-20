@@ -1,29 +1,84 @@
 import React, { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
-const navLinks = [
-  { to: "/",             icon: "bi-speedometer2",   label: "Dashboard"     },
-  { to: "/banner", icon: "bi-layer-backward", label: "Banner" },
-  { to: "/maincategory", icon: "bi-layer-backward", label: "Main Category" },
-  { to: "/subcategory",  icon: "bi-diagram-3",      label: "Sub Category"  },
-  { to: "/brand",        icon: "bi-patch-check",    label: "Brands"        },
-  { to: "/product",      icon: "bi-box-seam",       label: "Products"      },
-  { to: "/checkout",     icon: "bi-bag-check",      label: "Orders"        },
-  { to: "/testimonial",  icon: "bi-chat-quote",     label: "Testimonial"   },
-  { to: "/newsletter",   icon: "bi-envelope-paper", label: "Newsletter"    },
-    { to: "/user",        icon: "bi-patch-check",    label: "Users"        },
-  { to: "/contactUs",    icon: "bi-headset",        label: "Queries"       },
-];
+// FIX: same three-role mapping pattern as before, kept local to this file
+// on purpose. "Admin" / "DeliveryBoy" -> /api/user / /api/deliveryBoy,
+// "shop" -> /api/shop. (Renamed from "resturent" to "shop" to match the
+// updated Product/Shop schema.)
+function apiPathForRole(role) {
+  switch (role) {
+    case "Admin":
+      return "user";
+    case "DeliveryBoy":
+      return "deliveryBoy";
+
+    case "shop":
+      return "shop";
+
+    default:
+      return null;
+  }
+}
 
 export default function Sidebar({ onLinkClick }) {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
 
+  const rawRole = localStorage.getItem("role"); // exact casing: "Admin" | "DeliveryBoy" | "shop"
+  const userId = localStorage.getItem("userid");
+
+  // Nav-link lookup keys are the lowercased form of each of the three real
+  // roles, matched against `role` below (which is always lowercased first).
+  const role = (rawRole || "").toLowerCase();
+
+  const navLinksByRole = {
+    admin: [
+      { to: "/", icon: "bi-speedometer2", label: "Dashboard" },
+      { to: "/banner", icon: "bi-images", label: "Banners" },
+      { to: "/maincategory", icon: "bi-grid-3x3-gap", label: "Main Categories" },
+      { to: "/subcategory", icon: "bi-diagram-3", label: "Sub Categories" },
+      { to: "/brand", icon: "bi-patch-check", label: "Brands" },
+      { to: "/shop", icon: "bi-shop", label: "Shops" },
+      { to: "/product", icon: "bi-box-seam", label: "Products" },
+      { to: "/checkout", icon: "bi-cart-check", label: "Orders" },
+      { to: "/booking", icon: "bi-calendar-check", label: "Bookings" },
+      { to: "/testimonial", icon: "bi-chat-square-quote", label: "Testimonials" },
+      { to: "/newsletter", icon: "bi-envelope-paper", label: "Newsletter" },
+      { to: "/user", icon: "bi-people", label: "Users" },
+      { to: "/deliveryBoy", icon: "bi-people", label: "Delivery Boy" },
+      { to: "/contactUs", icon: "bi-headset", label: "Contact Queries" },
+      { to: `/shop/setting`, icon: "bi-person-circle", label: "Account Setting" },
+    ],
+
+    shop: [
+      { to: `/shop/${userId}`, icon: "bi-speedometer2", label: "Dashboard" },
+      { to: `/shopMaincategory/shop/${userId}`, icon: "bi-grid-3x3-gap", label: "Main Categories" },
+      { to: `/shopSubcategory/shop/${userId}`, icon: "bi-diagram-3", label: "Sub Categories" },
+      { to: `/shopProduct/shop/${userId}`, icon: "bi-box-seam", label: "Products" },
+      { to: `/shopCheckout/shop/${userId}`, icon: "bi-cart-check", label: "Orders" },
+      { to: `/shop/setting`, icon: "bi-person-circle", label: "Account Setting" },
+    ],
+
+    deliveryboy: [
+      { to: `/deliveryBoy/${userId}/dashboard`, icon: "bi-speedometer2", label: "Dashboard" },
+      { to: `/deliveryBoy/${userId}/orders`, icon: "bi-bag-check", label: "Assigned Orders" },
+      { to: `/deliveryBoy/${userId}/history`, icon: "bi-clock-history", label: "Order History" },
+      { to: `/shop/setting`, icon: "bi-person-circle", label: "Account Setting" },
+    ],
+  };
+
+  const navLinks = navLinksByRole[role] || [];
+
   useEffect(() => {
     (async () => {
       try {
+        if (!rawRole || !userId) {
+          navigate("/login");
+          return;
+        }
+
         let response = await fetch(
-          `${process.env.REACT_APP_BACKEND_SERVER}/api/user/${localStorage.getItem("userid")}`,
+          `${process.env.REACT_APP_BACKEND_SERVER}/api/${apiPathForRole(rawRole)}/${userId}`,
           { headers: { Authorization: localStorage.getItem("token") } }
         );
         response = await response.json();
@@ -33,7 +88,7 @@ export default function Sidebar({ onLinkClick }) {
         navigate("/login");
       }
     })();
-  }, [navigate]);
+  }, [navigate, rawRole, userId]);
 
   const name = data?.name || localStorage.getItem("name") || "Admin";
 

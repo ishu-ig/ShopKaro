@@ -7,41 +7,41 @@ import { createCheckout } from '../Redux/ActionCreators/CheckoutActionCreators';
 import { updateProduct, getProduct } from '../Redux/ActionCreators/ProductActionCreators';
 
 /* ─────────────────────────────────────────────
-   DESIGN TOKENS — Luxury Monochromatic + Gold
+   DESIGN TOKENS — Luxury Monochromatic + Gold (Light)
 ───────────────────────────────────────────── */
 const T = {
   /* Base */
-  bg:           '#0D0D0D',
-  surface:      '#141414',
-  surfaceRaised:'#1C1C1C',
-  surfaceHover: '#222222',
-  glass:        'rgba(255,255,255,0.03)',
-  glassHover:   'rgba(255,255,255,0.06)',
+  bg:           '#F7F5F0',
+  surface:      '#FFFFFF',
+  surfaceRaised:'#FCFBF8',
+  surfaceHover: '#F3F0E9',
+  glass:        'rgba(0,0,0,0.03)',
+  glassHover:   'rgba(0,0,0,0.06)',
 
   /* Borders */
-  border:       'rgba(255,255,255,0.07)',
-  borderMid:    'rgba(255,255,255,0.12)',
-  borderStrong: 'rgba(255,255,255,0.18)',
+  border:       'rgba(0,0,0,0.08)',
+  borderMid:    'rgba(0,0,0,0.14)',
+  borderStrong: 'rgba(0,0,0,0.22)',
 
-  /* Gold accent */
-  gold:         '#C9A84C',
-  goldLight:    '#E2C47A',
-  goldDeep:     '#A07830',
-  goldGlow:     'rgba(201,168,76,0.15)',
-  goldGlowStrong:'rgba(201,168,76,0.25)',
+  /* Gold accent — deepened slightly so it still reads on white */
+  gold:         '#B8913C',
+  goldLight:    '#D2AD5F',
+  goldDeep:     '#8C6B24',
+  goldGlow:     'rgba(184,145,60,0.12)',
+  goldGlowStrong:'rgba(184,145,60,0.22)',
 
   /* Text */
-  textPrimary:  '#F0EDE8',
-  textSub:      '#A09A92',
-  textMuted:    '#5C5851',
+  textPrimary:  '#221F1A',
+  textSub:      '#6E685F',
+  textMuted:    '#A29B90',
 
   /* Status */
-  green:        '#3DAA6E',
-  greenSoft:    'rgba(61,170,110,0.12)',
-  amber:        '#C9922A',
-  amberSoft:    'rgba(201,146,42,0.1)',
-  red:          '#C44040',
-  redSoft:      'rgba(196,64,64,0.1)',
+  green:        '#2E8B57',
+  greenSoft:    'rgba(46,139,87,0.1)',
+  amber:        '#B8791F',
+  amberSoft:    'rgba(184,121,31,0.1)',
+  red:          '#B23A3A',
+  redSoft:      'rgba(178,58,58,0.08)',
 
   /* Typography */
   serif: "'Playfair Display', 'Georgia', serif",
@@ -53,10 +53,10 @@ const T = {
   radiusSm:  '8px',
   radiusXs:  '5px',
   transition:'all 0.2s cubic-bezier(0.4,0,0.2,1)',
-  shadow1:   '0 1px 3px rgba(0,0,0,0.4)',
-  shadow2:   '0 4px 16px rgba(0,0,0,0.5)',
-  shadow3:   '0 12px 40px rgba(0,0,0,0.6)',
-  shadowGold:'0 8px 32px rgba(201,168,76,0.2)',
+  shadow1:   '0 1px 3px rgba(0,0,0,0.06)',
+  shadow2:   '0 4px 16px rgba(0,0,0,0.08)',
+  shadow3:   '0 12px 40px rgba(0,0,0,0.12)',
+  shadowGold:'0 8px 32px rgba(184,145,60,0.25)',
 };
 
 /* ─────────────────────────────────────────────
@@ -85,7 +85,7 @@ const GLOBAL_CSS = `
     content: '';
     position: fixed;
     inset: 0;
-    opacity: 0.025;
+    opacity: 0.02;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     background-size: 200px;
     pointer-events: none;
@@ -102,6 +102,7 @@ const GLOBAL_CSS = `
     overflow: hidden;
     transition: ${T.transition};
     animation: fadeUp 0.4s ease both;
+    box-shadow: ${T.shadow1};
   }
   .c-item:hover {
     background: ${T.surfaceRaised};
@@ -173,7 +174,7 @@ const GLOBAL_CSS = `
   .del-btn {
     width: 30px; height: 30px;
     border-radius: 50%;
-    border: 1px solid rgba(196,64,64,0.2);
+    border: 1px solid rgba(178,58,58,0.2);
     background: ${T.redSoft};
     color: ${T.red};
     display: flex; align-items: center; justify-content: center;
@@ -191,19 +192,19 @@ const GLOBAL_CSS = `
   }
 
   /* ── Summary card ── */
-  /* In GLOBAL_CSS, update sum-card */
-.sum-card {
-  background: ${T.surface};
-  border: 1px solid ${T.border};
-  border-radius: ${T.radius};
-  padding: 28px 24px;
-  max-width: 100%;   /* ← add this */
-  width: 100%;       /* ← add this */
-  position: sticky;
-  top: 24px;
-  animation: fadeUp 0.5s 0.15s ease both;
-  overflow: hidden;
-}
+  .sum-card {
+    background: ${T.surface};
+    border: 1px solid ${T.border};
+    border-radius: ${T.radius};
+    padding: 28px 24px;
+    max-width: 100%;
+    width: 100%;
+    position: sticky;
+    top: 24px;
+    animation: fadeUp 0.5s 0.15s ease both;
+    overflow: hidden;
+    box-shadow: ${T.shadow2};
+  }
   .sum-card::before {
     content: '';
     position: absolute;
@@ -221,7 +222,7 @@ const GLOBAL_CSS = `
     width: 100%;
     padding: 13px 0;
     background: ${T.gold};
-    color: #0D0D0D;
+    color: #FFFFFF;
     border: none;
     border-radius: 999px;
     font-family: ${T.sans};
@@ -237,10 +238,10 @@ const GLOBAL_CSS = `
     margin-top: 20px;
   }
   .btn-primary:hover {
-    background: ${T.goldLight};
+    background: ${T.goldDeep};
     transform: translateY(-1px);
-    box-shadow: 0 12px 36px rgba(201,168,76,0.3);
-    color: #0D0D0D;
+    box-shadow: 0 12px 36px rgba(184,145,60,0.32);
+    color: #FFFFFF;
   }
   .btn-primary:active { transform: scale(0.98); }
 
@@ -266,7 +267,7 @@ const GLOBAL_CSS = `
     margin-top: 20px;
   }
   .btn-success:hover {
-    filter: brightness(1.1);
+    filter: brightness(1.08);
     transform: translateY(-1px);
   }
 
@@ -284,7 +285,7 @@ const GLOBAL_CSS = `
     cursor: pointer;
     transition: border-color 0.18s;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235C5851' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236E685F' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 14px center;
   }
@@ -322,19 +323,19 @@ const GLOBAL_CSS = `
 
   .badge-gold {
     background: ${T.goldGlow};
-    border: 1px solid rgba(201,168,76,0.25);
+    border: 1px solid rgba(184,145,60,0.25);
     border-radius: 999px;
     padding: 3px 10px;
     font-size: 0.65rem;
     font-weight: 600;
-    color: ${T.gold};
+    color: ${T.goldDeep};
     letter-spacing: 0.06em;
     text-transform: uppercase;
   }
 
   .badge-free {
     background: ${T.greenSoft};
-    border: 1px solid rgba(61,170,110,0.2);
+    border: 1px solid rgba(46,139,87,0.2);
     border-radius: 999px;
     padding: 3px 10px;
     font-size: 0.65rem;
@@ -361,7 +362,7 @@ const GLOBAL_CSS = `
     align-items: center;
     gap: 8px;
     background: ${T.amberSoft};
-    border: 1px solid rgba(201,146,42,0.15);
+    border: 1px solid rgba(184,121,31,0.18);
     border-radius: ${T.radiusSm};
     padding: 9px 13px;
     font-size: 0.74rem;
@@ -397,7 +398,7 @@ const GLOBAL_CSS = `
   .col-md-8 {
         flex: 0 0 auto;
         /* width: 100% !important; */
-}
+  }
 
   /* ── Continue link ── */
   .back-link {
@@ -441,6 +442,7 @@ const GLOBAL_CSS = `
     .col-md-8 {
         flex: 0 0 auto;
         /* width: 100% !important; */
+    }
   }
 `;
 
@@ -521,17 +523,29 @@ export default function Cart({ title, data }) {
     if (window.confirm('Remove this item from cart?')) { dispatch(deleteCart({ _id })); getAPIData(); }
   }
 
+  // FIX: qty +/- previously read finalPrice/stockQuantity off item.product,
+  // which no longer carries those fields — they live on item.variant now
+  // (resolved server-side in CartController from Product.variants[]).
   function updateRecord(_id, option) {
     const item  = cart.find(x => x._id === _id);
     const index = cart.findIndex(x => x._id === _id);
     if (!item) return;
-    if (option === 'DEC' && item.qty > 1)                                { item.qty--; item.total -= item.product?.finalPrice; }
-    else if (option === 'INC' && item.qty < item.product?.stockQuantity) { item.qty++; item.total += item.product?.finalPrice; }
+    if (option === 'DEC' && item.qty > 1) {
+      item.qty--;
+      item.total -= item.variant?.finalPrice;
+    } else if (option === 'INC' && item.qty < item.variant?.stockQuantity) {
+      item.qty++;
+      item.total += item.variant?.finalPrice;
+    }
     dispatch(updateCart({ ...item }));
     cart[index] = { ...item };
     calculate([...cart]);
   }
 
+  // FIX: stock decrement previously mutated a flat product.stockQuantity
+  // field that no longer exists — stock now lives per-entry inside
+  // product.variants[], so we rebuild that array with the matching
+  // variant's stockQuantity/stock updated instead.
   function placeOrder() {
     dispatch(createCheckout({
       user: localStorage.getItem('userid'),
@@ -545,9 +559,12 @@ export default function Cart({ title, data }) {
     cart.forEach(ci => {
       const p = ProductStateData.find(x => x._id === ci.product._id);
       if (p) {
-        p.stockQuantity -= ci.qty;
-        p.stock = p.stockQuantity > 0;
-        dispatch(updateProduct(p));
+        const variants = p.variants.map(v =>
+          String(v._id) === String(ci.variant?._id)
+            ? { ...v, stockQuantity: v.stockQuantity - ci.qty, stock: (v.stockQuantity - ci.qty) > 0 }
+            : v
+        );
+        dispatch(updateProduct({ ...p, variants }));
         dispatch(deleteCart({ _id: ci._id }));
       }
     });
@@ -566,15 +583,15 @@ export default function Cart({ title, data }) {
         {/* Glow blob */}
         <div style={{
           position: 'absolute', inset: 0, borderRadius: '50%',
-          background: 'radial-gradient(ellipse at center, rgba(201,168,76,0.06) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse at center, rgba(184,145,60,0.08) 0%, transparent 70%)',
           pointerEvents: 'none',
         }} />
 
         <div className="float-anim" style={{
           width: 88, height: 88,
           borderRadius: '50%',
-          border: `1px solid rgba(201,168,76,0.25)`,
-          background: 'rgba(201,168,76,0.06)',
+          border: `1px solid rgba(184,145,60,0.3)`,
+          background: 'rgba(184,145,60,0.08)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           margin: '0 auto 28px',
           fontSize: '2rem',
@@ -584,7 +601,7 @@ export default function Cart({ title, data }) {
 
         <div style={{
           fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.2em',
-          color: T.gold, textTransform: 'uppercase', marginBottom: 14,
+          color: T.goldDeep, textTransform: 'uppercase', marginBottom: 14,
         }}>
           Empty Basket
         </div>
@@ -620,7 +637,7 @@ export default function Cart({ title, data }) {
           <div style={{ marginBottom: 32, paddingBottom: 24, borderBottom: `1px solid ${T.border}` }}>
             <div style={{
               fontSize: '0.58rem', fontWeight: 600, letterSpacing: '0.22em',
-              color: T.gold, textTransform: 'uppercase', marginBottom: 10,
+              color: T.goldDeep, textTransform: 'uppercase', marginBottom: 10,
               display: 'flex', alignItems: 'center', gap: 10,
             }}>
               <span style={{ display: 'block', width: 20, height: 1, background: T.gold }} />
@@ -651,15 +668,15 @@ export default function Cart({ title, data }) {
                   padding: '16px 20px', flexWrap: 'wrap',
                 }}>
 
-                  {/* Thumbnail */}
+                  {/* Thumbnail — links to the product page; image comes
+                      from the resolved variant, not the product root */}
                   <Link
-                    to={item.product?.pic}
-                    target="_blank" rel="noreferrer"
+                    to={`/product/${item.product?._id}`}
                     style={{ flexShrink: 0 }}
                   >
                     <div style={{ position: 'relative' }}>
                       <img
-                        src={item.product?.pic}
+                        src={item.variant?.pic?.[0]}
                         alt={item.product?.name}
                         style={{
                           width: 72, height: 72,
@@ -688,22 +705,22 @@ export default function Cart({ title, data }) {
 
                     <div style={{ marginBottom: 4 }}>
                       {item.product?.brand?.name && <span className="chip">{item.product.brand.name}</span>}
-                      {item.product?.color        && <span className="chip">{item.product.color}</span>}
-                      {item.product?.size          && <span className="chip">Size {item.product.size}</span>}
+                      {item.variant?.color && <span className="chip">{item.variant.color}</span>}
+                      {item.variant?.size && <span className="chip">Size {item.variant.size}</span>}
                     </div>
 
-                    {!isCheckout && item.product?.stockQuantity !== undefined && (
+                    {!isCheckout && item.variant?.stockQuantity !== undefined && (
                       <div style={{
                         fontSize: '0.68rem', fontWeight: 500,
-                        color: item.product?.stockQuantity > 5 ? T.green : T.amber,
+                        color: item.variant?.stockQuantity > 5 ? T.green : T.amber,
                         display: 'flex', alignItems: 'center', gap: 5,
                       }}>
                         <span style={{
                           width: 5, height: 5, borderRadius: '50%',
                           background: 'currentColor', display: 'inline-block', flexShrink: 0,
                         }} />
-                        {item.product?.stockQuantity
-                          ? `${item.product.stockQuantity} in stock`
+                        {item.variant?.stockQuantity
+                          ? `${item.variant.stockQuantity} in stock`
                           : 'Out of stock'}
                       </div>
                     )}
@@ -725,11 +742,11 @@ export default function Cart({ title, data }) {
                   {/* Price */}
                   <div style={{ textAlign: 'right', flexShrink: 0, minWidth: 72 }}>
                     <div style={{ fontSize: '0.68rem', color: T.textMuted, marginBottom: 4 }}>
-                      ₹{item.product?.finalPrice} each
+                      ₹{item.variant?.finalPrice} each
                     </div>
                     <div style={{
                       fontFamily: T.serif, fontWeight: 700,
-                      fontSize: '1.2rem', color: T.gold,
+                      fontSize: '1.2rem', color: T.goldDeep,
                     }}>
                       ₹{item.total}
                     </div>
@@ -755,9 +772,9 @@ export default function Cart({ title, data }) {
                 <div style={{
                   width: 34, height: 34, borderRadius: 8,
                   background: T.goldGlow,
-                  border: `1px solid rgba(201,168,76,0.2)`,
+                  border: `1px solid rgba(184,145,60,0.25)`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0, color: T.gold,
+                  flexShrink: 0, color: T.goldDeep,
                 }}>
                   <IconReceipt />
                 </div>
@@ -813,7 +830,7 @@ export default function Cart({ title, data }) {
                 <div style={{ textAlign: 'right' }}>
                   <div style={{
                     fontFamily: T.serif, fontWeight: 700,
-                    fontSize: '2rem', color: T.gold, letterSpacing: '-0.02em', lineHeight: 1,
+                    fontSize: '2rem', color: T.goldDeep, letterSpacing: '-0.02em', lineHeight: 1,
                   }}>
                     ₹{total}
                   </div>
@@ -832,7 +849,7 @@ export default function Cart({ title, data }) {
                     color: T.textMuted, textTransform: 'uppercase',
                     letterSpacing: '0.14em', marginBottom: 8,
                   }}>
-                    <span style={{ color: T.gold, fontSize: '0.7rem' }}>⚿</span>
+                    <span style={{ color: T.goldDeep, fontSize: '0.7rem' }}>⚿</span>
                     Payment Method
                   </label>
                   <select className="pay-select" onChange={e => setMode(e.target.value)}>

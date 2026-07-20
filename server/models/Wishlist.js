@@ -6,6 +6,10 @@ const WishlistSchema = new mongoose.Schema({
         ref: "User",
         required: [true, "User Id is Mendatory"]
     },
+    variant: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true
+    },
     product: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Product",

@@ -1,6 +1,6 @@
 const ProductRouter = require("express").Router()
 const { productUploader } = require("../middleware/fileuploader")
-const { verifyAdmin, verifyBoth } = require("../middleware/authentication")
+const { verifyAdmin, verifyBoth, verifyThree, verifyFour } = require("../middleware/authentication")
 const {
     createRecord,
     getRecord,
@@ -10,11 +10,11 @@ const {
     addReview,
 } = require("../controllers/ProductController")
 
-ProductRouter.post("", verifyAdmin, productUploader.array("pic"), createRecord)
+ProductRouter.post("",verifyBoth,  productUploader.array("pic"), createRecord)
 ProductRouter.get("", getRecord)
 ProductRouter.get("/:_id", getSingleRecord)
-ProductRouter.put("/:_id", verifyAdmin, productUploader.array("pic"), updateRecord)
-ProductRouter.delete("/:_id", verifyAdmin, deleteRecord)
-ProductRouter.post("/:_id/review", verifyBoth, addReview)
+ProductRouter.put("/:_id", verifyBoth, productUploader.array("pic"), updateRecord)
+ProductRouter.delete("/:_id", verifyBoth, deleteRecord)
+ProductRouter.post("/:_id/review", verifyFour, addReview)
 
 module.exports = ProductRouter

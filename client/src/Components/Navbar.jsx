@@ -54,10 +54,11 @@ export default function Navbar() {
 
   const dropdownLinks = [
     { to: "/profile", icon: "user", label: "My Profile" },
+    { to: "/address", icon: "shopping-cart", label: "Address" },
     { to: "/cart", icon: "shopping-cart", label: "Cart" },
     { to: "/order", icon: "list-alt", label: "Orders" },
-    { to: "/checkout", icon: "credit-card", label: "Checkout" },
-    { to: "/support", icon: "headphones", label: "Support" },
+    // { to: "/checkout", icon: "credit-card", label: "Checkout" },
+    // { to: "/support", icon: "headphones", label: "Support" },
   ];
 
   return (

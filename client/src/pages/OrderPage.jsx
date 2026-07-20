@@ -76,7 +76,7 @@ export default function OrderPage() {
                 <div style={{ padding:'18px 24px', borderBottom:'1px solid rgba(200,64,10,0.08)', display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'space-between', gap:12, background:'#FFFBF7' }}>
                   <div>
                     <div style={{ fontSize:'0.72rem', fontWeight:700, letterSpacing:'0.1em', color:'#7A6E65', textTransform:'uppercase', marginBottom:3 }}>Order ID</div>
-                    <div style={{ fontFamily:'Playfair Display,serif', fontWeight:700, fontSize:'0.95rem', color:'#1C1009', wordBreak:'break-all' }}>#{item?._id?.slice(-10)?.toUpperCase()}</div>
+                    <div style={{ fontFamily:'Playfair Display,serif', fontWeight:700, fontSize:'0.95rem', color:'#1C1009', wordBreak:'break-all' }}>#{item?._id}</div>
                     <div style={{ fontSize:'0.78rem', color:'#7A6E65', marginTop:3 }}>
                       <i className="fa fa-calendar-alt me-1" style={{ color:'#C8400A' }}></i>
                       {new Date(item?.createdAt).toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' })}

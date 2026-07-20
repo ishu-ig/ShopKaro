@@ -1,66 +1,98 @@
-const jwt = require("jsonwebtoken")
+const jwt = require("jsonwebtoken");
 
-function verifyAdmin(req, res, next) {
-    let token = req.headers.authorization
-    if (token) {
-        try {
-            if (jwt.verify(token, process.env.JWT_SECRET_KEY_ADMIN))
-                next()
-        } catch (error) {
-            if (error.name === "TokenExpiredError") {
-                res.status(498).send({
-                    result: "Fail",
-                    reason: "Token Expired. Please Login Again to Access this API"
-                })
-            }
-            else {
-                res.status(401).send({
-                    result: "Fail",
-                    reason: "You Are Not An Authorized Person to Access this API"
-                })
-            }
-        }
-    }
-    else
-        res.status(401).send({
-            result: "Fail",
-            reason: "You Are Not An Authorized Person to Access this API"
-        })
+function getToken(req) {
+    const authorization = req.headers.authorization;
+
+    if (!authorization) return null;
+
+    return authorization.startsWith("Bearer ")
+        ? authorization.split(" ")[1]
+        : authorization;
 }
 
-function verifyBoth(req, res, next) {
-    let token = req.headers.authorization
-    if (token) {
-        try {
-            if (jwt.verify(token, process.env.JWT_SECRET_KEY_BUYER))
-                next()
-        } catch (error) {
+function verifyWithSecrets(secrets) {
+    return (req, res, next) => {
+        const token = getToken(req);
+
+        if (!token) {
+            return res.status(401).send({
+                result: "Fail",
+                reason: "You Are Not Authorized to Access This API"
+            });
+        }
+
+        let expired = false;
+
+        for (const secret of secrets) {
             try {
-                if (jwt.verify(token, process.env.JWT_SECRET_KEY_ADMIN))
-                    next()
+                const decoded = jwt.verify(token, secret);
+                req.user = decoded.data;
+                return next();
             } catch (error) {
                 if (error.name === "TokenExpiredError") {
-                    res.status(498).send({
-                        result: "Fail",
-                        reason: "Token Expired. Please Login Again to Access this API"
-                    })
-                }
-                else {
-                    res.status(401).send({
-                        result: "Fail",
-                        reason: "You Are Not An Authorized Person to Access this API"
-                    })
+                    expired = true;
                 }
             }
         }
-    }
-    else
-        res.status(401).send({
+
+        return res.status(expired ? 498 : 401).send({
             result: "Fail",
-            reason: "You Are Not An Authorized Person to Access this API"
-        })
+            reason: expired
+                ? "Token Expired. Please Login Again"
+                : "You Are Not Authorized to Access This API"
+        });
+    };
 }
+
+const verifyAdmin = verifyWithSecrets([
+    process.env.JWT_SECRET_KEY_ADMIN
+]);
+
+const verifyShop = verifyWithSecrets([
+    process.env.JWT_SECRET_KEY_SHOP
+]);
+
+const verifyBuyer = verifyWithSecrets([
+    process.env.JWT_SECRET_KEY_BUYER
+]);
+
+const verifyDeliveryBoy = verifyWithSecrets([
+    process.env.JWT_SECRET_KEY_DELIVERYBOY
+]);
+
+// Buyer/DeliveryBoy + Admin
+const verifyBoth = verifyWithSecrets([
+    process.env.JWT_SECRET_KEY_SHOP,
+    process.env.JWT_SECRET_KEY_ADMIN
+]);
+
+// Buyer/DeliveryBoy + Admin + Restaurant
+const verifyThree = verifyWithSecrets([
+    process.env.JWT_SECRET_KEY_BUYER,
+    process.env.JWT_SECRET_KEY_ADMIN,
+    process.env.JWT_SECRET_KEY_SHOP
+]);
+
+const verifyFour = verifyWithSecrets([
+    process.env.JWT_SECRET_KEY_DELIVERYBOY,
+    process.env.JWT_SECRET_KEY_ADMIN,
+    process.env.JWT_SECRET_KEY_SHOP,
+    process.env.JWT_SECRET_KEY_BUYER,
+]);
+
+const verifyTwoDelivery = verifyWithSecrets([
+     process.env.JWT_SECRET_KEY_DELIVERYBOY,
+    process.env.JWT_SECRET_KEY_ADMIN,
+    process.env.JWT_SECRET_KEY_SHOP,
+])
+
+
 module.exports = {
-    verifyAdmin: verifyAdmin,
-    verifyBoth:verifyBoth
-}
+    verifyAdmin,
+    verifyShop,
+    verifyBuyer,
+    verifyBoth,
+    verifyThree,verifyFour,
+    verifyDeliveryBoy,verifyTwoDelivery
+
+};

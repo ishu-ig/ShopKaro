@@ -8,7 +8,7 @@ const styles = `
 
   .auth-root {
     min-height: 100vh;
-    background: #0a0a0f;
+    background: #f7f4ef;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -21,18 +21,18 @@ const styles = `
     position: absolute;
     top: -200px; right: -200px;
     width: 600px; height: 600px;
-    background: radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(201,168,76,0.10) 0%, transparent 70%);
     pointer-events: none;
   }
   .auth-card {
     width: 100%;
     max-width: 560px;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(201,168,76,0.15);
-    border-radius: 4px;
+    background: #ffffff;
+    border: 1px solid rgba(201,168,76,0.18);
+    border-radius: 20px;
     padding: 48px 44px;
     position: relative;
-    backdrop-filter: blur(20px);
+    box-shadow: 0 4px 28px rgba(13,27,42,0.08);
     animation: cardIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
   @keyframes cardIn {
@@ -64,7 +64,7 @@ const styles = `
     font-family: 'Cormorant Garamond', serif;
     font-size: 2rem;
     font-weight: 300;
-    color: #f0ede6;
+    color: #0d1b2a;
     letter-spacing: 0.5px;
     margin: 0 0 6px;
     line-height: 1.2;
@@ -74,7 +74,7 @@ const styles = `
     font-family: 'DM Sans', sans-serif;
     font-size: 12px;
     font-weight: 300;
-    color: rgba(240,237,230,0.4);
+    color: rgba(13,27,42,0.45);
     letter-spacing: 2px;
     text-transform: uppercase;
     margin: 0;
@@ -89,33 +89,33 @@ const styles = `
     font-weight: 500;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: rgba(240,237,230,0.5);
+    color: rgba(13,27,42,0.55);
     margin-bottom: 8px;
   }
   .auth-input {
     width: 100%;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 2px;
+    background: #faf8f4;
+    border: 1.5px solid #e8e0d0;
+    border-radius: 10px;
     padding: 13px 16px;
     font-family: 'DM Sans', sans-serif;
     font-size: 14px;
-    font-weight: 300;
-    color: #f0ede6;
+    font-weight: 400;
+    color: #1a1a1a;
     outline: none;
     transition: border-color 0.2s, background 0.2s;
     box-sizing: border-box;
   }
-  .auth-input::placeholder { color: rgba(240,237,230,0.2); }
+  .auth-input::placeholder { color: #bbb; }
   .auth-input:focus {
-    border-color: rgba(201,168,76,0.5);
-    background: rgba(201,168,76,0.04);
+    border-color: #c9a84c;
+    background: #ffffff;
   }
-  .auth-input.error { border-color: rgba(220,80,80,0.4); }
+  .auth-input.error { border-color: rgba(220,53,69,0.5); }
   .auth-field-error {
     font-family: 'DM Sans', sans-serif;
     font-size: 11px;
-    color: #ff8080;
+    color: #dc3545;
     margin-top: 5px;
   }
   .auth-input-wrap { position: relative; }
@@ -125,7 +125,7 @@ const styles = `
     right: 14px; top: 50%;
     transform: translateY(-50%);
     background: none; border: none;
-    color: rgba(240,237,230,0.3);
+    color: #999;
     cursor: pointer;
     padding: 4px;
     transition: color 0.2s;
@@ -138,7 +138,7 @@ const styles = `
     font-family: 'DM Sans', sans-serif;
     font-size: 12px;
     font-weight: 300;
-    color: rgba(240,237,230,0.4);
+    color: #666;
     cursor: pointer;
     margin-bottom: 24px;
   }
@@ -146,44 +146,44 @@ const styles = `
   .auth-btn-primary {
     width: 100%;
     background: #c9a84c;
-    color: #0a0a0f;
+    color: #000;
     border: none;
-    border-radius: 2px;
+    border-radius: 10px;
     padding: 14px;
     font-family: 'DM Sans', sans-serif;
     font-size: 11px;
-    font-weight: 500;
+    font-weight: 700;
     letter-spacing: 3px;
     text-transform: uppercase;
     cursor: pointer;
-    transition: background 0.2s, transform 0.15s;
+    transition: background 0.2s, color 0.2s, transform 0.15s;
     margin-bottom: 16px;
   }
-  .auth-btn-primary:hover { background: #dbb85a; transform: translateY(-1px); }
+  .auth-btn-primary:hover { background: #0d1b2a; color: #c9a84c; transform: translateY(-1px); }
   .auth-divider {
     display: flex;
     align-items: center;
     gap: 14px;
     margin-bottom: 16px;
   }
-  .auth-divider-line { flex: 1; height: 1px; background: rgba(255,255,255,0.06); }
+  .auth-divider-line { flex: 1; height: 1px; background: #f0ece4; }
   .auth-divider-text {
     font-family: 'DM Sans', sans-serif;
     font-size: 10px;
-    color: rgba(240,237,230,0.25);
+    color: #bbb;
     letter-spacing: 2px;
     text-transform: uppercase;
   }
   .auth-social { display: flex; gap: 10px; margin-bottom: 28px; }
   .auth-btn-social {
     flex: 1;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 2px;
+    background: #faf8f4;
+    border: 1.5px solid #e8e0d0;
+    border-radius: 10px;
     padding: 11px;
     font-family: 'DM Sans', sans-serif;
     font-size: 11px;
-    color: rgba(240,237,230,0.5);
+    color: #666;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -191,19 +191,19 @@ const styles = `
     gap: 8px;
     transition: border-color 0.2s, color 0.2s;
   }
-  .auth-btn-social:hover { border-color: rgba(201,168,76,0.3); color: #c9a84c; }
+  .auth-btn-social:hover { border-color: #c9a84c; color: #0d1b2a; }
   .auth-links { display: flex; justify-content: space-between; align-items: center; }
   .auth-link {
     font-family: 'DM Sans', sans-serif;
     font-size: 11px;
-    font-weight: 300;
-    color: rgba(240,237,230,0.35);
+    font-weight: 600;
+    color: #c9a84c;
     text-decoration: none;
     letter-spacing: 0.5px;
     transition: color 0.2s;
     border-bottom: 1px solid transparent;
   }
-  .auth-link:hover { color: #c9a84c; border-bottom-color: rgba(201,168,76,0.4); }
+  .auth-link:hover { color: #0d1b2a; border-bottom-color: rgba(13,27,42,0.3); }
 `;
 
 export default function SignupPage() {
@@ -344,7 +344,7 @@ export default function SignupPage() {
                         </div>
 
                         <div className="auth-links">
-                            <span style={{fontSize:'11px', color:'rgba(240,237,230,0.2)', fontFamily:"'DM Sans',sans-serif"}}>Already have an account?</span>
+                            <span style={{fontSize:'11px', color:'#999', fontFamily:"'DM Sans',sans-serif"}}>Already have an account?</span>
                             <Link to="/login" className="auth-link">Sign in →</Link>
                         </div>
                     </form>

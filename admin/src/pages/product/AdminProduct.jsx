@@ -3,16 +3,67 @@ import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { getProduct, deleteProduct, updateProduct } from "../../Redux/ActionCreators/ProductActionCreators";
 
+// Cover image: the first image found on the first variant that has one.
+function getCoverImage(item) {
+  const variants = item.variants || [];
+  for (const v of variants) {
+    if (Array.isArray(v.pic) && v.pic.length > 0) return v.pic[0];
+  }
+  return null;
+}
+
+// Total image count across all variants — shown as a "+N" badge on the thumbnail.
+function totalPicCount(item) {
+  return (item.variants || []).reduce(
+    (sum, v) => sum + (Array.isArray(v.pic) ? v.pic.length : 0),
+    0
+  );
+}
+
+// "In stock" now lives at the variant level (stock / stockQuantity), not as
+// a single top-level flag, so a product counts as in-stock if any variant is.
+function isAvailable(item) {
+  return (item.variants || []).some((v) => v.stock && (v.stockQuantity ?? 0) > 0);
+}
+
+// Product has NO top-level basePrice/finalPrice field — only variants carry
+// price/finalPrice (each variant sets its own finalPrice from its own price
+// and the product's shared discount). Build a min-max range from whatever
+// variants exist instead of reading a field that was never on the schema.
+function priceSummary(item) {
+  const variants = item.variants || [];
+  const finalPrices = variants
+    .map((v) => v.finalPrice)
+    .filter((p) => typeof p === "number" && !Number.isNaN(p));
+  const origPrices = variants
+    .map((v) => v.price)
+    .filter((p) => typeof p === "number" && !Number.isNaN(p));
+
+  if (finalPrices.length === 0) return null;
+
+  const finalMin = Math.min(...finalPrices);
+  const finalMax = Math.max(...finalPrices);
+  const origMin = origPrices.length ? Math.min(...origPrices) : null;
+
+  return {
+    finalMin,
+    finalMax,
+    isRange: finalMin !== finalMax,
+    showStrike: origMin !== null && origMin > finalMin,
+    origMin,
+  };
+}
+
 export default function AdminProduct() {
   const ProductStateData = useSelector((state) => state.ProductStateData);
   const dispatch = useDispatch();
   const [flag, setFlag] = useState(false);
   const [search, setSearch] = useState("");
 
-  const totalCount    = ProductStateData?.length ?? 0;
-  const activeCount   = ProductStateData?.filter((i) => i.active).length ?? 0;
+  const totalCount = ProductStateData?.length ?? 0;
+  const activeCount = ProductStateData?.filter((i) => i.active).length ?? 0;
   const inactiveCount = totalCount - activeCount;
-  const inStockCount  = ProductStateData?.filter((i) => i.stock).length ?? 0;
+  const inStockCount = ProductStateData?.filter((i) => isAvailable(i)).length ?? 0;
 
   function deleteRecord(_id) {
     if (window.confirm("Are you sure you want to delete this product?")) {
@@ -21,6 +72,8 @@ export default function AdminProduct() {
     }
   }
 
+  // Toggling now flips the product's `active` status, since there's no
+  // separate top-level availability flag in the new schema.
   function toggleActive(_id) {
     const item = ProductStateData.find((p) => p._id === _id);
     if (!item) return;
@@ -34,24 +87,14 @@ export default function AdminProduct() {
 
   useEffect(() => { dispatch(getProduct()); }, [flag]);
 
+  // No route-based scoping here — Admin sees every product across every shop.
   const filteredData = ProductStateData?.filter((item) =>
     item.name?.toLowerCase().includes(search.toLowerCase()) ||
     item.maincategory?.name?.toLowerCase().includes(search.toLowerCase()) ||
     item.subcategory?.name?.toLowerCase().includes(search.toLowerCase()) ||
-    item.brand?.name?.toLowerCase().includes(search.toLowerCase())
+    item.brand?.name?.toLowerCase().includes(search.toLowerCase()) ||
+    item.shop?.name?.toLowerCase().includes(search.toLowerCase())
   ) ?? [];
-
-  // Backend stores pic as an array of relative paths e.g. "product/xyz.jpg"
-  function picUrl(p) {
-    if (!p) return "";
-    return `${p}`;
-  }
-
-  function coverPic(item) {
-    if (Array.isArray(item.pic) && item.pic.length > 0) return picUrl(item.pic[0]);
-    if (item.pic) return picUrl(item.pic);
-    return "";
-  }
 
   return (
     <>
@@ -98,6 +141,11 @@ export default function AdminProduct() {
         }
         .price-strike { text-decoration: line-through; color: #6c757d; font-size: 0.78rem; }
         .price-final  { font-weight: 600; color: #198754; }
+        .variant-chip {
+          font-size: 0.7rem; padding: 1px 6px; border-radius: 10px;
+          background: var(--bs-tertiary-bg, #f1f3f5); margin: 1px;
+          display: inline-block;
+        }
       `}</style>
 
       <main className="dashboard-content">
@@ -200,8 +248,9 @@ export default function AdminProduct() {
                     <th>Name</th>
                     <th>Category</th>
                     <th>Brand</th>
+                    <th>Shop</th>
+                    <th>Variants</th>
                     <th>Price</th>
-                    <th>Stock</th>
                     <th>Status</th>
                     <th className="text-end">Action</th>
                   </tr>
@@ -209,11 +258,14 @@ export default function AdminProduct() {
                 <tbody>
                   {filteredData.length > 0 ? (
                     filteredData.map((item, index) => {
-                      const cover    = coverPic(item);
-                      const picCount = Array.isArray(item.pic) ? item.pic.length : (item.pic ? 1 : 0);
+                      const cover = getCoverImage(item);
+                      const picCount = totalPicCount(item);
+                      const price = priceSummary(item);
                       return (
                         <tr key={item._id}>
                           <td>{index + 1}</td>
+
+                          {/* Image — first available variant image */}
                           <td>
                             <div className="position-relative d-inline-block">
                               {cover ? (
@@ -228,31 +280,72 @@ export default function AdminProduct() {
                               {picCount > 1 && <span className="pic-count">+{picCount}</span>}
                             </div>
                           </td>
+
+                          {/* Name */}
                           <td>
                             <div className="fw-semibold">{item.name}</div>
-                            <div className="text-muted small">{item.color} · {item.size}</div>
                           </td>
+
+                          {/* Category */}
                           <td>
                             <div className="small">{item.maincategory?.name ?? "—"}</div>
-                            <div className="text-muted" style={{ fontSize: "0.75rem" }}>{item.subcategory?.name}</div>
+                            <div className="text-muted" style={{ fontSize: "0.75rem" }}>
+                              {item.subcategory?.name}
+                            </div>
                           </td>
+
+                          {/* Brand */}
                           <td>{item.brand?.name ?? "—"}</td>
+
+                          {/* Shop — Admin sees products across every shop, so this stays visible */}
+                          <td>{item.shop?.name ?? "—"}</td>
+
+                          {/* Variants — color/size chips with stock status */}
                           <td>
-                            <div className="price-final">₹{item.finalPrice}</div>
-                            {item.discount > 0 && (
-                              <div className="price-strike">₹{item.basePrice} <span className="text-danger">-{item.discount}%</span></div>
+                            {(item.variants || []).length > 0 ? (
+                              (item.variants || []).map((v, i) => (
+                                <span
+                                  key={v._id || i}
+                                  className="variant-chip"
+                                  title={`Stock: ${v.stockQuantity ?? 0}`}
+                                >
+                                  {v.color}/{v.size} {v.stock ? "" : "(out)"}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-muted small">No variants</span>
                             )}
                           </td>
+
+                          {/* Price — no top-level price on Product; derived
+                              from each variant's own finalPrice/price */}
                           <td>
-                            <span className={`badge ${item.stock ? "text-bg-success" : "text-bg-danger"}`}>
-                              {item.stock ? `${item.stockQuantity} left` : "Out"}
-                            </span>
+                            {price ? (
+                              <>
+                                <span className="price-final">
+                                  ₹{price.finalMin}
+                                  {price.isRange ? ` - ₹${price.finalMax}` : ""}
+                                </span>
+                                {price.showStrike && (
+                                  <span className="price-strike ms-1">₹{price.origMin}</span>
+                                )}
+                                {item.discount > 0 && (
+                                  <div className="text-danger small">-{item.discount}% off</div>
+                                )}
+                              </>
+                            ) : (
+                              <span className="text-muted small">—</span>
+                            )}
                           </td>
+
+                          {/* Status */}
                           <td>
                             <span className={`badge ${item.active ? "text-bg-success" : "text-bg-secondary"}`}>
                               {item.active ? "Active" : "Inactive"}
                             </span>
                           </td>
+
+                          {/* Actions */}
                           <td className="text-end">
                             <div className="act-strip">
                               <Link className="act-btn act-btn-edit"
@@ -281,7 +374,7 @@ export default function AdminProduct() {
                     })
                   ) : (
                     <tr>
-                      <td colSpan="9" className="text-center text-muted py-4">
+                      <td colSpan="10" className="text-center text-muted py-4">
                         {search ? `No products found for "${search}"` : "No products available."}
                       </td>
                     </tr>

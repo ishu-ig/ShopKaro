@@ -1,5 +1,5 @@
 const WishlistRouter = require("express").Router()
-const { verifyBoth } = require("../middleware/authentication")
+const { verifyThree } = require("../middleware/authentication")
 const {
     createRecord,
     getRecord,
@@ -7,10 +7,10 @@ const {
     deleteRecord,
 } = require("../controllers/WishlistController")
 
-WishlistRouter.post("", verifyBoth, createRecord)
-WishlistRouter.get("/:userid", verifyBoth, getRecord)
-WishlistRouter.get("/single/:_id", verifyBoth, getSingleRecord)
-WishlistRouter.delete("/:_id", verifyBoth, deleteRecord)
+WishlistRouter.post("", verifyThree, createRecord)
+WishlistRouter.get("/:userid", verifyThree, getRecord)
+WishlistRouter.get("/single/:_id", verifyThree, getSingleRecord)
+WishlistRouter.delete("/:_id", verifyThree, deleteRecord)
 
 
 module.exports = WishlistRouter

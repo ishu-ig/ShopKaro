@@ -17,9 +17,29 @@ function applyTheme(theme) {
   localStorage.setItem(THEME_KEY, theme);
 }
 
+// Mirrors the role options on the signup page. "user" covers Admin /
+// Super Admin / Delivery Boy accounts (all live in the User collection);
+// "shop" hits the separate shop login endpoint.
+const ROLE_OPTIONS = [
+  { value: "user", label: "Admin", icon: "bi-person-badge", apiPath: "user" },
+  {
+    value: "DelieryBoy",
+    label: "Delivery Boy",
+    icon: "bi-person-badge",
+    apiPath: "deliveryBoy",
+  },
+  {
+    value: "shop",
+    label: "Shop",
+    icon: "bi-shop",
+    apiPath: "shop",
+  },
+];
+
 export default function LoginPage() {
   const navigate = useNavigate();
 
+  const [role, setRole] = useState("user");
   const [data, setData] = useState({ username: "", password: "" });
   const [remember, setRemember] = useState(false);
   const [validated, setValidated] = useState(false);
@@ -52,23 +72,28 @@ export default function LoginPage() {
     applyTheme(theme === "dark" ? "light" : "dark");
   }
 
-  // ── From file 1: single getInputData handler + clears error on change ────────
   function getInputData(e) {
     const { name, value } = e.target;
     setError("");
     setData((old) => ({ ...old, [name]: value }));
   }
 
-  // ── From file 1: postData logic (Admin / Super Admin roles) ──────────────────
+  function handleRoleChange(nextRole) {
+    setRole(nextRole);
+    setError("");
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setValidated(true);
     if (!e.target.checkValidity()) return;
 
+    const selectedRole = ROLE_OPTIONS.find((opt) => opt.value === role);
+
     setLoading(true);
     try {
       let response = await fetch(
-        `${process.env.REACT_APP_BACKEND_SERVER}/api/user/login`,
+        `${process.env.REACT_APP_BACKEND_SERVER}/api/${selectedRole.apiPath}/login`,
         {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -83,27 +108,55 @@ export default function LoginPage() {
       if (response.result === "Done" && response.data.active === false) {
         setError("Your account is inactive. Please contact support.");
       } else if (response.result === "Done") {
+        // FIX: was `selectedRole.apiPath === "user" || "deliveryBoy"`, which
+        // is always true (a non-empty string is truthy) regardless of
+        // apiPath, so the Shop branch below was unreachable. Now both
+        // sides of the OR actually compare against apiPath.
         if (
-          response.data.role === "Admin" ||
-          response.data.role === "Super Admin"
+          selectedRole.apiPath === "user" ||
+          selectedRole.apiPath === "deliveryBoy"
         ) {
+          // Explicit allow-list of the two real user-collection roles.
+          const isAuthorized =
+            response.data.role === "Admin" ||
+            response.data.role === "DeliveryBoy";
+
+          if (isAuthorized) {
+            localStorage.setItem("login", true);
+            localStorage.setItem("name", response.data.name);
+            localStorage.setItem("userid", response.data._id);
+            localStorage.setItem("role", response.data.role); // exact casing preserved
+            localStorage.setItem("token", response.token);
+
+            const incomplete = [
+              "address",
+              "state",
+              "pin",
+              "phone",
+              "name",
+              "city",
+            ].some((f) => !response.data[f]);
+
+            // "/profile" is not a registered route. App.js only defines
+            // "/:role/:_id/profile". Build the real path using the role
+            // that was just returned from the login response.
+            navigate(
+              incomplete
+                ? `/${response.data.role.toLowerCase()}/${response.data._id}/profile`
+                : "/",
+            );
+          } else {
+            setError("You are not authorized to access this panel.");
+            localStorage.setItem("login", false);
+          }
+        } else {
+          // Shop login
           localStorage.setItem("login", true);
           localStorage.setItem("name", response.data.name);
           localStorage.setItem("userid", response.data._id);
-          localStorage.setItem("role", response.data.role);
+          localStorage.setItem("role", selectedRole.value); // "shop"
           localStorage.setItem("token", response.token);
-          const incomplete = [
-            "address",
-            "state",
-            "pin",
-            "phone",
-            "name",
-            "city",
-          ].some((f) => !response.data[f]);
-          navigate(incomplete ? "/profile" : "/");
-        } else {
-          setError("You are not authorized to access this panel.");
-          localStorage.setItem("login", false);
+          navigate("/");
         }
       } else {
         setError("Invalid username/email or password.");
@@ -114,9 +167,15 @@ export default function LoginPage() {
       setLoading(false);
     }
   }
-
   return (
     <>
+      <style>{`
+        .auth-card {
+          max-width: 550px !important;
+          width: 100% !important;
+        }
+      `}</style>
+
       {/* Floating theme toggle */}
       <button
         className="icon-button theme-toggle auth-theme-toggle"
@@ -172,10 +231,46 @@ export default function LoginPage() {
               </div>
             )}
 
+            {/* Role selector */}
+            <div className="mb-3">
+              <label className="form-label d-block">I am signing in as</label>
+              <div
+                className="btn-group w-100"
+                role="group"
+                aria-label="Account type"
+              >
+                {ROLE_OPTIONS.map((opt) => (
+                  <React.Fragment key={opt.value}>
+                    <input
+                      type="radio"
+                      className="btn-check"
+                      name="loginRole"
+                      id={`login-role-${opt.value}`}
+                      autoComplete="off"
+                      checked={role === opt.value}
+                      onChange={() => handleRoleChange(opt.value)}
+                    />
+                    <label
+                      className="btn btn-outline-primary"
+                      htmlFor={`login-role-${opt.value}`}
+                    >
+                      <i
+                        className={`bi ${opt.icon} me-1`}
+                        aria-hidden="true"
+                      ></i>
+                      {opt.label}
+                    </label>
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+
             {/* Username */}
             <div className="mb-3">
               <label className="form-label" htmlFor="loginUserName">
-                Email Address or Username
+                {role === "shop"
+                  ? "Email Address"
+                  : "Email Address or Username"}
               </label>
               <input
                 className="form-control"
@@ -264,9 +359,9 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* <div className="auth-footer">
+          <div className="auth-footer">
             New here? <Link to="/register">Create an account</Link>
-          </div> */}
+          </div>
         </section>
       </main>
     </>

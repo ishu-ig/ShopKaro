@@ -9,6 +9,12 @@ import { getBrand } from "../Redux/ActionCreators/BrandActionCreators";
 import { getProduct } from "../Redux/ActionCreators/ProductActionCreators";
 import { useDispatch, useSelector } from 'react-redux';
 
+// Pricing/color now live per-variant instead of on the product itself.
+// The listing card (Product.jsx) always shows variants[0], so sort/filter
+// use that same variant as "the" price for a product to stay consistent
+// with what's on screen.
+const listingPrice = (item) => item?.variants?.[0]?.finalPrice ?? 0;
+
 export default function ShopPage() {
   const [data, setData] = useState([]);
   const [mc, setMc] = useState("All");
@@ -39,7 +45,7 @@ export default function ShopPage() {
       (x.maincategory?.name?.toLowerCase().includes(ch) ||
         x.subcategory?.name?.toLowerCase().includes(ch) ||
         x.brand?.name?.toLowerCase().includes(ch) ||
-        x.color?.toLowerCase() === ch ||
+        x.variants?.some(v => v.color?.toLowerCase() === ch) ||
         x.description?.toLowerCase().includes(ch))
     ));
   }
@@ -47,8 +53,8 @@ export default function ShopPage() {
   function sortFilter(option) {
     const sorted = [...data];
     if (option === "1") sorted.sort((x, y) => y._id.localeCompare(x._id));
-    else if (option === "2") sorted.sort((x, y) => y.finalPrice - x.finalPrice);
-    else sorted.sort((x, y) => x.finalPrice - y.finalPrice);
+    else if (option === "2") sorted.sort((x, y) => listingPrice(y) - listingPrice(x));
+    else sorted.sort((x, y) => listingPrice(x) - listingPrice(y));
     setData(sorted);
   }
 
@@ -59,8 +65,8 @@ export default function ShopPage() {
       (mcVal === "All" || mcVal === p.maincategory?.name) &&
       (scVal === "All" || scVal === p.subcategory?.name) &&
       (brVal === "All" || brVal === p.brand?.name) &&
-      (minVal === -1 || p.finalPrice >= minVal) &&
-      (maxVal === -1 || p.finalPrice <= maxVal)
+      (minVal === -1 || listingPrice(p) >= minVal) &&
+      (maxVal === -1 || listingPrice(p) <= maxVal)
     ));
   }
 
@@ -119,8 +125,32 @@ export default function ShopPage() {
   );
 
   return (
-    <>
-      <HeroSection title="Shop" />
+    <div className='mt-5'>
+      {/* <HeroSection title="Shop" /> */}
+      <h3
+        className="text-center pt-3"
+        style={{
+          fontFamily: "'Playfair Display', serif",
+          fontWeight: 700,
+          color: '#0d1b2a',
+          letterSpacing: 1,
+          position: 'relative',
+          paddingBottom: 12,
+          marginBottom: 8,
+        }}
+      >
+        Shop
+        <span
+          style={{
+            display: 'block',
+            width: 60,
+            height: 3,
+            background: '#c9a84c',
+            margin: '10px auto 0',
+            borderRadius: 2,
+          }}
+        />
+      </h3>
 
       {/* Mobile Filter Overlay */}
       {sidebarOpen && (
@@ -212,21 +242,25 @@ export default function ShopPage() {
                 </button>
               </div>
 
-              {/* Toolbar */}
-              <div className="sk-toolbar">
-                <form onSubmit={postSearch} className="sk-search-wrap">
+              {/* Toolbar - stacks vertically on mobile, row on md+ */}
+              <div className="sk-toolbar d-flex flex-column flex-md-row gap-2 align-items-stretch align-items-md-center">
+                <form onSubmit={postSearch} className="sk-search-wrap w-100">
                   <input
                     type="search"
                     placeholder="Search products, brands, categories..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    className="sk-search-input"
+                    className="sk-search-input w-100"
                   />
                   <button type="submit" className="sk-search-btn">
                     <i className="fa fa-search"></i>
                   </button>
                 </form>
-                <select onChange={e => sortFilter(e.target.value)} className="sk-sort-select">
+                <select
+                  onChange={e => sortFilter(e.target.value)}
+                  className="sk-sort-select w-100"
+                  style={{ maxWidth: '100%' }}
+                >
                   <option value="1">Latest First</option>
                   <option value="2">Price: High to Low</option>
                   <option value="3">Price: Low to High</option>
@@ -234,10 +268,10 @@ export default function ShopPage() {
               </div>
 
               {/* Results count + Active filter tags */}
-              <div className="d-flex flex-wrap align-items-center gap-2 mb-3 px-1">
-                <span className="sk-results-count">
+              <div className="d-flex flex-wrap align-items-center gap-2 mb-0 px-1 mt-2">
+                {/* <span className="sk-results-count">
                   Showing <strong>{Math.min(data.length, 21)}</strong> of <strong>{data.length}</strong> products
-                </span>
+                </span> */}
 
                 {mc !== "All" && (
                   <span className="sk-active-filter">
@@ -291,6 +325,6 @@ export default function ShopPage() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
