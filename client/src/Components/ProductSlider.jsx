@@ -444,11 +444,11 @@ export default function ProductSlider({ title, data }) {
                           ★ {item.rating || "4.5"}
                         </span>
                         <div className="ps-overlay">
-                          <Link to={`/cart/${item._id}`} className="ps-overlay-btn primary">
+                          <Link to={`/cart/${item._id}`} className="ps-overlay-btn text-center py-2 primary">
                             <i className="fa fa-shopping-cart" style={{ fontSize: 12 }} />
                             Add to Cart
                           </Link>
-                          <Link to={`/product/${item._id}`} className="ps-overlay-btn secondary">
+                          <Link to={`/product/${item._id}`} className="ps-overlay-btn secondary text-center py-2">
                             View Details
                           </Link>
                         </div>
