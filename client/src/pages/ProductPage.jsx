@@ -352,19 +352,25 @@ export default function ProductPage() {
                             selectedVariant?.color === color ? "active" : ""
                           }`}
                           style={{
-                            padding: "6px 14px",
+                            padding: "7px 16px",
                             borderRadius: 20,
                             border:
                               selectedVariant?.color === color
-                                ? "2px solid #C8400A"
-                                : "1px solid #ddd",
+                                ? "2px solid #c9a84c"
+                                : "1px solid #ddd6c8",
                             background:
                               selectedVariant?.color === color
-                                ? "rgba(200,64,10,0.08)"
+                                ? "rgba(201,168,76,0.14)"
                                 : "#fff",
-                            fontSize: "0.82rem",
-                            fontWeight: 600,
+                            color:
+                              selectedVariant?.color === color
+                                ? "#0d1b2a"
+                                : "#444455",
+                            fontSize: "0.84rem",
+                            fontWeight: 700,
                             cursor: "pointer",
+                            transition: "all 0.2s ease",
+                            boxShadow: selectedVariant?.color === color ? "0 2px 8px rgba(201,168,76,0.25)" : "none",
                           }}
                         >
                           {color}
@@ -389,19 +395,25 @@ export default function ProductPage() {
                             selectedVariant?.size === size ? "active" : ""
                           }`}
                           style={{
-                            padding: "6px 14px",
+                            padding: "7px 16px",
                             borderRadius: 20,
                             border:
                               selectedVariant?.size === size
-                                ? "2px solid #C8400A"
-                                : "1px solid #ddd",
+                                ? "2px solid #c9a84c"
+                                : "1px solid #ddd6c8",
                             background:
                               selectedVariant?.size === size
-                                ? "rgba(200,64,10,0.08)"
+                                ? "rgba(201,168,76,0.14)"
                                 : "#fff",
-                            fontSize: "0.82rem",
-                            fontWeight: 600,
+                            color:
+                              selectedVariant?.size === size
+                                ? "#0d1b2a"
+                                : "#444455",
+                            fontSize: "0.84rem",
+                            fontWeight: 700,
                             cursor: "pointer",
+                            transition: "all 0.2s ease",
+                            boxShadow: selectedVariant?.size === size ? "0 2px 8px rgba(201,168,76,0.25)" : "none",
                           }}
                         >
                           {size}
@@ -504,7 +516,7 @@ export default function ProductPage() {
                     padding: "12px 16px",
                     background: "rgba(200,64,10,0.04)",
                     borderRadius: 12,
-                    border: "1px solid rgba(200,64,10,0.1)",
+                    border: "1px solid rgba(201,168,76,0.12)",
                     display: "flex",
                     alignItems: "center",
                     gap: 10,
@@ -512,7 +524,7 @@ export default function ProductPage() {
                 >
                   <i
                     className="fa fa-calendar-check"
-                    style={{ color: "#C8400A", fontSize: 16 }}
+                    style={{ color: "var(--sk-gold, #c9a84c)", fontSize: 16 }}
                   />
                   <div>
                     <div
@@ -535,11 +547,11 @@ export default function ProductPage() {
                       }}
                     >
                       Online: by{" "}
-                      <span style={{ color: "#C8400A" }}>
+                      <span style={{ color: "var(--sk-gold, #c9a84c)" }}>
                         {deliveryDate(4)}
                       </span>
                       &nbsp;·&nbsp; COD: by{" "}
-                      <span style={{ color: "#C8400A" }}>
+                      <span style={{ color: "var(--sk-gold, #c9a84c)" }}>
                         {deliveryDate(6)}
                       </span>
                     </div>
@@ -593,7 +605,7 @@ export default function ProductPage() {
                         padding: "14px 18px",
                         background: "rgba(200,64,10,0.04)",
                         borderRadius: 14,
-                        border: "1px solid rgba(200,64,10,0.08)",
+                        border: "1px solid rgba(201,168,76,0.1)",
                       }}
                     >
                       <div style={{ textAlign: "center" }}>
@@ -602,7 +614,7 @@ export default function ProductPage() {
                             fontFamily: "Playfair Display,serif",
                             fontWeight: 900,
                             fontSize: "2.4rem",
-                            color: "#C8400A",
+                            color: "var(--sk-gold, #c9a84c)",
                             lineHeight: 1,
                           }}
                         >
@@ -688,7 +700,7 @@ export default function ProductPage() {
                                 justifyContent: "center",
                                 fontWeight: 700,
                                 fontSize: "0.85rem",
-                                color: "#C8400A",
+                                color: "var(--sk-gold, #c9a84c)",
                                 flexShrink: 0,
                               }}
                             >
@@ -757,8 +769,8 @@ export default function ProductPage() {
                             style={{
                               padding: "9px 22px",
                               background: "#fff",
-                              color: "#C8400A",
-                              border: "1.5px solid #C8400A",
+                              color: "var(--sk-gold, #c9a84c)",
+                              border: "1.5px solid var(--sk-gold, #c9a84c)",
                               borderRadius: 50,
                               fontWeight: 700,
                               fontSize: "0.84rem",
@@ -798,7 +810,7 @@ export default function ProductPage() {
                   style={{
                     background: "rgba(200,64,10,0.03)",
                     borderRadius: 16,
-                    border: "1px solid rgba(200,64,10,0.08)",
+                    border: "1px solid rgba(201,168,76,0.1)",
                     padding: "20px 22px",
                   }}
                 >
@@ -916,7 +928,7 @@ export default function ProductPage() {
                       padding: "10px 28px",
                       background: reviewLoading
                         ? "#ccc"
-                        : "linear-gradient(135deg,#C8400A,#E86834)",
+                        : "linear-gradient(135deg,var(--sk-gold, #c9a84c),var(--sk-gold-bright, #e8c873))",
                       color: "white",
                       border: "none",
                       borderRadius: 50,

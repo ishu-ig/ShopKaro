@@ -193,23 +193,15 @@ export default function LoginPage() {
       <main className="auth-page">
         <section className="auth-card">
           {/* Brand */}
-          <Link className="auth-brand" to="/">
+          <Link className="auth-brand text-decoration-none" to="/">
             <span className="brand-icon">
-              <i className="bi bi-grid-1x2-fill" aria-hidden="true"></i>
+              <i className="bi bi-cart4" aria-hidden="true"></i>
             </span>
-            <span>
-              <strong>adminHMD</strong>
-              <small>Sign in to your admin workspace.</small>
+            <span className="text-start">
+              <strong className="d-block fs-5 text-body">ShopKaro</strong>
+              <small className="text-muted">Enterprise Admin Portal</small>
             </span>
           </Link>
-
-          {/* Hero image */}
-          <div className="auth-visual">
-            <img
-              src="/images/png/dasher-ui-bootstrap-5.jpg"
-              alt="adminHMD dashboard interface"
-            />
-          </div>
 
           {/* Form */}
           <form
@@ -217,50 +209,34 @@ export default function LoginPage() {
             noValidate
             onSubmit={handleSubmit}
           >
-            <div className="mb-4">
-              <p className="eyebrow mb-1">Secure Access</p>
-              <h1 className="h3 mb-1">Login</h1>
-              <p className="text-muted mb-0">
-                Sign in to your admin workspace.
+            <div className="mb-4 text-center">
+              <h2 className="h4 mb-1 fw-bold text-body">Welcome Back</h2>
+              <p className="text-muted small mb-0">
+                Sign in to manage products, orders, and store settings.
               </p>
             </div>
 
             {error && (
-              <div className="alert alert-danger py-2 mb-3" role="alert">
-                {error}
+              <div className="alert bg-danger-subtle text-danger border border-danger-subtle py-2.5 px-3 mb-3 d-flex align-items-center gap-2" role="alert">
+                <i className="bi bi-exclamation-triangle-fill"></i>
+                <div className="small fw-semibold">{error}</div>
               </div>
             )}
 
-            {/* Role selector */}
+            {/* Role selector segmented tabs */}
             <div className="mb-3">
-              <label className="form-label d-block">I am signing in as</label>
-              <div
-                className="btn-group w-100"
-                role="group"
-                aria-label="Account type"
-              >
+              <label className="form-label d-block text-muted small text-uppercase fw-bold letter-spacing-wide">Sign In As</label>
+              <div className="role-segmented-group">
                 {ROLE_OPTIONS.map((opt) => (
-                  <React.Fragment key={opt.value}>
-                    <input
-                      type="radio"
-                      className="btn-check"
-                      name="loginRole"
-                      id={`login-role-${opt.value}`}
-                      autoComplete="off"
-                      checked={role === opt.value}
-                      onChange={() => handleRoleChange(opt.value)}
-                    />
-                    <label
-                      className="btn btn-outline-primary"
-                      htmlFor={`login-role-${opt.value}`}
-                    >
-                      <i
-                        className={`bi ${opt.icon} me-1`}
-                        aria-hidden="true"
-                      ></i>
-                      {opt.label}
-                    </label>
-                  </React.Fragment>
+                  <button
+                    key={opt.value}
+                    type="button"
+                    className={`role-segmented-btn${role === opt.value ? " active" : ""}`}
+                    onClick={() => handleRoleChange(opt.value)}
+                  >
+                    <i className={`bi ${opt.icon}`}></i>
+                    <span>{opt.label}</span>
+                  </button>
                 ))}
               </div>
             </div>

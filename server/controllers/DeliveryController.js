@@ -73,9 +73,16 @@ async function createRecord(req, res) {
         }
         const hash = await bcrypt.hash(password, 12);
 
-        
+        let permanentLocation = req.body.permanentLocation;
+        if (typeof permanentLocation === "string") {
+            try {
+                permanentLocation = JSON.parse(permanentLocation);
+            } catch (e) {}
+        }
+
         const data = new DeliveryBoy({
             ...req.body,
+            permanentLocation: permanentLocation || undefined,
             password: hash,
             role: "DeliveryBoy"
         });

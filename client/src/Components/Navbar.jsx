@@ -1,16 +1,31 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { getCart } from "../Redux/ActionCreators/CartActionCreators";
+import { getWishlist } from "../Redux/ActionCreators/WishlistActionCreators";
 
 export default function Navbar() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [data, setData] = useState([]);
   const [scrolled, setScrolled] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const cartData = useSelector((state) => state.CartStateData) || [];
+  const wishlistData = useSelector((state) => state.WishlistStateData) || [];
+
+  const cartCount = Array.isArray(cartData) ? cartData.length : 0;
+  const wishlistCount = Array.isArray(wishlistData) ? wishlistData.length : 0;
 
   function logout() {
     localStorage.clear();
     navigate("/login");
   }
+
+  useEffect(() => {
+    dispatch(getCart());
+    dispatch(getWishlist());
+  }, [dispatch]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -21,19 +36,22 @@ export default function Navbar() {
   useEffect(() => {
     (async () => {
       try {
+        const userId = localStorage.getItem("userid");
+        const token = localStorage.getItem("token");
+        if (!userId || !token) return;
+
         let response = await fetch(
-          `${process.env.REACT_APP_BACKEND_SERVER}/api/user/${localStorage.getItem("userid")}`,
+          `${process.env.REACT_APP_BACKEND_SERVER}/api/user/${userId}`,
           {
             method: "GET",
             headers: {
               "content-Type": "application/json",
-              authorization: localStorage.getItem("token"),
+              authorization: token,
             },
           }
         );
         response = await response.json();
         if (response.result === "Done") setData(response.data);
-        else navigate("/login");
       } catch (error) {
         console.error("Error fetching user data:", error);
       }
@@ -54,11 +72,11 @@ export default function Navbar() {
 
   const dropdownLinks = [
     { to: "/profile", icon: "user", label: "My Profile" },
-    { to: "/address", icon: "shopping-cart", label: "Address" },
-    { to: "/cart", icon: "shopping-cart", label: "Cart" },
-    { to: "/order", icon: "list-alt", label: "Orders" },
-    // { to: "/checkout", icon: "credit-card", label: "Checkout" },
-    // { to: "/support", icon: "headphones", label: "Support" },
+    { to: "/address", icon: "map-marker-alt", label: "My Addresses" },
+    { to: "/cart", icon: "shopping-cart", label: `Cart (${cartCount})` },
+    { to: "/wishlist", icon: "heart", label: `Wishlist (${wishlistCount})` },
+    { to: "/order", icon: "box-open", label: "My Orders" },
+    { to: "/settings", icon: "cog", label: "Account Settings" },
   ];
 
   return (
@@ -167,15 +185,37 @@ export default function Navbar() {
         .sk-nav-link.active::after { opacity: 1; transform: scaleX(1); }
 
         .sk-icon-btn {
-          width: 38px; height: 38px; border-radius: 9px;
-          border: none; background: transparent;
+          width: 40px; height: 40px; border-radius: 10px;
+          border: 1px solid transparent; background: transparent;
           color: var(--sk-muted); cursor: pointer;
           display: inline-flex; align-items: center; justify-content: center;
-          font-size: 15px; transition: all .22s cubic-bezier(.4,0,.2,1); text-decoration: none;
+          font-size: 16px; transition: all .22s cubic-bezier(.4,0,.2,1); text-decoration: none;
+          position: relative;
         }
         .sk-icon-btn:hover {
           background: rgba(201,162,39,.14); color: var(--sk-gold-bright);
+          border-color: rgba(201,162,39,.25);
           transform: translateY(-1px);
+        }
+
+        .sk-nav-badge {
+          position: absolute;
+          top: -2px;
+          right: -2px;
+          min-width: 18px;
+          height: 18px;
+          padding: 0 4px;
+          background: linear-gradient(135deg, #c9a84c, #e8c873);
+          color: #070d14;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-size: 10px;
+          font-weight: 800;
+          line-height: 18px;
+          border-radius: 999px;
+          text-align: center;
+          box-shadow: 0 2px 8px rgba(201, 168, 76, 0.5);
+          animation: skBadgePop 0.3s ease-out;
+          border: 1.5px solid var(--sk-dark);
         }
 
         .sk-avatar {
@@ -431,11 +471,16 @@ export default function Navbar() {
 
             {/* Desktop Right Icons */}
             <div className="sk-nav-right-desktop d-none d-lg-flex align-items-center gap-2">
+              <Link to="/shop" className="sk-icon-btn" title="Search & Browse">
+                <i className="fa fa-search"></i>
+              </Link>
               <Link to="/wishlist" className="sk-icon-btn" title="Wishlist">
                 <i className="fa fa-heart"></i>
+                {wishlistCount > 0 && <span className="sk-nav-badge">{wishlistCount}</span>}
               </Link>
               <Link to="/cart" className="sk-icon-btn" title="Cart">
                 <i className="fa fa-shopping-cart"></i>
+                {cartCount > 0 && <span className="sk-nav-badge">{cartCount}</span>}
               </Link>
               <div className="dropdown">
                 <button className="btn p-0 border-0 bg-transparent dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown">
@@ -481,11 +526,16 @@ export default function Navbar() {
             <div className="sk-mobile-controls d-flex align-items-end gap-1">
               {/* Mobile quick icons (left of hamburger) */}
               <div className="sk-mobile-icons">
+                <Link to="/shop" className="sk-icon-btn" title="Search">
+                  <i className="fa fa-search"></i>
+                </Link>
                 <Link to="/wishlist" className="sk-icon-btn" title="Wishlist">
                   <i className="fa fa-heart"></i>
+                  {wishlistCount > 0 && <span className="sk-nav-badge">{wishlistCount}</span>}
                 </Link>
                 <Link to="/cart" className="sk-icon-btn" title="Cart">
                   <i className="fa fa-shopping-cart"></i>
+                  {cartCount > 0 && <span className="sk-nav-badge">{cartCount}</span>}
                 </Link>
               </div>
 

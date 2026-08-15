@@ -7,7 +7,7 @@ import imageValidator from '../FormValidator/imageValidator';
 const inputStyle = (hasError, show) => ({
   width: '100%',
   padding: '11px 16px',
-  border: `1.5px solid ${show && hasError ? '#f43f5e' : 'rgba(200,64,10,0.2)'}`,
+  border: `1.5px solid ${show && hasError ? '#f43f5e' : 'rgba(201,168,76,0.22)'}`,
   borderRadius: 12,
   fontSize: '0.9rem',
   color: '#1C1009',
@@ -162,7 +162,7 @@ export default function UpdateProfilePage() {
                 background: 'white',
                 borderRadius: 24,
                 boxShadow: '0 8px 40px rgba(28,16,9,0.1)',
-                border: '1px solid rgba(200,64,10,0.08)',
+                border: '1px solid rgba(201,168,76,0.1)',
                 overflow: 'hidden',
               }}>
 
@@ -248,8 +248,8 @@ export default function UpdateProfilePage() {
                         placeholder="e.g. Ishaan Gupta"
                         onChange={getInputData}
                         style={inputStyle(errorMessage.name, show)}
-                        onFocus={e => e.target.style.borderColor = '#C8400A'}
-                        onBlur={e => e.target.style.borderColor = show && errorMessage.name ? '#f43f5e' : 'rgba(200,64,10,0.2)'}
+                        onFocus={e => e.target.style.borderColor = 'var(--sk-gold, #c9a84c)'}
+                        onBlur={e => e.target.style.borderColor = show && errorMessage.name ? '#f43f5e' : 'rgba(201,168,76,0.22)'}
                       />
                       {show && errorMessage.name && (
                         <p style={errorStyle}><i className="fa fa-times-circle"></i>{errorMessage.name}</p>
@@ -264,8 +264,8 @@ export default function UpdateProfilePage() {
                         placeholder="e.g. 9876543210"
                         onChange={getInputData}
                         style={inputStyle(errorMessage.phone, show)}
-                        onFocus={e => e.target.style.borderColor = '#C8400A'}
-                        onBlur={e => e.target.style.borderColor = show && errorMessage.phone ? '#f43f5e' : 'rgba(200,64,10,0.2)'}
+                        onFocus={e => e.target.style.borderColor = 'var(--sk-gold, #c9a84c)'}
+                        onBlur={e => e.target.style.borderColor = show && errorMessage.phone ? '#f43f5e' : 'rgba(201,168,76,0.22)'}
                       />
                       {show && errorMessage.phone && (
                         <p style={errorStyle}><i className="fa fa-times-circle"></i>{errorMessage.phone}</p>
@@ -278,7 +278,7 @@ export default function UpdateProfilePage() {
                     <label style={labelStyle}>Profile Photo</label>
                     <div
                       style={{
-                        border: `1.5px dashed ${show && errorMessage.pic ? '#f43f5e' : 'rgba(200,64,10,0.3)'}`,
+                        border: `1.5px dashed ${show && errorMessage.pic ? '#f43f5e' : 'rgba(201,168,76,0.3)'}`,
                         borderRadius: 12,
                         padding: '10px 14px',
                         cursor: 'pointer',
@@ -290,7 +290,7 @@ export default function UpdateProfilePage() {
                       }}
                       onClick={() => fileInputRef.current?.click()}
                     >
-                      <i className="fa fa-cloud-upload-alt" style={{ color: '#C8400A', fontSize: '1.1rem' }}></i>
+                      <i className="fa fa-cloud-upload-alt" style={{ color: 'var(--sk-gold, #c9a84c)', fontSize: '1.1rem' }}></i>
                       <span style={{ fontSize: '0.83rem', color: '#7A6E65' }}>
                         {data.pic && typeof data.pic === 'object' ? data.pic.name : 'Click to upload photo'}
                       </span>
@@ -309,7 +309,7 @@ export default function UpdateProfilePage() {
                   </div>
 
                   {/* Divider */}
-                  <div style={{ height: 1, background: 'rgba(200,64,10,0.08)', marginBottom: 24 }} />
+                  <div style={{ height: 1, background: 'rgba(201,168,76,0.1)', marginBottom: 24 }} />
 
                   {/* Delivery addresses — read-only summary, managed on /address */}
                   <div style={{ marginBottom: 24 }}>
@@ -317,8 +317,8 @@ export default function UpdateProfilePage() {
                       <label style={{ ...labelStyle, marginBottom: 0 }}>Delivery Addresses</label>
                       {addressCount > 0 && (
                         <span style={{
-                          fontSize: '0.7rem', fontWeight: 700, color: '#C8400A',
-                          background: 'rgba(200,64,10,0.1)', padding: '3px 10px', borderRadius: 50,
+                          fontSize: '0.7rem', fontWeight: 700, color: 'var(--sk-gold, #c9a84c)',
+                          background: 'rgba(201,168,76,0.12)', padding: '3px 10px', borderRadius: 50,
                         }}>
                           {addressCount} saved
                         </span>
@@ -336,7 +336,7 @@ export default function UpdateProfilePage() {
                           </span>
                           <span style={{
                             fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase',
-                            color: '#C8400A', background: 'rgba(200,64,10,0.1)', padding: '2px 8px', borderRadius: 50,
+                            color: 'var(--sk-gold, #c9a84c)', background: 'rgba(201,168,76,0.12)', padding: '2px 8px', borderRadius: 50,
                           }}>
                             Default
                           </span>
@@ -357,12 +357,12 @@ export default function UpdateProfilePage() {
                         style={{
                           display: 'inline-flex', alignItems: 'center', gap: 8,
                           padding: '9px 18px', borderRadius: 50,
-                          border: '1.5px solid rgba(200,64,10,0.2)', color: '#7A6E65',
+                          border: '1.5px solid rgba(201,168,76,0.22)', color: '#7A6E65',
                           fontSize: '0.82rem', fontWeight: 700, textDecoration: 'none',
                           transition: 'all 0.2s',
                         }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = '#C8400A'; e.currentTarget.style.color = '#C8400A'; }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(200,64,10,0.2)'; e.currentTarget.style.color = '#7A6E65'; }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--sk-gold, #c9a84c)'; e.currentTarget.style.color = 'var(--sk-gold, #c9a84c)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.22)'; e.currentTarget.style.color = '#7A6E65'; }}
                       >
                         <i className="fa fa-plus" style={{ fontSize: 11 }}></i> Add address
                       </Link>
@@ -371,9 +371,9 @@ export default function UpdateProfilePage() {
                         style={{
                           display: 'inline-flex', alignItems: 'center', gap: 8,
                           padding: '9px 18px', borderRadius: 50,
-                          background: 'linear-gradient(135deg, #C8400A, #E86834)', color: '#fff',
+                          background: 'linear-gradient(135deg, var(--sk-gold, #c9a84c), var(--sk-gold-bright, #e8c873))', color: '#fff',
                           fontSize: '0.82rem', fontWeight: 700, textDecoration: 'none',
-                          boxShadow: '0 6px 16px rgba(200,64,10,0.25)',
+                          boxShadow: '0 6px 16px rgba(201,168,76,0.28)',
                         }}
                       >
                         <i className="fa fa-map-marker-alt" style={{ fontSize: 11 }}></i> Manage addresses
@@ -382,7 +382,7 @@ export default function UpdateProfilePage() {
                   </div>
 
                   {/* Divider */}
-                  <div style={{ height: 1, background: 'rgba(200,64,10,0.08)', marginBottom: 24 }} />
+                  <div style={{ height: 1, background: 'rgba(201,168,76,0.1)', marginBottom: 24 }} />
 
                   {/* Actions */}
                   <div className="d-flex gap-3">
@@ -393,7 +393,7 @@ export default function UpdateProfilePage() {
                         flex: 1,
                         padding: '13px 0',
                         background: 'transparent',
-                        border: '1.5px solid rgba(200,64,10,0.2)',
+                        border: '1.5px solid rgba(201,168,76,0.22)',
                         borderRadius: 50,
                         fontWeight: 700,
                         fontSize: '0.9rem',
@@ -402,8 +402,8 @@ export default function UpdateProfilePage() {
                         transition: 'all 0.2s',
                         fontFamily: 'DM Sans, sans-serif',
                       }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#C8400A'; e.currentTarget.style.color = '#C8400A'; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(200,64,10,0.2)'; e.currentTarget.style.color = '#7A6E65'; }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--sk-gold, #c9a84c)'; e.currentTarget.style.color = 'var(--sk-gold, #c9a84c)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.22)'; e.currentTarget.style.color = '#7A6E65'; }}
                     >
                       Cancel
                     </button>
@@ -413,7 +413,7 @@ export default function UpdateProfilePage() {
                       style={{
                         flex: 2,
                         padding: '13px 0',
-                        background: submitting ? '#aaa' : 'linear-gradient(135deg, #C8400A, #E86834)',
+                        background: submitting ? '#aaa' : 'linear-gradient(135deg, var(--sk-gold, #c9a84c), var(--sk-gold-bright, #e8c873))',
                         color: 'white',
                         border: 'none',
                         borderRadius: 50,
@@ -421,7 +421,7 @@ export default function UpdateProfilePage() {
                         fontSize: '0.9rem',
                         cursor: submitting ? 'not-allowed' : 'pointer',
                         transition: 'opacity 0.2s, transform 0.2s',
-                        boxShadow: submitting ? 'none' : '0 8px 20px rgba(200,64,10,0.25)',
+                        boxShadow: submitting ? 'none' : '0 8px 20px rgba(201,168,76,0.28)',
                         fontFamily: 'DM Sans, sans-serif',
                         display: 'flex',
                         alignItems: 'center',

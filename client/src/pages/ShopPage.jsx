@@ -244,14 +244,33 @@ export default function ShopPage() {
 
               {/* Toolbar - stacks vertically on mobile, row on md+ */}
               <div className="sk-toolbar d-flex flex-column flex-md-row gap-2 align-items-stretch align-items-md-center">
-                <form onSubmit={postSearch} className="sk-search-wrap w-100">
+                <form onSubmit={postSearch} className="sk-search-wrap w-100 position-relative">
                   <input
                     type="search"
-                    placeholder="Search products, brands, categories..."
+                    placeholder="Search luxury products, brands, categories..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     className="sk-search-input w-100"
                   />
+                  {search && (
+                    <button
+                      type="button"
+                      onClick={() => { setSearch(""); filter(mc, sc, br); }}
+                      style={{
+                        position: "absolute",
+                        right: 48,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        background: "none",
+                        border: "none",
+                        color: "#999",
+                        fontSize: 16,
+                        cursor: "pointer",
+                      }}
+                    >
+                      &times;
+                    </button>
+                  )}
                   <button type="submit" className="sk-search-btn">
                     <i className="fa fa-search"></i>
                   </button>
@@ -261,17 +280,44 @@ export default function ShopPage() {
                   className="sk-sort-select w-100"
                   style={{ maxWidth: '100%' }}
                 >
-                  <option value="1">Latest First</option>
-                  <option value="2">Price: High to Low</option>
-                  <option value="3">Price: Low to High</option>
+                  <option value="1">✨ Latest Arrivals</option>
+                  <option value="2">📈 Price: High to Low</option>
+                  <option value="3">📉 Price: Low to High</option>
                 </select>
+              </div>
+
+              {/* Quick price chips rail */}
+              <div className="sk-quick-price-bar px-1">
+                <span className="sk-quick-price-label">
+                  <i className="fa fa-sliders-h" style={{ fontSize: 10, color: "#c9a84c" }} /> Quick Price:
+                </span>
+                {[
+                  { label: "All", minV: 0, maxV: 100000 },
+                  { label: "Under ₹1,000", minV: 0, maxV: 1000 },
+                  { label: "₹1,000 - ₹3,000", minV: 1000, maxV: 3000 },
+                  { label: "₹3,000 - ₹10,000", minV: 3000, maxV: 10000 },
+                  { label: "₹10,000+", minV: 10000, maxV: 100000 },
+                ].map(p => {
+                  const isActive = min === p.minV && max === p.maxV;
+                  return (
+                    <button
+                      key={p.label}
+                      type="button"
+                      onClick={() => { setMin(p.minV); setMax(p.maxV); filter(mc, sc, br, p.minV, p.maxV); }}
+                      className={`sk-quick-price-chip ${isActive ? "active" : ""}`}
+                    >
+                      {isActive && <i className="fa fa-check me-1" style={{ fontSize: 9 }} />}
+                      {p.label}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Results count + Active filter tags */}
               <div className="d-flex flex-wrap align-items-center gap-2 mb-0 px-1 mt-2">
-                {/* <span className="sk-results-count">
-                  Showing <strong>{Math.min(data.length, 21)}</strong> of <strong>{data.length}</strong> products
-                </span> */}
+                <span style={{ fontSize: "0.82rem", color: "#6e685f" }}>
+                  Showing <strong style={{ color: "#0d1b2a" }}>{data.length}</strong> items
+                </span>
 
                 {mc !== "All" && (
                   <span className="sk-active-filter">
@@ -314,13 +360,72 @@ export default function ShopPage() {
                     ₹{min} – ₹{max}
                     <button
                       className="sk-active-filter-remove"
-                      onClick={() => { setMin(0); setMax(100000); filter(mc, sc, br); }}
+                      onClick={() => { setMin(0); setMax(100000); filter(mc, sc, br, -1, -1); }}
                     >×</button>
                   </span>
                 )}
               </div>
 
-              <Product title="Shop" data={data} />
+              {data.length === 0 ? (
+                <div
+                  className="text-center py-5 my-4"
+                  style={{
+                    background: "#ffffff",
+                    borderRadius: 16,
+                    border: "1px solid #e8e0d0",
+                    padding: "48px 24px",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 64,
+                      height: 64,
+                      borderRadius: "50%",
+                      background: "rgba(201,168,76,0.12)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginBottom: 16,
+                      color: "#c9a84c",
+                      fontSize: 24,
+                    }}
+                  >
+                    <i className="fa fa-search"></i>
+                  </div>
+                  <h4 style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, color: "#0d1b2a" }}>
+                    No Products Found
+                  </h4>
+                  <p style={{ color: "#777", maxWidth: 400, margin: "0 auto 20px", fontSize: "0.9rem" }}>
+                    We couldn't find any products matching your current search or filter criteria.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMc("All");
+                      setSc("All");
+                      setBr("All");
+                      setSearch("");
+                      setMin(0);
+                      setMax(100000);
+                      setData(ProductStateData.filter(x => x.active));
+                    }}
+                    className="btn px-4 py-2 rounded-pill"
+                    style={{
+                      background: "linear-gradient(135deg, #c9a84c, #e8c873)",
+                      color: "#070d14",
+                      fontWeight: 700,
+                      fontSize: "0.85rem",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      border: "none",
+                    }}
+                  >
+                    Reset All Filters
+                  </button>
+                </div>
+              ) : (
+                <Product title="Shop" data={data} />
+              )}
             </div>
           </div>
         </div>

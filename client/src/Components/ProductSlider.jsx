@@ -53,7 +53,7 @@ export default function ProductSlider({ title, data }) {
     <>
       <style>{`
         .ps-section {
-          padding: 48px 0;
+          padding: 56px 0;
         }
 
         .ps-header {
@@ -66,25 +66,25 @@ export default function ProductSlider({ title, data }) {
         }
 
         .ps-eyebrow {
-          font-size: 0.7rem;
+          font-size: 0.72rem;
           font-weight: 700;
-          letter-spacing: 0.28em;
+          letter-spacing: 0.25em;
           text-transform: uppercase;
-          color: #C8400A;
+          color: #c9a84c;
           margin-bottom: 6px;
         }
 
         .ps-heading {
           font-family: "Playfair Display", serif;
           font-weight: 800;
-          font-size: clamp(1.5rem, 3vw, 2.1rem);
-          color: #1C1009;
+          font-size: clamp(1.6rem, 3.2vw, 2.3rem);
+          color: #0d1b2a;
           margin: 0;
         }
 
         .ps-heading em {
           font-style: italic;
-          color: #C8400A;
+          color: #c9a84c;
         }
 
         .ps-view-all {
@@ -93,22 +93,22 @@ export default function ProductSlider({ title, data }) {
           gap: 6px;
           font-size: 0.85rem;
           font-weight: 700;
-          color: #1C1009;
+          color: #0d1b2a;
           text-decoration: none;
-          border-bottom: 1.5px solid #C9A84C;
+          border-bottom: 1.5px solid #c9a84c;
           padding-bottom: 3px;
           white-space: nowrap;
           transition: color 0.2s ease, gap 0.2s ease;
         }
 
         .ps-view-all:hover {
-          color: #C8400A;
+          color: #c9a84c;
           gap: 9px;
         }
 
         .ps-swiper-wrap {
           position: relative;
-          padding: 0 4px 8px;
+          padding: 0 4px 12px;
         }
 
         .ps-card,
@@ -187,28 +187,30 @@ export default function ProductSlider({ title, data }) {
           position: absolute;
           top: 10px;
           left: 10px;
-          background: #C8400A;
-          color: #fff;
+          background: linear-gradient(135deg, #c9a84c, #b38b29);
+          color: #070d14;
           font-size: 0.68rem;
-          font-weight: 700;
+          font-weight: 800;
           padding: 4px 9px;
-          border-radius: 999px;
-          letter-spacing: 0.02em;
+          border-radius: 6px;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
           z-index: 2;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.18);
         }
 
         .ps-rating {
           position: absolute;
           top: 10px;
           right: 10px;
-          background: rgba(28,16,9,0.75);
-          color: #E8B85C;
+          background: rgba(13,27,42,0.85);
+          color: #e8c873;
           font-size: 0.7rem;
           font-weight: 700;
           padding: 4px 8px;
           border-radius: 999px;
           z-index: 2;
-          backdrop-filter: blur(2px);
+          backdrop-filter: blur(4px);
         }
 
         /* Desktop hover overlay */
@@ -219,7 +221,7 @@ export default function ProductSlider({ title, data }) {
           flex-direction: column;
           gap: 8px;
           padding: 14px 12px 12px;
-          background: linear-gradient(to top, rgba(28,16,9,0.85), transparent);
+          background: linear-gradient(to top, rgba(13,27,42,0.92), transparent);
           transform: translateY(12px);
           opacity: 0;
           transition: opacity 0.25s ease, transform 0.25s ease;
@@ -241,21 +243,22 @@ export default function ProductSlider({ title, data }) {
           padding: 8px 10px;
           border-radius: 8px;
           text-decoration: none;
-          transition: opacity 0.2s ease;
+          transition: all 0.2s ease;
         }
 
         .ps-overlay-btn:hover {
-          opacity: 0.88;
+          opacity: 0.95;
+          transform: scale(1.02);
         }
 
         .ps-overlay-btn.primary {
-          background: #C8400A;
-          color: #fff;
+          background: linear-gradient(135deg, #c9a84c, #e8c873);
+          color: #070d14;
         }
 
         .ps-overlay-btn.secondary {
-          background: rgba(255,255,255,0.92);
-          color: #1C1009;
+          background: rgba(255,255,255,0.95);
+          color: #0d1b2a;
         }
 
         .ps-body {
@@ -303,7 +306,7 @@ export default function ProductSlider({ title, data }) {
         }
 
         /* Mobile-only quick action, since hover overlays don't work on touch */
-        .ps-mobile-cta {
+        .ps-mobile-btn {
           display: none;
         }
 
@@ -339,49 +342,61 @@ export default function ProductSlider({ title, data }) {
             margin-bottom: 18px;
           }
 
+          .ps-body {
+            padding: 10px 10px 14px;
+          }
+
+          .ps-name {
+            font-size: 0.82rem;
+            margin-bottom: 4px;
+          }
+
+          .ps-final {
+            font-size: 0.94rem;
+          }
+
           .ps-overlay {
             display: none;
           }
 
-          .ps-mobile-cta {
+          .ps-mobile-btn {
             display: flex;
-            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
             margin-top: 10px;
-          }
-
-          .ps-mobile-cta a {
-            flex: 1;
-            text-align: center;
-            font-size: 0.76rem;
+            padding: 7px 10px;
+            background: linear-gradient(135deg, #c9a84c, #e8c873);
+            color: #070d14;
+            font-size: 0.74rem;
             font-weight: 700;
-            padding: 8px 6px;
-            border-radius: 8px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            border-radius: 50px;
             text-decoration: none;
+            box-shadow: 0 3px 10px rgba(201,168,76,0.25);
+            transition: all 0.2s ease;
           }
 
-          .ps-mobile-cta .primary {
-            background: #C8400A;
-            color: #fff;
-          }
-
-          .ps-mobile-cta .secondary {
-            background: #f4efe9;
-            color: #1C1009;
+          .ps-mobile-btn:active {
+            transform: scale(0.97);
+            background: #c9a84c;
           }
 
           .ps-swiper-wrap .swiper-button-next,
           .ps-swiper-wrap .swiper-button-prev {
-            width: 30px;
-            height: 30px;
+            width: 28px;
+            height: 28px;
           }
 
           .ps-swiper-wrap .swiper-button-next::after,
           .ps-swiper-wrap .swiper-button-prev::after {
-            font-size: 10px;
+            font-size: 9px;
           }
         }
 
-        @media (max-width: 400px) {
+        @media (max-width: 480px) {
           .ps-swiper-wrap .swiper-button-next,
           .ps-swiper-wrap .swiper-button-prev {
             display: none;
@@ -407,18 +422,17 @@ export default function ProductSlider({ title, data }) {
           <div className="ps-swiper-wrap">
             <Swiper
               className="ps-swiper"
-              slidesPerView={1.2}
-              spaceBetween={16}
-              loop={data.length > 4}
+              spaceBetween={10}
+              loop={true}
               modules={[Autoplay, Navigation]}
               navigation={true}
               autoplay={{ delay: 2800, disableOnInteraction: false }}
               grabCursor={true}
               breakpoints={{
-                480: { slidesPerView: 1.6, spaceBetween: 16 },
-                576: { slidesPerView: 2.2, spaceBetween: 18 },
-                768: { slidesPerView: 2.6, spaceBetween: 18 },
-                1024: { slidesPerView: 3.4, spaceBetween: 20 },
+                0: { slidesPerView: 2, spaceBetween: 10 },
+                480: { slidesPerView: 2.2, spaceBetween: 12 },
+                768: { slidesPerView: 3, spaceBetween: 16 },
+                1024: { slidesPerView: 4, spaceBetween: 20 },
                 1280: { slidesPerView: 4, spaceBetween: 20 },
               }}
             >
@@ -444,17 +458,17 @@ export default function ProductSlider({ title, data }) {
                           ★ {item.rating || "4.5"}
                         </span>
                         <div className="ps-overlay">
-                          <Link to={`/cart/${item._id}`} className="ps-overlay-btn text-center py-2 primary">
-                            <i className="fa fa-shopping-cart" style={{ fontSize: 12 }} />
-                            Add to Cart
-                          </Link>
-                          <Link to={`/product/${item._id}`} className="ps-overlay-btn secondary text-center py-2">
-                            View Details
+                          <Link to={`/product/${item._id}`} className="ps-overlay-btn primary text-center py-2">
+                            View Details <i className="fa fa-arrow-right ms-1" style={{ fontSize: 11 }} />
                           </Link>
                         </div>
                       </div>
                       <div className="ps-body">
-                        <h5 className="ps-name">{item.name}</h5>
+                        <h5 className="ps-name">
+                          <Link to={`/product/${item._id}`} style={{ color: "inherit", textDecoration: "none" }}>
+                            {item.name}
+                          </Link>
+                        </h5>
                         <div className="ps-pricing">
                           <span className="ps-final">₹{finalPrice?.toLocaleString()}</span>
                           {basePrice > finalPrice && (
@@ -464,14 +478,10 @@ export default function ProductSlider({ title, data }) {
                             <span className="ps-discount">Save {item.discount}%</span>
                           )}
                         </div>
-                        <div className="ps-mobile-cta">
-                          <Link to={`/cart/${item._id}`} className="primary">
-                            Add to Cart
-                          </Link>
-                          <Link to={`/product/${item._id}`} className="secondary">
-                            View
-                          </Link>
-                        </div>
+                        <Link to={`/product/${item._id}`} className="ps-mobile-btn">
+                          <span>View Details</span>
+                          <i className="fa fa-arrow-right" style={{ fontSize: 10 }} />
+                        </Link>
                       </div>
                     </div>
                   </SwiperSlide>

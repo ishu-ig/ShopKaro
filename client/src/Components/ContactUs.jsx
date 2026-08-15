@@ -4,7 +4,7 @@ import formValidator from "../FormValidator/formValidator";
 import { createContactUs } from "../Redux/ActionCreators/ContactUsActionCreators";
 
 const CONTACT_CARDS = [
-  { icon: "fa-map-marker-alt", label: "Address",   value: "A-43 Sector-16, Noida",  href: "https://www.google.com/maps?q=A-43+Sector-16+Noida", color: '#C8400A' },
+  { icon: "fa-map-marker-alt", label: "Address",   value: "A-43 Sector-16, Noida",  href: "https://www.google.com/maps?q=A-43+Sector-16+Noida", color: 'var(--sk-gold, #c9a84c)' },
   { icon: "fa-phone-alt",      label: "Call Us",   value: "+012 3456 7890",          href: "tel:+0123456789",                                    color: '#2563eb' },
   { icon: "fa-envelope",       label: "Email Us",  value: "info@example.com",        href: "mailto:info@example.com",                            color: '#059669' },
   { icon: "fa-whatsapp fab",   label: "WhatsApp",  value: "+91-8218635347",          href: "https://wa.me/918218635347",                         color: '#25d366' },
@@ -63,7 +63,7 @@ export default function ContactUs() {
 
         {/* Section heading */}
         <div className="text-center mb-5">
-          <p style={{ fontSize:'0.78rem', fontWeight:700, letterSpacing:'0.15em', color:'#C8400A', textTransform:'uppercase', marginBottom:8 }}>Reach Out</p>
+          <p style={{ fontSize:'0.78rem', fontWeight:700, letterSpacing:'0.15em', color:'var(--sk-gold, #c9a84c)', textTransform:'uppercase', marginBottom:8 }}>Reach Out</p>
           <h2 style={{ fontFamily:'Playfair Display,serif', fontSize:'clamp(1.8rem,3.5vw,2.6rem)', fontWeight:900, color:'#1C1009', marginBottom:12 }}>
             Contact Us
           </h2>
@@ -71,7 +71,7 @@ export default function ContactUs() {
             Have a question, suggestion, or just want to say hello? We'd love to hear from you.
           </p>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, marginTop:16 }}>
-            <span style={{ width:36, height:3, background:'#C8400A', borderRadius:2, display:'block' }} />
+            <span style={{ width:36, height:3, background:'var(--sk-gold, #c9a84c)', borderRadius:2, display:'block' }} />
             <span style={{ width:8, height:8, borderRadius:'50%', background:'#F4A044', display:'block' }} />
             <span style={{ width:56, height:3, background:'#F4A044', borderRadius:2, display:'block', opacity:0.5 }} />
           </div>
@@ -82,7 +82,7 @@ export default function ContactUs() {
           {CONTACT_CARDS.map(({ icon, label, value, href, color }) => (
             <div key={label} className="col-md-6 col-lg-3">
               <a href={href} target="_blank" rel="noreferrer" style={{ textDecoration:'none', display:'block' }}>
-                <div style={{ background:'white', borderRadius:16, padding:'20px 20px', border:'1px solid rgba(200,64,10,0.08)', boxShadow:'0 2px 12px rgba(28,16,9,0.06)', transition:'all 0.3s', display:'flex', alignItems:'center', gap:14 }}
+                <div style={{ background:'white', borderRadius:16, padding:'20px 20px', border:'1px solid rgba(201,168,76,0.1)', boxShadow:'0 2px 12px rgba(28,16,9,0.06)', transition:'all 0.3s', display:'flex', alignItems:'center', gap:14 }}
                   onMouseEnter={e => { e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.boxShadow='0 12px 30px rgba(28,16,9,0.12)'; }}
                   onMouseLeave={e => { e.currentTarget.style.transform=''; e.currentTarget.style.boxShadow='0 2px 12px rgba(28,16,9,0.06)'; }}
                 >
@@ -104,7 +104,7 @@ export default function ContactUs() {
 
           {/* Map */}
           <div className="col-lg-6">
-            <div style={{ borderRadius:20, overflow:'hidden', height:'100%', minHeight:420, boxShadow:'0 4px 24px rgba(28,16,9,0.1)', border:'1px solid rgba(200,64,10,0.08)' }}>
+            <div style={{ borderRadius:20, overflow:'hidden', height:'100%', minHeight:420, boxShadow:'0 4px 24px rgba(28,16,9,0.1)', border:'1px solid rgba(201,168,76,0.1)' }}>
               <iframe
                 width="100%" height="100%" title="map"
                 src="https://maps.google.com/maps?q=A-43%20Sector-16%20Noida&t=&z=13&ie=UTF8&iwloc=&output=embed"
@@ -116,7 +116,7 @@ export default function ContactUs() {
 
           {/* Form */}
           <div className="col-lg-6">
-            <div style={{ background:'white', borderRadius:20, padding:'32px 28px', boxShadow:'0 4px 24px rgba(28,16,9,0.08)', border:'1px solid rgba(200,64,10,0.08)', height:'100%', boxSizing:'border-box' }}>
+            <div style={{ background:'white', borderRadius:20, padding:'32px 28px', boxShadow:'0 4px 24px rgba(28,16,9,0.08)', border:'1px solid rgba(201,168,76,0.1)', height:'100%', boxSizing:'border-box' }}>
 
               {/* Form header */}
               <div style={{ marginBottom:24 }}>
@@ -145,7 +145,7 @@ export default function ContactUs() {
                         onChange={getInputData}
                         placeholder={placeholder}
                         style={inputBase(show && errorMessage[name])}
-                        onFocus={e => { e.target.style.borderColor='#C8400A'; e.target.style.boxShadow='0 0 0 3px rgba(200,64,10,0.08)'; }}
+                        onFocus={e => { e.target.style.borderColor='var(--sk-gold, #c9a84c)'; e.target.style.boxShadow='0 0 0 3px rgba(201,168,76,0.1)'; }}
                         onBlur={e => { e.target.style.borderColor = show && errorMessage[name] ? 'rgba(244,63,94,0.5)' : 'rgba(200,64,10,0.15)'; e.target.style.boxShadow='none'; }}
                       />
                       {show && errorMessage[name] && (
@@ -162,7 +162,7 @@ export default function ContactUs() {
                       onChange={getInputData}
                       placeholder="Your message…"
                       style={{ ...inputBase(show && errorMessage.message), resize:'vertical', lineHeight:1.65 }}
-                      onFocus={e => { e.target.style.borderColor='#C8400A'; e.target.style.boxShadow='0 0 0 3px rgba(200,64,10,0.08)'; }}
+                      onFocus={e => { e.target.style.borderColor='var(--sk-gold, #c9a84c)'; e.target.style.boxShadow='0 0 0 3px rgba(201,168,76,0.1)'; }}
                       onBlur={e => { e.target.style.borderColor = show && errorMessage.message ? 'rgba(244,63,94,0.5)' : 'rgba(200,64,10,0.15)'; e.target.style.boxShadow='none'; }}
                     />
                     {show && errorMessage.message && (
@@ -175,7 +175,7 @@ export default function ContactUs() {
                   <div className="col-12">
                     <button
                       type="submit"
-                      style={{ width:'100%', padding:'13px 0', background:'linear-gradient(135deg,#C8400A,#E86834)', color:'white', border:'none', borderRadius:50, fontWeight:700, fontSize:'0.92rem', cursor:'pointer', transition:'all 0.25s', boxShadow:'0 8px 20px rgba(200,64,10,0.25)', letterSpacing:'0.03em', fontFamily:'DM Sans,sans-serif', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}
+                      style={{ width:'100%', padding:'13px 0', background:'linear-gradient(135deg,var(--sk-gold, #c9a84c),var(--sk-gold-bright, #e8c873))', color:'white', border:'none', borderRadius:50, fontWeight:700, fontSize:'0.92rem', cursor:'pointer', transition:'all 0.25s', boxShadow:'0 8px 20px rgba(201,168,76,0.28)', letterSpacing:'0.03em', fontFamily:'DM Sans,sans-serif', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}
                       onMouseEnter={e => { e.currentTarget.style.opacity='0.9'; e.currentTarget.style.transform='translateY(-2px)'; }}
                       onMouseLeave={e => { e.currentTarget.style.opacity='1'; e.currentTarget.style.transform=''; }}
                     >

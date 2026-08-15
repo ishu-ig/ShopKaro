@@ -11,7 +11,7 @@ export default function ConfirmationPage() {
         background: 'white',
         borderRadius: 24,
         boxShadow: '0 8px 48px rgba(28,16,9,0.12)',
-        border: '1px solid rgba(200,64,10,0.08)',
+        border: '1px solid rgba(201,168,76,0.1)',
         padding: 'clamp(32px,6vw,56px) clamp(24px,6vw,52px)',
         maxWidth: 520,
         width: '100%',
@@ -28,7 +28,7 @@ export default function ConfirmationPage() {
 
         {/* Decorative line */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 20 }}>
-          <span style={{ width: 36, height: 3, background: '#C8400A', borderRadius: 2, display: 'block' }} />
+          <span style={{ width: 36, height: 3, background: 'var(--sk-gold, #c9a84c)', borderRadius: 2, display: 'block' }} />
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#F4A044', display: 'block' }} />
           <span style={{ width: 56, height: 3, background: '#F4A044', borderRadius: 2, display: 'block', opacity: 0.5 }} />
         </div>
@@ -52,16 +52,16 @@ export default function ConfirmationPage() {
         {/* Action buttons */}
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link to="/order"
-            style={{ padding: '12px 28px', background: 'linear-gradient(135deg,#C8400A,#E86834)', color: 'white', textDecoration: 'none', borderRadius: 50, fontWeight: 700, fontSize: '0.88rem', boxShadow: '0 8px 18px rgba(200,64,10,0.25)', transition: 'opacity 0.2s,transform 0.2s', display: 'flex', alignItems: 'center', gap: 8 }}
+            style={{ padding: '12px 28px', background: 'linear-gradient(135deg,var(--sk-gold, #c9a84c),var(--sk-gold-bright, #e8c873))', color: 'white', textDecoration: 'none', borderRadius: 50, fontWeight: 700, fontSize: '0.88rem', boxShadow: '0 8px 18px rgba(201,168,76,0.28)', transition: 'opacity 0.2s,transform 0.2s', display: 'flex', alignItems: 'center', gap: 8 }}
             onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
             onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = ''; }}
           >
             <i className="fa fa-box" style={{ fontSize: '0.8rem' }}></i> My Orders
           </Link>
           <Link to="/shop"
-            style={{ padding: '12px 28px', background: 'transparent', border: '1.5px solid rgba(200,64,10,0.3)', color: '#C8400A', textDecoration: 'none', borderRadius: 50, fontWeight: 700, fontSize: '0.88rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 8 }}
-            onMouseEnter={e => { e.currentTarget.style.background = '#C8400A'; e.currentTarget.style.color = 'white'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#C8400A'; }}
+            style={{ padding: '12px 28px', background: 'transparent', border: '1.5px solid rgba(201,168,76,0.3)', color: 'var(--sk-gold, #c9a84c)', textDecoration: 'none', borderRadius: 50, fontWeight: 700, fontSize: '0.88rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 8 }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--sk-gold, #c9a84c)'; e.currentTarget.style.color = 'white'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--sk-gold, #c9a84c)'; }}
           >
             <i className="fa fa-shopping-bag" style={{ fontSize: '0.8rem' }}></i> Shop More
           </Link>

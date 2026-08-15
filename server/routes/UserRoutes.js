@@ -24,7 +24,7 @@ const {
 } = require("../controllers/UserController");
 
 // Public routes
-UserRouter.post("/", createRecord);
+UserRouter.post("/", userUploader.single("pic"), createRecord);
 UserRouter.post("/login", login);
 
 UserRouter.post("/forgetPassword-1", forgetPassword1);

@@ -67,7 +67,7 @@ function Card({ icon, title, children, delay = ".1s" }) {
       style={{
         background: "white",
         borderRadius: 20,
-        border: "1px solid rgba(200,64,10,0.08)",
+        border: "1px solid rgba(201,168,76,0.1)",
         boxShadow: "0 2px 16px rgba(28,16,9,0.07)",
         marginBottom: 20,
         overflow: "hidden",
@@ -76,7 +76,7 @@ function Card({ icon, title, children, delay = ".1s" }) {
       <div
         style={{
           padding: "16px 24px",
-          borderBottom: "1px solid rgba(200,64,10,0.08)",
+          borderBottom: "1px solid rgba(201,168,76,0.1)",
           background: "#FFFBF7",
           display: "flex",
           alignItems: "center",
@@ -88,11 +88,11 @@ function Card({ icon, title, children, delay = ".1s" }) {
             width: 34,
             height: 34,
             borderRadius: 10,
-            background: "rgba(200,64,10,0.08)",
+            background: "rgba(201,168,76,0.1)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#C8400A",
+            color: "var(--sk-gold, #c9a84c)",
             flexShrink: 0,
           }}
         >
@@ -184,7 +184,7 @@ export default function OrderDetailPage() {
             width: 44,
             height: 44,
             border: "3px solid rgba(200,64,10,0.15)",
-            borderTopColor: "#C8400A",
+            borderTopColor: "var(--sk-gold, #c9a84c)",
             borderRadius: "50%",
             animation: "spin 0.8s linear infinite",
           }}
@@ -204,7 +204,7 @@ export default function OrderDetailPage() {
     ? { bg: "rgba(16,185,129,0.1)", color: "#059669" }
     : isCancelled
     ? { bg: "rgba(244,63,94,0.1)", color: "#e11d48" }
-    : { bg: "rgba(200,64,10,0.1)", color: "#C8400A" };
+    : { bg: "rgba(201,168,76,0.12)", color: "var(--sk-gold, #c9a84c)" };
 
   return (
     <div
@@ -234,7 +234,7 @@ export default function OrderDetailPage() {
                 fontSize: "0.72rem",
                 fontWeight: 700,
                 letterSpacing: "0.14em",
-                color: "#C8400A",
+                color: "var(--sk-gold, #c9a84c)",
                 textTransform: "uppercase",
                 marginBottom: 4,
               }}
@@ -396,7 +396,7 @@ export default function OrderDetailPage() {
                   left: "5%",
                   right: "5%",
                   height: 2,
-                  background: "rgba(200,64,10,0.1)",
+                  background: "rgba(201,168,76,0.12)",
                   zIndex: 0,
                 }}
               />
@@ -411,7 +411,7 @@ export default function OrderDetailPage() {
                       ? `${(currentIndex / (STATUS_STEPS.length - 1)) * 90}%`
                       : "0%",
                   height: 2,
-                  background: "linear-gradient(90deg,#C8400A,#E86834)",
+                  background: "linear-gradient(90deg,var(--sk-gold, #c9a84c),var(--sk-gold-bright, #e8c873))",
                   zIndex: 1,
                   transition: "width 0.6s ease",
                 }}
@@ -439,17 +439,17 @@ export default function OrderDetailPage() {
                         height: 36,
                         borderRadius: "50%",
                         background: done
-                          ? "linear-gradient(135deg,#C8400A,#E86834)"
+                          ? "linear-gradient(135deg,var(--sk-gold, #c9a84c),var(--sk-gold-bright, #e8c873))"
                           : "white",
                         border: done
                           ? "none"
                           : current
-                          ? "2.5px solid #C8400A"
-                          : "2px solid rgba(200,64,10,0.2)",
+                          ? "2.5px solid var(--sk-gold, #c9a84c)"
+                          : "2px solid rgba(201,168,76,0.22)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        color: done ? "white" : current ? "#C8400A" : "#ccc",
+                        color: done ? "white" : current ? "var(--sk-gold, #c9a84c)" : "#ccc",
                         fontSize: "0.8rem",
                         boxShadow: current
                           ? "0 0 0 4px rgba(200,64,10,0.12)"
@@ -465,7 +465,7 @@ export default function OrderDetailPage() {
                       style={{
                         fontSize: "0.68rem",
                         fontWeight: current || done ? 700 : 500,
-                        color: done ? "#C8400A" : current ? "#C8400A" : "#aaa",
+                        color: done ? "var(--sk-gold, #c9a84c)" : current ? "var(--sk-gold, #c9a84c)" : "#aaa",
                         marginTop: 8,
                         textAlign: "center",
                         lineHeight: 1.3,
@@ -559,14 +559,14 @@ export default function OrderDetailPage() {
                     width: 56,
                     height: 56,
                     borderRadius: "50%",
-                    background: "linear-gradient(135deg,#C8400A,#E86834)",
+                    background: "linear-gradient(135deg,var(--sk-gold, #c9a84c),var(--sk-gold-bright, #e8c873))",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     color: "white",
                     fontSize: 22,
                     flexShrink: 0,
-                    boxShadow: "0 4px 14px rgba(200,64,10,0.25)",
+                    boxShadow: "0 4px 14px rgba(201,168,76,0.28)",
                   }}
                 >
                   <i className="fa fa-user"></i>
@@ -594,7 +594,7 @@ export default function OrderDetailPage() {
                           gap: 6,
                           fontSize: "0.82rem",
                           fontWeight: 600,
-                          color: "#C8400A",
+                          color: "var(--sk-gold, #c9a84c)",
                           textDecoration: "none",
                         }}
                       >
@@ -641,9 +641,9 @@ export default function OrderDetailPage() {
                       background:
                         order.orderStatus === "Delivered"
                           ? "rgba(16,185,129,0.1)"
-                          : "rgba(200,64,10,0.08)",
+                          : "rgba(201,168,76,0.1)",
                       color:
-                        order.orderStatus === "Delivered" ? "#059669" : "#C8400A",
+                        order.orderStatus === "Delivered" ? "#059669" : "var(--sk-gold, #c9a84c)",
                       borderRadius: 50,
                       padding: "6px 16px",
                       fontSize: "0.75rem",
@@ -691,8 +691,8 @@ export default function OrderDetailPage() {
                       transition: "background 0.2s, border-color 0.2s",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "rgba(200,64,10,0.08)";
-                      e.currentTarget.style.borderColor = "rgba(200,64,10,0.2)";
+                      e.currentTarget.style.background = "rgba(201,168,76,0.1)";
+                      e.currentTarget.style.borderColor = "rgba(201,168,76,0.22)";
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = "rgba(200,64,10,0.03)";
@@ -734,11 +734,11 @@ export default function OrderDetailPage() {
                           width: 52,
                           height: 52,
                           borderRadius: 10,
-                          background: "rgba(200,64,10,0.08)",
+                          background: "rgba(201,168,76,0.1)",
                           display: prod.variant?.pic?.[0] ? "none" : "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          color: "#C8400A",
+                          color: "var(--sk-gold, #c9a84c)",
                           flexShrink: 0,
                         }}
                       >
@@ -762,7 +762,7 @@ export default function OrderDetailPage() {
                         <div
                           style={{
                             fontSize: "0.7rem",
-                            color: "#C8400A",
+                            color: "var(--sk-gold, #c9a84c)",
                             marginTop: 3,
                             display: "flex",
                             alignItems: "center",
@@ -850,7 +850,7 @@ export default function OrderDetailPage() {
                             fontFamily: "Playfair Display,serif",
                             fontWeight: 900,
                             fontSize: "1rem",
-                            color: "#C8400A",
+                            color: "var(--sk-gold, #c9a84c)",
                           }}
                         >
                           ₹{prod.total?.toLocaleString()}
@@ -880,7 +880,7 @@ export default function OrderDetailPage() {
           style={{
             background: "white",
             borderRadius: 20,
-            border: "1px solid rgba(200,64,10,0.08)",
+            border: "1px solid rgba(201,168,76,0.1)",
             boxShadow: "0 2px 16px rgba(28,16,9,0.07)",
             padding: "20px 24px",
             display: "flex",
@@ -908,7 +908,7 @@ export default function OrderDetailPage() {
                 fontFamily: "Playfair Display,serif",
                 fontWeight: 900,
                 fontSize: "1.6rem",
-                color: "#C8400A",
+                color: "var(--sk-gold, #c9a84c)",
               }}
             >
               ₹{order.total?.toLocaleString()}
@@ -973,8 +973,8 @@ export default function OrderDetailPage() {
               style={{
                 padding: "10px 22px",
                 background: "transparent",
-                border: "1.5px solid rgba(200,64,10,0.3)",
-                color: "#C8400A",
+                border: "1.5px solid rgba(201,168,76,0.3)",
+                color: "var(--sk-gold, #c9a84c)",
                 borderRadius: 50,
                 fontWeight: 700,
                 fontSize: "0.85rem",
@@ -985,12 +985,12 @@ export default function OrderDetailPage() {
                 gap: 8,
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#C8400A";
+                e.currentTarget.style.background = "var(--sk-gold, #c9a84c)";
                 e.currentTarget.style.color = "white";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "transparent";
-                e.currentTarget.style.color = "#C8400A";
+                e.currentTarget.style.color = "var(--sk-gold, #c9a84c)";
               }}
             >
               <i className="fa fa-arrow-left" style={{ fontSize: "0.72rem" }}></i>

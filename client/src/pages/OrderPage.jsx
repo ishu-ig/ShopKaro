@@ -8,7 +8,7 @@ import { Link, useNavigate } from 'react-router-dom';
 const STATUS_COLOR = {
   'Delivered':        { bg: 'rgba(16,185,129,0.1)',  color: '#059669', dot: '#10b981' },
   'Cancelled':        { bg: 'rgba(244,63,94,0.1)',   color: '#e11d48', dot: '#f43f5e' },
-  'Ordered':          { bg: 'rgba(200,64,10,0.1)',   color: '#c8400a', dot: '#e86834' },
+  'Ordered':          { bg: 'rgba(201,168,76,0.12)',   color: '#c8400a', dot: '#e86834' },
   'Shipped':          { bg: 'rgba(59,130,246,0.1)',  color: '#2563eb', dot: '#3b82f6' },
   'Packed':           { bg: 'rgba(245,158,11,0.1)',  color: '#d97706', dot: '#f59e0b' },
   'Out for Delivery': { bg: 'rgba(139,92,246,0.1)',  color: '#7c3aed', dot: '#8b5cf6' },
@@ -59,7 +59,7 @@ export default function OrderPage() {
 
           {/* Page heading */}
           <div className="mb-4">
-            <p style={{ fontSize:'0.72rem', fontWeight:700, letterSpacing:'0.14em', color:'#C8400A', textTransform:'uppercase', marginBottom:4 }}>Account</p>
+            <p style={{ fontSize:'0.72rem', fontWeight:700, letterSpacing:'0.14em', color:'var(--sk-gold, #c9a84c)', textTransform:'uppercase', marginBottom:4 }}>Account</p>
             <h2 style={{ fontFamily:'Playfair Display,serif', fontWeight:900, fontSize:'clamp(1.6rem,3vw,2.2rem)', color:'#1C1009', margin:0 }}>Your Orders</h2>
           </div>
 
@@ -68,17 +68,17 @@ export default function OrderPage() {
             return (
               <div
                 key={item?._id}
-                style={{ background:'white', borderRadius:20, border:'1px solid rgba(200,64,10,0.08)', boxShadow:'0 2px 16px rgba(28,16,9,0.07)', marginBottom:20, overflow:'hidden', transition:'box-shadow 0.3s ease' }}
+                style={{ background:'white', borderRadius:20, border:'1px solid rgba(201,168,76,0.1)', boxShadow:'0 2px 16px rgba(28,16,9,0.07)', marginBottom:20, overflow:'hidden', transition:'box-shadow 0.3s ease' }}
                 onMouseEnter={e => e.currentTarget.style.boxShadow = '0 8px 32px rgba(28,16,9,0.12)'}
                 onMouseLeave={e => e.currentTarget.style.boxShadow = '0 2px 16px rgba(28,16,9,0.07)'}
               >
                 {/* Order header */}
-                <div style={{ padding:'18px 24px', borderBottom:'1px solid rgba(200,64,10,0.08)', display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'space-between', gap:12, background:'#FFFBF7' }}>
+                <div style={{ padding:'18px 24px', borderBottom:'1px solid rgba(201,168,76,0.1)', display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'space-between', gap:12, background:'#FFFBF7' }}>
                   <div>
                     <div style={{ fontSize:'0.72rem', fontWeight:700, letterSpacing:'0.1em', color:'#7A6E65', textTransform:'uppercase', marginBottom:3 }}>Order ID</div>
                     <div style={{ fontFamily:'Playfair Display,serif', fontWeight:700, fontSize:'0.95rem', color:'#1C1009', wordBreak:'break-all' }}>#{item?._id}</div>
                     <div style={{ fontSize:'0.78rem', color:'#7A6E65', marginTop:3 }}>
-                      <i className="fa fa-calendar-alt me-1" style={{ color:'#C8400A' }}></i>
+                      <i className="fa fa-calendar-alt me-1" style={{ color:'var(--sk-gold, #c9a84c)' }}></i>
                       {new Date(item?.createdAt).toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' })}
                     </div>
                   </div>
@@ -100,7 +100,7 @@ export default function OrderPage() {
                       >
                         <div
                           style={{ display:'flex', alignItems:'center', gap:10, background:'rgba(200,64,10,0.03)', borderRadius:12, padding:'10px 14px', border:'1px solid rgba(200,64,10,0.07)', cursor:'pointer', transition:'background 0.2s, border-color 0.2s' }}
-                          onMouseEnter={e => { e.currentTarget.style.background='rgba(200,64,10,0.08)'; e.currentTarget.style.borderColor='rgba(200,64,10,0.2)'; }}
+                          onMouseEnter={e => { e.currentTarget.style.background='rgba(201,168,76,0.1)'; e.currentTarget.style.borderColor='rgba(201,168,76,0.22)'; }}
                           onMouseLeave={e => { e.currentTarget.style.background='rgba(200,64,10,0.03)'; e.currentTarget.style.borderColor='rgba(200,64,10,0.07)'; }}
                         >
                           {/* Product image */}
@@ -116,14 +116,14 @@ export default function OrderPage() {
                             />
                           ) : null}
                           {/* Fallback icon */}
-                          <div style={{ width:44, height:44, borderRadius:8, background:'rgba(200,64,10,0.08)', display: prod.product?.pic?.[0] ? 'none' : 'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                            <i className="fa fa-box" style={{ color:'#C8400A', fontSize:'0.85rem' }}></i>
+                          <div style={{ width:44, height:44, borderRadius:8, background:'rgba(201,168,76,0.1)', display: prod.product?.pic?.[0] ? 'none' : 'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                            <i className="fa fa-box" style={{ color:'var(--sk-gold, #c9a84c)', fontSize:'0.85rem' }}></i>
                           </div>
 
                           <div style={{ minWidth:0 }}>
                             <div style={{ fontWeight:600, fontSize:'0.85rem', color:'#1C1009', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{prod.product?.name}</div>
-                            <div style={{ fontSize:'0.75rem', color:'#7A6E65' }}>×{prod.qty} · <span style={{ color:'#C8400A', fontWeight:700 }}>₹{prod.total?.toLocaleString()}</span></div>
-                            <div style={{ fontSize:'0.68rem', color:'#C8400A', marginTop:2, display:'flex', alignItems:'center', gap:3 }}>
+                            <div style={{ fontSize:'0.75rem', color:'#7A6E65' }}>×{prod.qty} · <span style={{ color:'var(--sk-gold, #c9a84c)', fontWeight:700 }}>₹{prod.total?.toLocaleString()}</span></div>
+                            <div style={{ fontSize:'0.68rem', color:'var(--sk-gold, #c9a84c)', marginTop:2, display:'flex', alignItems:'center', gap:3 }}>
                               <i className="fa fa-external-link-alt" style={{ fontSize:'0.6rem' }}></i> View product
                             </div>
                           </div>
@@ -134,7 +134,7 @@ export default function OrderPage() {
                 </div>
 
                 {/* Footer row */}
-                <div style={{ padding:'14px 24px 18px', borderTop:'1px solid rgba(200,64,10,0.08)', display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'space-between', gap:14 }}>
+                <div style={{ padding:'14px 24px 18px', borderTop:'1px solid rgba(201,168,76,0.1)', display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'space-between', gap:14 }}>
                   <div style={{ display:'flex', flexWrap:'wrap', gap:20 }}>
                     <div>
                       <div style={{ fontSize:'0.7rem', fontWeight:700, letterSpacing:'0.1em', color:'#7A6E65', textTransform:'uppercase', marginBottom:2 }}>Expected Delivery</div>
@@ -154,7 +154,7 @@ export default function OrderPage() {
                     </div>
                     <div>
                       <div style={{ fontSize:'0.7rem', fontWeight:700, letterSpacing:'0.1em', color:'#7A6E65', textTransform:'uppercase', marginBottom:2 }}>Total</div>
-                      <div style={{ fontFamily:'Playfair Display,serif', fontWeight:900, fontSize:'1.1rem', color:'#C8400A' }}>₹{item?.total?.toLocaleString()}</div>
+                      <div style={{ fontFamily:'Playfair Display,serif', fontWeight:900, fontSize:'1.1rem', color:'var(--sk-gold, #c9a84c)' }}>₹{item?.total?.toLocaleString()}</div>
                     </div>
                   </div>
 
@@ -171,7 +171,7 @@ export default function OrderPage() {
                     )}
                     <Link
                       to={`/order-detail/${item?._id}`}
-                      style={{ padding:'9px 20px', background:'linear-gradient(135deg,#C8400A,#E86834)', color:'white', borderRadius:50, fontWeight:700, fontSize:'0.82rem', textDecoration:'none', transition:'opacity 0.2s', boxShadow:'0 4px 14px rgba(200,64,10,0.2)' }}
+                      style={{ padding:'9px 20px', background:'linear-gradient(135deg,var(--sk-gold, #c9a84c),var(--sk-gold-bright, #e8c873))', color:'white', borderRadius:50, fontWeight:700, fontSize:'0.82rem', textDecoration:'none', transition:'opacity 0.2s', boxShadow:'0 4px 14px rgba(201,168,76,0.22)' }}
                       onMouseEnter={e => e.currentTarget.style.opacity='0.88'}
                       onMouseLeave={e => e.currentTarget.style.opacity='1'}
                     >
@@ -186,7 +186,7 @@ export default function OrderPage() {
               <div style={{ fontSize:'4.5rem', marginBottom:18 }}>📦</div>
               <h3 style={{ fontFamily:'Playfair Display,serif', fontWeight:800, color:'#1C1009', marginBottom:10 }}>No orders yet</h3>
               <p style={{ color:'#7A6E65', marginBottom:28, fontSize:'0.95rem' }}>Looks like you haven't placed any orders.</p>
-              <Link to="/product" style={{ display:'inline-block', background:'linear-gradient(135deg,#C8400A,#E86834)', color:'white', textDecoration:'none', borderRadius:50, padding:'13px 36px', fontWeight:700, fontSize:'0.92rem', boxShadow:'0 8px 20px rgba(200,64,10,0.25)' }}>
+              <Link to="/product" style={{ display:'inline-block', background:'linear-gradient(135deg,var(--sk-gold, #c9a84c),var(--sk-gold-bright, #e8c873))', color:'white', textDecoration:'none', borderRadius:50, padding:'13px 36px', fontWeight:700, fontSize:'0.92rem', boxShadow:'0 8px 20px rgba(201,168,76,0.28)' }}>
                 Browse Products →
               </Link>
             </div>

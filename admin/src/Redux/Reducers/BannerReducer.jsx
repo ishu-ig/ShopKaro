@@ -1,26 +1,28 @@
 import { CREATE_BANNER_RED, DELETE_BANNER_RED, GET_BANNER_RED, UPDATE_BANNER_RED } from "../Constants"
-export default function BannerReducer(state=[], action) {
+export default function BannerReducer(state = [], action) {
     switch (action.type) {
         case CREATE_BANNER_RED:
+            if (!action.payload) return state;
             let newState = [...state]
             newState.unshift(action.payload)
             return newState
 
         case GET_BANNER_RED:
-            return action.payload
+            return Array.isArray(action.payload) ? action.payload : state
 
         case UPDATE_BANNER_RED:
+            if (!action.payload) return state;
             let index = state.findIndex(x => x._id === action.payload._id)
-            state[index].title = action.payload.title
-            state[index].pic = action.payload.pic
-            state[index].link = action.payload.link
-            state[index].total = action.payload.total
-            return state
+            if (index === -1) return state;
+            let copyState = [...state]
+            copyState[index] = { ...copyState[index], ...action.payload }
+            return copyState
 
         case DELETE_BANNER_RED:
+            if (!action.payload) return state;
             return state.filter(x => x._id !== action.payload._id)
 
         default:
             return state
     }
-}   
+}

@@ -295,23 +295,15 @@ function handleUsernameChange(e) {
         <section className="auth-card auth-card--wide">
 
           {/* Brand */}
-          <Link className="auth-brand" to="/">
+          <Link className="auth-brand text-decoration-none" to="/">
             <span className="brand-icon">
-              <i className="bi bi-grid-1x2-fill" aria-hidden="true"></i>
+              <i className="bi bi-cart4" aria-hidden="true"></i>
             </span>
-            <span>
-              <strong>adminHMD</strong>
-              <small>Create your adminHMD account.</small>
+            <span className="text-start">
+              <strong className="d-block fs-5 text-body">ShopKaro</strong>
+              <small className="text-muted">Merchant & Partner Onboarding</small>
             </span>
           </Link>
-
-          {/* Hero image */}
-          <div className="auth-visual">
-            <img
-              src="/images/png/dasher-ui-bootstrap-5.jpg"
-              alt="adminHMD dashboard interface"
-            />
-          </div>
 
           {/* Form */}
           <form
@@ -319,44 +311,38 @@ function handleUsernameChange(e) {
             noValidate
             onSubmit={handleSubmit}
           >
-            <div className="mb-4">
-              <p className="eyebrow mb-1">Secure Access</p>
-              <h1 className="h3 mb-1">Register</h1>
-              <p className="text-muted mb-0">Create your account.</p>
+            <div className="mb-4 text-center">
+              <h2 className="h4 mb-1 fw-bold text-body">Create Account</h2>
+              <p className="text-muted small mb-0">Join the ShopKaro merchant and delivery partner network.</p>
             </div>
 
             {error && (
-              <div className="alert alert-danger py-2 mb-3 d-flex align-items-center gap-2" role="alert">
+              <div className="alert bg-danger-subtle text-danger border border-danger-subtle py-2.5 px-3 mb-3 d-flex align-items-center gap-2" role="alert">
                 <i className="bi bi-exclamation-triangle-fill"></i>
-                {error}
+                <div className="small fw-semibold">{error}</div>
               </div>
             )}
 
-            {/* Role selector */}
+            {/* Role selector segmented buttons */}
             <div className="mb-4">
-              <label className="form-label d-block">I am signing up as</label>
-              <div className="btn-group w-100" role="group" aria-label="Account type">
+              <label className="form-label d-block text-muted small text-uppercase fw-bold letter-spacing-wide">Sign Up As</label>
+              <div className="role-segmented-group">
                 {ROLE_OPTIONS.map((opt) => (
-                  <React.Fragment key={opt.value}>
-                    <input
-                      type="radio"
-                      className="btn-check"
-                      name="role"
-                      id={`role-${opt.value}`}
-                      autoComplete="off"
-                      checked={role === opt.value}
-                      onChange={() => setRole(opt.value)}
-                    />
-                    <label className="btn btn-outline-primary" htmlFor={`role-${opt.value}`}>
-                      <i className={`bi ${opt.icon} me-1`} aria-hidden="true"></i>
-                      {opt.label}
-                    </label>
-                  </React.Fragment>
+                  <button
+                    key={opt.value}
+                    type="button"
+                    className={`role-segmented-btn${role === opt.value ? " active" : ""}`}
+                    onClick={() => setRole(opt.value)}
+                  >
+                    <i className={`bi ${opt.icon}`}></i>
+                    <span>{opt.label}</span>
+                  </button>
                 ))}
               </div>
               {role === "shop" && (
-                <div className="form-text mt-2">
-                  You'll set up your shop's menu, hours, and location after signing up.
+                <div className="form-text small text-muted mt-1.5">
+                  <i className="bi bi-info-circle me-1"></i>
+                  You will be able to customize your store profile, catalog, and banner settings once registered.
                 </div>
               )}
             </div>

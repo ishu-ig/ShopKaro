@@ -23,7 +23,7 @@ const {
 } = require("../controllers/DeliveryController");
 
 // Public routes
-DeliveryBoyRouter.post("/", createRecord);
+DeliveryBoyRouter.post("/", deliveryBoyUploader.single("pic"), createRecord);
 DeliveryBoyRouter.post("/login", login);
 
 DeliveryBoyRouter.post("/forgetPassword-1", forgetPassword1);
@@ -34,13 +34,11 @@ DeliveryBoyRouter.post("/forgetPassword-3", forgetPassword3);
 DeliveryBoyRouter.get("/check-username", checkUsername);
 DeliveryBoyRouter.get("/check-email", checkEmail);
 
-// Protected routes
-DeliveryBoyRouter.get("/", verifyTwoDelivery , getRecord);
-DeliveryBoyRouter.get("/:_id", verifyTwoDelivery , getSingleRecord);
+// Data routes
+DeliveryBoyRouter.get("/", getRecord);
+DeliveryBoyRouter.get("/:_id", getSingleRecord);
 
-DeliveryBoyRouter.put("/:_id", verifyTwoDelivery , deliveryBoyUploader.single("pic"), updateRecord);
-
-
-DeliveryBoyRouter.delete("/:_id", verifyTwoDelivery ,deleteRecord);
+DeliveryBoyRouter.put("/:_id", verifyTwoDelivery, deliveryBoyUploader.single("pic"), updateRecord);
+DeliveryBoyRouter.delete("/:_id", verifyTwoDelivery, deleteRecord);
 
 module.exports = DeliveryBoyRouter;

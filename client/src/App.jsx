@@ -31,6 +31,7 @@ import Payment from './pages/Payment'
 import ChatPage from './pages/ChatPage'
 import FeatureDetail from './pages/FeatureDetailPage'
 import AddressPages from './pages/AddressPages'
+import SettingsPage from './pages/SettingsPage'
 new WOW().init();
 
 
@@ -65,6 +66,7 @@ export default function App() {
                 <Route path='/profile' element={<ProfilePage />}/>
                 <Route path='/login' element={<LoginPage />}/>
                 <Route path='/UpdateProfile' element={<UpdateProfilePage />}/>
+                <Route path='/settings' element={<SettingsPage />}/>
 
                 <Route path='/forgetPassword-1' element={<ForgetPasswordPage1 />}/>
                 <Route path='/forgetPassword-2' element={<ForgetPasswordPage2 />}/>

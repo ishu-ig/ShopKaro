@@ -52,6 +52,16 @@ import AdminUser from "./pages/user/AdminUser";
 import AdminCreateUser from "./pages/user/AdminCreateUser";
 import AdminUpdateUser from "./pages/user/AdminUpdateUser";
 
+// Admin staff management
+import AdminUserList from "./pages/adminUser/AdminUserList";
+import AdminCreateAdminUser from "./pages/adminUser/AdminCreateAdminUser";
+import AdminUpdateAdminUser from "./pages/adminUser/AdminUpdateAdminUser";
+
+// Delivery partner management for admin
+import AdminDeliver from "./pages/deliver/AdminDeliver";
+import AdminCreateDeliver from "./pages/deliver/AdminCreateDeliver";
+import AdminUpdateDeliver from "./pages/deliver/AdminUpdateDeliver";
+
 // contactus
 import AdminContactUs from "./pages/contactus/AdminContactUs";
 import AdminShowQuery from "./pages/contactus/AdminShowQuery";
@@ -237,10 +247,23 @@ function Shell() {
           <Route path="/checkout/view/:_id" element={<AdminCheckoutShow />} />
           <Route path="/checkout/product/:_id" element={<ViewProductPage />} />
 
-          {/* User Routes */}
+          {/* Admin Staff Routes */}
+          <Route path="/admins" element={<AdminUserList />} />
+          <Route path="/admins/create" element={<AdminCreateAdminUser />} />
+          <Route path="/admins/update/:_id" element={<AdminUpdateAdminUser />} />
+
+          {/* User / Customer Routes */}
           <Route path="/user" element={<AdminUser />} />
           <Route path="/user/create" element={<AdminCreateUser />} />
           <Route path="/user/update/:_id" element={<AdminUpdateUser />} />
+
+          {/* Delivery Partner Management Routes */}
+          <Route path="/deliveryBoy" element={<AdminDeliver />} />
+          <Route path="/deliveryBoy/create" element={<AdminCreateDeliver />} />
+          <Route path="/deliveryBoy/update/:_id" element={<AdminUpdateDeliver />} />
+          <Route path="/deliver" element={<AdminDeliver />} />
+          <Route path="/deliver/create" element={<AdminCreateDeliver />} />
+          <Route path="/deliver/update/:_id" element={<AdminUpdateDeliver />} />
 
           {/* ContactUS Routes */}
           <Route path="/contactus" element={<AdminContactUs />} />

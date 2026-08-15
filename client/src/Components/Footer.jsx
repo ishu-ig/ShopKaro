@@ -54,36 +54,39 @@ export default function Footer() {
   }
 
   return (
-    <footer style={{ background: '#0d1117', color: 'rgba(255,255,255,0.55)', fontFamily: 'DM Sans, sans-serif' }}>
+    <footer style={{ background: 'linear-gradient(180deg, #070d14 0%, #0d1b2a 100%)', color: 'rgba(255,255,255,0.65)', fontFamily: "'Plus Jakarta Sans', sans-serif", borderTop: '1px solid rgba(201,168,76,0.15)' }}>
 
       {/* Main footer body */}
-      <div className="container" style={{ padding: '64px 20px 50px 20px' }}>
+      <div className="container" style={{ padding: '64px 20px 40px 20px' }}>
         <div className="row g-5">
 
           {/* Brand col */}
           <div className="col-lg-3 col-md-6">
             <Link to="/" style={{ textDecoration: 'none' }}>
-              <h2 style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, fontSize: '1.75rem', color: 'white', marginBottom: 16 }}>
-                Eazy<span style={{ color: '#C8400A' }}>Dine</span>
-              </h2>
+              <div style={{ display: 'inline-flex', alignItems: 'center', marginBottom: 16 }}>
+                <span style={{ width: 8, height: 8, background: '#c9a84c', transform: 'rotate(45deg)', marginRight: 10, boxShadow: '0 0 10px rgba(201,168,76,0.8)' }}></span>
+                <h2 style={{ fontFamily: "'Playfair Display', serif", fontWeight: 900, fontSize: '1.85rem', color: 'white', margin: 0, letterSpacing: '0.02em' }}>
+                  Shop<span style={{ color: '#c9a84c', fontStyle: 'italic' }}>Karo</span>
+                </h2>
+              </div>
             </Link>
-            <p style={{ fontSize: '0.88rem', lineHeight: 1.75, marginBottom: 24, color: 'rgba(255,255,255,0.45)' }}>
-              Bringing you the finest dining experiences with up to 50% off on top restaurants and premium food products.
+            <p style={{ fontSize: '0.88rem', lineHeight: 1.75, marginBottom: 24, color: 'rgba(255,255,255,0.55)' }}>
+              Your premier destination for verified luxury brands, top trends, and premium shopping experiences with seamless delivery.
             </p>
             <div style={{ display: 'flex', gap: 10 }}>
               {SOCIALS.map(({ icon, href }) => (
                 <a key={icon} href={href} style={{
-                  width: 36, height: 36, borderRadius: '50%',
+                  width: 38, height: 38, borderRadius: '50%',
                   background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(201,168,76,0.2)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'rgba(255,255,255,0.55)',
+                  color: 'rgba(255,255,255,0.65)',
                   textDecoration: 'none',
-                  transition: 'all 0.25s',
-                  fontSize: '0.78rem',
+                  transition: 'all 0.25s ease',
+                  fontSize: '0.85rem',
                 }}
-                  onMouseEnter={e => { e.currentTarget.style.background = '#C8400A'; e.currentTarget.style.borderColor = '#C8400A'; e.currentTarget.style.color = 'white'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'rgba(255,255,255,0.55)'; }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#c9a84c'; e.currentTarget.style.borderColor = '#c9a84c'; e.currentTarget.style.color = '#070d14'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(201,168,76,0.2)'; e.currentTarget.style.color = 'rgba(255,255,255,0.65)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
                   <i className={icon}></i>
                 </a>
@@ -93,22 +96,22 @@ export default function Footer() {
 
           {/* Contact col */}
           <div className="col-lg-3 col-md-6">
-            <h6 style={{ fontFamily: 'Playfair Display, serif', color: 'white', fontWeight: 700, fontSize: '1rem', marginBottom: 20, paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-              Contact Us
+            <h6 style={{ fontFamily: "'Playfair Display', serif", color: 'white', fontWeight: 700, fontSize: '1.05rem', marginBottom: 20, paddingBottom: 12, borderBottom: '1px solid rgba(201,168,76,0.15)' }}>
+              Get In Touch
             </h6>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {[
-                { icon: 'fa-map-marker-alt', text: '123 Street, New York, USA',       href: '#' },
-                { icon: 'fa-phone-alt',      text: '+123 456 7890',                   href: 'tel:+1234567890' },
-                { icon: 'fa-whatsapp fab',   text: '+91 82186 35344',                 href: 'https://wa.me/8218635344' },
-                { icon: 'fa-envelope',       text: 'info@example.com',                href: 'mailto:info@example.com' },
+                { icon: 'fa-map-marker-alt', text: 'New Delhi, India',             href: '#' },
+                { icon: 'fa-phone-alt',      text: '+91-9873848046',              href: 'tel:+919873848046' },
+                { icon: 'fa-whatsapp fab',   text: '+91 82186 35344',             href: 'https://wa.me/8218635344' },
+                { icon: 'fa-envelope',       text: 'vishankchauhan@gmail.com',    href: 'mailto:vishankchauhan@gmail.com' },
               ].map(({ icon, text, href }) => (
-                <a key={text} href={href} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: 'rgba(255,255,255,0.45)', fontSize: '0.86rem', transition: 'color 0.2s' }}
-                  onMouseEnter={e => e.currentTarget.style.color = 'white'}
-                  onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.45)'}
+                <a key={text} href={href} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: 'rgba(255,255,255,0.55)', fontSize: '0.86rem', transition: 'color 0.2s' }}
+                  onMouseEnter={e => e.currentTarget.style.color = '#e8c873'}
+                  onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.55)'}
                 >
-                  <span style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(200,64,10,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <i className={`fa ${icon}`} style={{ color: '#C8400A', fontSize: '0.78rem' }}></i>
+                  <span style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <i className={`fa ${icon}`} style={{ color: '#c9a84c', fontSize: '0.82rem' }}></i>
                   </span>
                   {text}
                 </a>
@@ -118,16 +121,16 @@ export default function Footer() {
 
           {/* Quick links col */}
           <div className="col-lg-3 col-md-6">
-            <h6 style={{ fontFamily: 'Playfair Display, serif', color: 'white', fontWeight: 700, fontSize: '1rem', marginBottom: 20, paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-              Quick Links
+            <h6 style={{ fontFamily: "'Playfair Display', serif", color: 'white', fontWeight: 700, fontSize: '1.05rem', marginBottom: 20, paddingBottom: 12, borderBottom: '1px solid rgba(201,168,76,0.15)' }}>
+              Explore ShopKaro
             </h6>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 16px' }}>
               {[...QUICK_LINKS_1, ...QUICK_LINKS_2].map(({ to, label }) => (
-                <Link key={label} to={to} style={{ color: 'rgba(255,255,255,0.45)', textDecoration: 'none', fontSize: '0.86rem', display: 'flex', alignItems: 'center', gap: 6, transition: 'color 0.2s' }}
-                  onMouseEnter={e => e.currentTarget.style.color = '#C8400A'}
-                  onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.45)'}
+                <Link key={label} to={to} style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'none', fontSize: '0.86rem', display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.2s' }}
+                  onMouseEnter={e => { e.currentTarget.style.color = '#e8c873'; e.currentTarget.style.transform = 'translateX(3px)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.55)'; e.currentTarget.style.transform = 'translateX(0)'; }}
                 >
-                  <i className="fa fa-angle-right" style={{ fontSize: '0.7rem', color: '#C8400A' }}></i>
+                  <i className="fa fa-angle-right" style={{ fontSize: '0.75rem', color: '#c9a84c' }}></i>
                   {label}
                 </Link>
               ))}
@@ -136,13 +139,13 @@ export default function Footer() {
 
           {/* Newsletter col */}
           <div className="col-lg-3 col-md-6">
-            <h6 style={{ fontFamily: 'Playfair Display, serif', color: 'white', fontWeight: 700, fontSize: '1rem', marginBottom: 20, paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-              Newsletter
+            <h6 style={{ fontFamily: "'Playfair Display', serif", color: 'white', fontWeight: 700, fontSize: '1.05rem', marginBottom: 20, paddingBottom: 12, borderBottom: '1px solid rgba(201,168,76,0.15)' }}>
+              VIP Newsletter
             </h6>
-            <p style={{ fontSize: '0.86rem', color: 'rgba(255,255,255,0.45)', marginBottom: 18, lineHeight: 1.7 }}>
+            <p style={{ fontSize: '0.86rem', color: 'rgba(255,255,255,0.55)', marginBottom: 18, lineHeight: 1.7 }}>
               {message
-                ? <span style={{ color: message.startsWith('🎉') ? '#10b981' : '#f43f5e', fontWeight: 600 }}>{message}</span>
-                : 'Subscribe for the latest deals, new dishes, and restaurant updates.'}
+                ? <span style={{ color: message.startsWith('🎉') ? '#27a85a' : '#e04444', fontWeight: 600 }}>{message}</span>
+                : 'Subscribe to receive private sale invites, exclusive discounts, and new arrivals.'}
             </p>
             <form onSubmit={postData}>
               <div style={{ position: 'relative', marginBottom: 10 }}>
@@ -152,31 +155,32 @@ export default function Footer() {
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   style={{
-                    width: '100%', padding: '11px 16px', borderRadius: 12,
-                    border: '1px solid rgba(255,255,255,0.1)',
+                    width: '100%', padding: '12px 16px', borderRadius: 10,
+                    border: '1px solid rgba(201,168,76,0.2)',
                     background: 'rgba(255,255,255,0.06)',
-                    color: 'white', fontSize: '0.86rem', outline: 'none',
-                    transition: 'border-color 0.2s',
+                    color: 'white', fontSize: '0.88rem', outline: 'none',
+                    transition: 'border-color 0.25s',
                     boxSizing: 'border-box',
                   }}
-                  onFocus={e => e.target.style.borderColor = '#C8400A'}
-                  onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+                  onFocus={e => e.target.style.borderColor = '#c9a84c'}
+                  onBlur={e => e.target.style.borderColor = 'rgba(201,168,76,0.2)'}
                 />
               </div>
               <button
                 type="submit"
                 disabled={loading}
                 style={{
-                  width: '100%', padding: '11px 0',
-                  background: loading ? 'rgba(200,64,10,0.5)' : 'linear-gradient(135deg,#C8400A,#E86834)',
-                  color: 'white', border: 'none', borderRadius: 12,
-                  fontWeight: 700, fontSize: '0.86rem', cursor: loading ? 'not-allowed' : 'pointer',
-                  transition: 'opacity 0.2s', letterSpacing: '0.04em',
+                  width: '100%', padding: '12px 0',
+                  background: loading ? 'rgba(201,168,76,0.5)' : 'linear-gradient(135deg, #c9a84c, #e8c873)',
+                  color: '#070d14', border: 'none', borderRadius: 10,
+                  fontWeight: 800, fontSize: '0.86rem', cursor: loading ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.25s ease', letterSpacing: '0.06em', textTransform: 'uppercase',
+                  boxShadow: '0 4px 16px rgba(201,168,76,0.3)',
                 }}
-                onMouseEnter={e => !loading && (e.currentTarget.style.opacity = '0.88')}
-                onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+                onMouseEnter={e => !loading && (e.currentTarget.style.boxShadow = '0 6px 20px rgba(201,168,76,0.45)')}
+                onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 4px 16px rgba(201,168,76,0.3)')}
               >
-                {loading ? 'Subscribing…' : 'Subscribe →'}
+                {loading ? 'Subscribing…' : 'Join VIP Club →'}
               </button>
             </form>
           </div>
@@ -185,14 +189,18 @@ export default function Footer() {
       </div>
 
       {/* Bottom bar */}
-      <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', padding: '18px 0' }}>
-        <div className="container" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-          <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.35)' }}>
-            © {new Date().getFullYear()} <span style={{ color: '#C8400A', fontWeight: 600 }}>EazyDine</span>. All rights reserved.
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', padding: '20px 0', background: 'rgba(0,0,0,0.25)' }}>
+        <div className="container" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
+          <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.45)' }}>
+            © {new Date().getFullYear()} <span style={{ color: '#c9a84c', fontWeight: 700 }}>ShopKaro</span>. All rights reserved.
           </span>
-          <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.25)' }}>
-            Made with <span style={{ color: '#f43f5e' }}>♥</span> for food lovers
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: '0.78rem', color: 'rgba(255,255,255,0.45)' }}>
+            <span>🔒 100% Secure Checkout</span>
+            <span>•</span>
+            <span>⚡ Express Delivery</span>
+            <span>•</span>
+            <span>🔄 7-Day Returns</span>
+          </div>
         </div>
       </div>
 

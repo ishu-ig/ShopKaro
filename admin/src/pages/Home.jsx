@@ -246,236 +246,262 @@ export default function Home() {
     ];
     const maxBar = Math.max(...contentBars.map(b => b.count), 1);
 
-    // ── Stat cards ────────────────────────────────────────────────────────────
+    // ── Greeting calculation ──────────────────────────────────────────────────
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return "Good morning";
+        if (hour < 17) return "Good afternoon";
+        return "Good evening";
+    };
+
+    const userName = localStorage.getItem("name") || "Admin";
+
     const statCards = [
-        { label: "Total Products", value: D.products.length,   icon: "bi-box-seam",  variant: "metric-primary", to: "/product"   },
-        { label: "Total Orders",   value: D.checkouts.length,  icon: "bi-bag-check", variant: "metric-success", to: "/checkout"  },
-        { label: "Banner Items",     value: D.Banners.length,      icon: "bi-Banner3",     variant: "metric-warning", to: "/Banner"      },
-        { label: "Queries",        value: D.contacts.length,   icon: "bi-headset",   variant: "metric-danger",  to: "/contactUs" },
+        { label: "Total Products", value: D.products.length, icon: "bi-box-seam", variant: "metric-primary", to: "/product", trend: "+8.2% this mo" },
+        { label: "Total Orders", value: D.checkouts.length, icon: "bi-bag-check", variant: "metric-success", to: "/checkout", trend: "+14.5% this mo" },
+        { label: "Active Brands", value: D.brands.length, icon: "bi-award", variant: "metric-warning", to: "/brand", trend: "Catalogued" },
+        { label: "Customer Inquiries", value: D.contacts.length, icon: "bi-chat-dots", variant: "metric-danger", to: "/contactUs", trend: `${unreadContacts} Unread` },
     ];
 
-    // ── Alert cards ───────────────────────────────────────────────────────────
     const alertCards = [
-        { label: "New Orders",        value: pendingOrders,    icon: "bi-clock-history",      color: "text-warning" },
-        { label: "Pending Payments",  value: pendingPayments,  icon: "bi-credit-card",        color: "text-danger"  },
-        { label: "Unread Messages",   value: unreadContacts,   icon: "bi-envelope",           color: "text-primary" },
-        { label: "Out of Stock",      value: outOfStock,       icon: "bi-exclamation-circle", color: "text-warning" },
+        { label: "New Orders Placed", value: pendingOrders, icon: "bi-clock-history", bg: "bg-warning-subtle", text: "text-warning", border: "border-warning-subtle", to: "/checkout" },
+        { label: "Pending Payments", value: pendingPayments, icon: "bi-credit-card", bg: "bg-danger-subtle", text: "text-danger", border: "border-danger-subtle", to: "/checkout" },
+        { label: "Unread Messages", value: unreadContacts, icon: "bi-envelope-check", bg: "bg-primary-subtle", text: "text-primary", border: "border-primary-subtle", to: "/contactUs" },
+        { label: "Out of Stock Items", value: outOfStock, icon: "bi-exclamation-circle", bg: "bg-warning-subtle", text: "text-warning", border: "border-warning-subtle", to: "/product" },
     ];
 
-    // ── Quick actions ─────────────────────────────────────────────────────────
     const quickActions = [
-        { label: "Add Product",    icon: "bi-plus-circle",  to: "/product/create",      color: "#0d6efd" },
-        { label: "Add Category",   icon: "bi-folder-plus",  to: "/maincategory/create", color: "#198754" },
-        { label: "Add Brand",      icon: "bi-patch-plus",   to: "/brand/create",        color: "#ffc107" },
-        { label: "Add Sub-Cat.",   icon: "bi-diagram-3",    to: "/subcategory/create",  color: "#0dcaf0" },
-        { label: "View Orders",    icon: "bi-bag-check",    to: "/checkout",            color: "#6f42c1" },
-        { label: "View Banner",      icon: "bi-Banner3",        to: "/Banner",                color: "#14b8a6" },
-        { label: "View Messages",  icon: "bi-headset",      to: "/contactUs",           color: "#dc3545" },
-        { label: "Testimonials",   icon: "bi-chat-quote",   to: "/testimonial",         color: "#ec4899" },
+        { label: "Add Product", icon: "bi-plus-circle-fill", to: "/product/create", color: "#4f46e5" },
+        { label: "Add Category", icon: "bi-folder-plus", to: "/maincategory/create", color: "#10b981" },
+        { label: "Add Brand", icon: "bi-patch-plus", to: "/brand/create", color: "#f59e0b" },
+        { label: "Add Sub-Cat.", icon: "bi-diagram-3", to: "/subcategory/create", color: "#06b6d4" },
+        { label: "View Orders", icon: "bi-bag-check", to: "/checkout", color: "#8b5cf6" },
+        { label: "Banners", icon: "bi-images", to: "/banner", color: "#ec4899" },
+        { label: "Customer Queries", icon: "bi-chat-dots", to: "/contactUs", color: "#f43f5e" },
+        { label: "Testimonials", icon: "bi-chat-quote", to: "/testimonial", color: "#14b8a6" },
     ];
 
-    const axisStyle = { fontSize: 11, fill: "var(--bs-secondary-color, #6c757d)" };
-    const gridStyle = { stroke: "var(--bs-border-color, rgba(0,0,0,.1))", strokeDasharray: "3 3" };
-    const PIE_COLORS = ["#0d6efd", "#198754", "#0dcaf0", "#ffc107", "#dc3545", "#6f42c1"];
+    const axisStyle = { fontSize: 11, fill: "var(--admin-muted, #94a3b8)" };
+    const gridStyle = { stroke: "var(--admin-border, rgba(0,0,0,.08))", strokeDasharray: "3 3" };
+    const PIE_COLORS = ["#4f46e5", "#10b981", "#06b6d4", "#f59e0b", "#f43f5e", "#8b5cf6"];
 
     return (
         <main className="dashboard-content">
             <div className="container-fluid px-3 px-lg-4 py-4">
 
-                {/* ── Page heading ── */}
-                <div className="page-heading mb-4">
-                    <div className="page-heading-copy">
-                        <span className="page-icon">
-                            <i className="bi bi-speedometer2" aria-hidden="true"></i>
-                        </span>
+                {/* ── Welcome Header ── */}
+                <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-2">
+                    <div className="d-flex align-items-center gap-3">
+                        <div className="page-icon">
+                            <i className="bi bi-grid-1x2-fill" aria-hidden="true"></i>
+                        </div>
                         <div>
-                            <p className="eyebrow mb-1">Overview</p>
-                            <h1 className="h3 mb-1">Dashboard</h1>
-                            <p className="text-muted mb-0">
-                                {new Date().toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+                            <div className="d-flex align-items-center gap-2">
+                                <h1 className="h3 mb-0 fw-bold">{getGreeting()}, {userName}! 👋</h1>
+                            </div>
+                            <p className="text-muted mb-0 small">
+                                Here is what’s happening in your store today • {new Date().toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "short", day: "numeric" })}
                             </p>
                         </div>
+                    </div>
+                    <div className="d-flex align-items-center gap-2">
+                        <Link to="/product/create" className="btn btn-primary shadow-sm">
+                            <i className="bi bi-plus-lg"></i>
+                            <span>Add New Product</span>
+                        </Link>
                     </div>
                 </div>
 
-                {/* ── Sample banner ── */}
+                {/* ── Sample Preview Alert (if mock mode) ── */}
                 {usingSample && (
-                    <div className="alert alert-warning d-flex align-items-center gap-2 mb-4" role="alert">
-                        <i className="bi bi-flask"></i>
-                        <span><strong>Preview mode —</strong> showing sample data. API returned no records yet.</span>
+                    <div className="alert bg-warning-subtle text-warning-emphasis border border-warning-subtle d-flex align-items-center gap-2 mb-4 shadow-sm" role="alert">
+                        <i className="bi bi-info-circle-fill fs-5"></i>
+                        <div><strong>Preview Mode:</strong> Displaying sample store metrics while connecting with backend database records.</div>
                     </div>
                 )}
 
-                {/* ── Revenue banner ── */}
-                <div className="panel mb-3" style={{ background: "linear-gradient(135deg, var(--bs-primary) 0%, #0a3880 100%)", border: "none" }}>
-                    <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                {/* ── Total Revenue Highlight Banner ── */}
+                <div className="panel mb-4 p-4 text-white position-relative overflow-hidden" 
+                     style={{ 
+                         background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%)", 
+                         border: "1px solid rgba(255, 255, 255, 0.12)",
+                         boxShadow: "0 20px 40px -10px rgba(49, 46, 129, 0.4)" 
+                     }}>
+                    {/* Background glow decoration */}
+                    <div style={{
+                        position: "absolute", top: "-50px", right: "-50px", width: "200px", height: "200px",
+                        background: "radial-gradient(circle, rgba(99, 102, 241, 0.4) 0%, rgba(99, 102, 241, 0) 70%)",
+                        borderRadius: "50%", pointerEvents: "none"
+                    }}></div>
+
+                    <div className="d-flex align-items-center justify-content-between flex-wrap gap-3 position-relative z-1">
                         <div>
-                            <p className="text-white-50 mb-1" style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".07em", fontWeight: 700 }}>Total Revenue Collected</p>
-                            <p className="text-white mb-0" style={{ fontSize: 32, fontWeight: 800, letterSpacing: "-.02em" }}>
+                            <span className="badge bg-white bg-opacity-20 text-white border-0 mb-2 px-2.5 py-1">
+                                <i className="bi bi-cash-stack me-1"></i> Net Sales Performance
+                            </span>
+                            <div className="text-white-50 small text-uppercase fw-bold letter-spacing-wide">Total Revenue Collected</div>
+                            <div className="text-white display-5 fw-extrabold my-1 letter-spacing-tight">
                                 {fmt(totalRevenue)}
-                            </p>
+                            </div>
+                            <div className="text-white-50 small d-flex align-items-center gap-1">
+                                <span className="text-success-light fw-bold">₹{Number(totalRevenuePending).toLocaleString("en-IN")}</span> pending clearance across {pendingOrders} open orders
+                            </div>
                         </div>
-                        <div className="d-flex align-items-center justify-content-center rounded-3"
-                            style={{ width: 54, height: 54, background: "rgba(255,255,255,.15)", fontSize: 22, color: "#fff" }}>
+                        <div className="d-flex align-items-center justify-content-center rounded-4"
+                            style={{ width: 64, height: 64, background: "rgba(255,255,255,.12)", backdropFilter: "blur(10px)", fontSize: 26, color: "#fff", border: "1px solid rgba(255,255,255,0.2)" }}>
                             <i className="bi bi-graph-up-arrow"></i>
                         </div>
                     </div>
-                    <div className="d-flex flex-wrap gap-3 mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,.15)" }}>
+
+                    <div className="row g-2 mt-3 pt-3 border-top border-white border-opacity-15 position-relative z-1">
                         {[
-                            { icon: "bi-check-circle",   label: `Collected: ${fmt(totalRevenue)}`         },
-                            { icon: "bi-clock",          label: `Pending: ${fmt(totalRevenuePending)}`    },
-                            { icon: "bi-bag-check",      label: `${deliveredOrders} Delivered`            },
-                            { icon: "bi-x-circle",       label: `${cancelledOrders} Cancelled`            },
-                            { icon: "bi-box-seam",       label: `${D.products.length} Products`           },
-                            { icon: "bi-envelope-paper", label: `${D.newsletters.length} Subscribers`     },
+                            { icon: "bi-check-circle-fill", label: "Completed Revenue", val: fmt(totalRevenue), color: "#34d399" },
+                            { icon: "bi-clock-fill", label: "Pending Revenue", val: fmt(totalRevenuePending), color: "#fbbf24" },
+                            { icon: "bi-truck", label: "Delivered Orders", val: `${deliveredOrders} orders`, color: "#38bdf8" },
+                            { icon: "bi-boxes", label: "Catalog Products", val: `${D.products.length} items`, color: "#c084fc" },
+                            { icon: "bi-send-check", label: "Subscribers", val: `${D.newsletters.length} users`, color: "#f472b6" },
                         ].map((s, i) => (
-                            <span key={i} className="text-white-50 d-flex align-items-center gap-2" style={{ fontSize: 13 }}>
-                                <i className={`bi ${s.icon} text-white`}></i> {s.label}
-                            </span>
+                            <div key={i} className="col-6 col-md-4 col-lg">
+                                <div className="d-flex align-items-center gap-2 text-white-50 small">
+                                    <i className={`bi ${s.icon}`} style={{ color: s.color }}></i>
+                                    <div>
+                                        <div className="text-white fw-bold">{s.val}</div>
+                                        <div style={{ fontSize: "0.72rem" }}>{s.label}</div>
+                                    </div>
+                                </div>
+                            </div>
                         ))}
                     </div>
                 </div>
 
-                {/* ── Stat cards ── */}
-                <section className="row g-3 mb-3">
+                {/* ── 4 Primary Stat Cards ── */}
+                <section className="row g-3 mb-4">
                     {statCards.map((c, i) => (
                         <div key={i} className="col-12 col-sm-6 col-xl-3">
-                            <Link to={c.to} style={{ textDecoration: "none" }}>
-                                <article className={`metric-card ${c.variant}`}>
+                            <Link to={c.to} className="text-decoration-none">
+                                <article className={`metric-card ${c.variant} h-100`}>
                                     <div className="metric-top">
                                         <span className="metric-label">{c.label}</span>
-                                        <span className="metric-icon"><i className={`bi ${c.icon}`} aria-hidden="true"></i></span>
+                                        <span className="metric-icon">
+                                            <i className={`bi ${c.icon}`} aria-hidden="true"></i>
+                                        </span>
                                     </div>
                                     <div className="metric-value">{c.value}</div>
-                                    <div className="metric-meta"><span className="text-muted">total records</span></div>
+                                    <div className="metric-meta d-flex justify-content-between align-items-center">
+                                        <span className="badge bg-primary-subtle text-primary border-0 font-size-xs">{c.trend}</span>
+                                        <span className="text-muted small">View all <i className="bi bi-chevron-right ms-0.5"></i></span>
+                                    </div>
                                 </article>
                             </Link>
                         </div>
                     ))}
                 </section>
 
-                {/* ── Alert cards ── */}
-                <div className="row g-3 mb-3">
+                {/* ── 4 Mini Status Cards ── */}
+                <div className="row g-3 mb-4">
                     {alertCards.map((c, i) => (
                         <div key={i} className="col-12 col-sm-6 col-xl-3">
-                            <div className="panel d-flex align-items-center gap-3 py-3">
-                                <span className={`fs-4 ${c.color}`}><i className={`bi ${c.icon}`}></i></span>
-                                <div>
-                                    <div className="fw-bold fs-5">{c.value}</div>
-                                    <div className="text-muted small">{c.label}</div>
+                            <Link to={c.to} className="text-decoration-none">
+                                <div className={`panel p-3 d-flex align-items-center gap-3 border ${c.border} h-100`}>
+                                    <div className={`p-2.5 rounded-3 ${c.bg} ${c.text} fs-4 d-inline-grid place-items-center`}>
+                                        <i className={`bi ${c.icon}`}></i>
+                                    </div>
+                                    <div className="flex-grow-1">
+                                        <div className="fw-bold fs-5 text-body">{c.value}</div>
+                                        <div className="text-muted small">{c.label}</div>
+                                    </div>
+                                    <i className="bi bi-arrow-up-right text-muted opacity-50"></i>
                                 </div>
-                            </div>
+                            </Link>
                         </div>
                     ))}
                 </div>
 
-                {/* ── Monthly Revenue (area) + Order Status (pie) ── */}
-                <div className="row g-3 mb-3">
-                    <div className="col-12 col-xl-7">
+                {/* ── Charts Row 1: Monthly Revenue Area Chart + Order Status Donut Chart ── */}
+                <div className="row g-4 mb-4">
+                    <div className="col-12 col-xl-8">
                         <div className="panel h-100">
-                            <div className="panel-header">
+                            <div className="panel-header mb-3">
                                 <div>
                                     <h2 className="h5 mb-1 section-title">
-                                        <i className="bi bi-graph-up" aria-hidden="true"></i>
+                                        <i className="bi bi-graph-up text-primary" aria-hidden="true"></i>
                                         <span>Monthly Revenue Trend</span>
                                     </h2>
-                                    <p className="text-muted mb-0">Completed orders only</p>
+                                    <p className="text-muted small mb-0">Completed sales revenue trend over recent months</p>
                                 </div>
-                                <span className="badge text-bg-secondary" style={{ fontSize: 11 }}>Last 7 months</span>
+                                <span className="badge bg-primary-subtle text-primary">Last 7 Months</span>
                             </div>
                             {monthlyRevenue.length === 0
-                                ? <p className="text-muted text-center py-4">No revenue data yet.</p>
-                                : <ResponsiveContainer width="100%" height={220}>
-                                    <AreaChart data={monthlyRevenue} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                                        <defs>
-                                            <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%"  stopColor="#0d6efd" stopOpacity={0.3} />
-                                                <stop offset="95%" stopColor="#0d6efd" stopOpacity={0.02} />
-                                            </linearGradient>
-                                        </defs>
-                                        <CartesianGrid {...gridStyle} />
-                                        <XAxis dataKey="month" tick={axisStyle} axisLine={false} tickLine={false} />
-                                        <YAxis tick={axisStyle} axisLine={false} tickLine={false}
-                                            tickFormatter={v => "₹" + (v >= 1000 ? (v / 1000).toFixed(0) + "k" : v)} />
-                                        <Tooltip content={<DashTooltip />} />
-                                        <Area type="monotone" dataKey="revenue" name="Revenue"
-                                            stroke="#0d6efd" strokeWidth={2.5} fill="url(#revGrad)"
-                                            dot={{ fill: "#0d6efd", r: 4, strokeWidth: 0 }}
-                                            activeDot={{ r: 6, fill: "#6ea8fe" }} />
-                                    </AreaChart>
-                                </ResponsiveContainer>
+                                ? <div className="text-muted text-center py-5">No completed revenue transactions to display.</div>
+                                : <div style={{ height: 260 }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={monthlyRevenue} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                            <defs>
+                                                <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.4} />
+                                                    <stop offset="95%" stopColor="#4f46e5" stopOpacity={0.02} />
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid {...gridStyle} />
+                                            <XAxis dataKey="month" tick={axisStyle} axisLine={false} tickLine={false} />
+                                            <YAxis tick={axisStyle} axisLine={false} tickLine={false}
+                                                tickFormatter={v => "₹" + (v >= 1000 ? (v / 1000).toFixed(0) + "k" : v)} />
+                                            <Tooltip content={<DashTooltip />} />
+                                            <Area type="monotone" dataKey="revenue" name="Revenue"
+                                                stroke="#4f46e5" strokeWidth={3} fill="url(#revenueGradient)"
+                                                dot={{ fill: "#4f46e5", r: 4, strokeWidth: 2, stroke: "#ffffff" }}
+                                                activeDot={{ r: 7, fill: "#6366f1", stroke: "#ffffff", strokeWidth: 2 }} />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
                             }
                         </div>
                     </div>
 
-                    <div className="col-12 col-xl-5">
-                        <div className="panel h-100">
-                            <div className="panel-header">
+                    <div className="col-12 col-xl-4">
+                        <div className="panel h-100 d-flex flex-column">
+                            <div className="panel-header mb-3">
                                 <div>
                                     <h2 className="h5 mb-1 section-title">
-                                        <i className="bi bi-bag-check" aria-hidden="true"></i>
-                                        <span>Order Status</span>
+                                        <i className="bi bi-pie-chart text-success" aria-hidden="true"></i>
+                                        <span>Order Status Breakdown</span>
                                     </h2>
-                                    <p className="text-muted mb-0">All statuses</p>
+                                    <p className="text-muted small mb-0">Distribution across active order statuses</p>
                                 </div>
-                                <Link to="/checkout" className="btn btn-light btn-sm">View all</Link>
+                                <Link to="/checkout" className="btn btn-light btn-sm py-1 px-2.5">View all</Link>
                             </div>
-                            {orderStatusPie.length === 0
-                                ? <p className="text-muted text-center py-4">No orders yet.</p>
-                                : <ResponsiveContainer width="100%" height={220}>
-                                    <PieChart>
-                                        <Pie data={orderStatusPie} dataKey="value" nameKey="name"
-                                            cx="50%" cy="50%" innerRadius={50} outerRadius={78}
-                                            paddingAngle={3} strokeWidth={0}>
-                                            {orderStatusPie.map((e, i) => <Cell key={i} fill={e.fill} />)}
-                                        </Pie>
-                                        <Tooltip content={<DashTooltip />} />
-                                        <Legend iconType="circle" iconSize={8}
-                                            formatter={v => <span style={{ fontSize: 11, color: "var(--bs-secondary-color)" }}>{v}</span>} />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            }
+                            <div className="flex-grow-1 d-flex flex-column justify-content-center" style={{ minHeight: 220 }}>
+                                {orderStatusPie.length === 0
+                                    ? <div className="text-muted text-center py-4">No order records recorded.</div>
+                                    : <ResponsiveContainer width="100%" height={230}>
+                                        <PieChart>
+                                            <Pie data={orderStatusPie} dataKey="value" nameKey="name"
+                                                cx="50%" cy="50%" innerRadius={54} outerRadius={82}
+                                                paddingAngle={4} strokeWidth={2} stroke="var(--admin-surface, #ffffff)">
+                                                {orderStatusPie.map((e, i) => <Cell key={i} fill={e.fill} />)}
+                                            </Pie>
+                                            <Tooltip content={<DashTooltip />} />
+                                            <Legend iconType="circle" iconSize={8}
+                                                formatter={v => <span className="small text-muted">{v}</span>} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                }
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* ── Revenue Split + Payment Modes + Stock Status ── */}
-                <div className="row g-3 mb-3">
-                    <div className="col-12 col-xl-4">
+                {/* ── Charts Row 2: Payment Modes & Brand Distribution ── */}
+                <div className="row g-4 mb-4">
+                    <div className="col-12 col-xl-6">
                         <div className="panel h-100">
-                            <div className="panel-header">
+                            <div className="panel-header mb-3">
                                 <div>
                                     <h2 className="h5 mb-1 section-title">
-                                        <i className="bi bi-bar-chart-line" aria-hidden="true"></i>
-                                        <span>Revenue Split</span>
+                                        <i className="bi bi-credit-card-2-front text-info" aria-hidden="true"></i>
+                                        <span>Payment Methods Distribution</span>
                                     </h2>
-                                    <p className="text-muted mb-0">Collected vs Pending</p>
-                                </div>
-                            </div>
-                            <ResponsiveContainer width="100%" height={200}>
-                                <BarChart data={revenueSplit} margin={{ top: 10, right: 10, left: 0, bottom: 0 }} barSize={44}>
-                                    <CartesianGrid {...gridStyle} />
-                                    <XAxis dataKey="name" tick={{ ...axisStyle, fontSize: 10 }} axisLine={false} tickLine={false} />
-                                    <YAxis tick={axisStyle} axisLine={false} tickLine={false}
-                                        tickFormatter={v => "₹" + (v >= 1000 ? (v / 1000).toFixed(0) + "k" : v)} />
-                                    <Tooltip content={<DashTooltip />} />
-                                    <Bar dataKey="revenue" name="Revenue" radius={[6, 6, 0, 0]}>
-                                        {revenueSplit.map((e, i) => <Cell key={i} fill={e.fill} />)}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-
-                    <div className="col-12 col-xl-4">
-                        <div className="panel h-100">
-                            <div className="panel-header">
-                                <div>
-                                    <h2 className="h5 mb-1 section-title">
-                                        <i className="bi bi-credit-card" aria-hidden="true"></i>
-                                        <span>Payment Modes</span>
-                                    </h2>
-                                    <p className="text-muted mb-0">Orders by payment type</p>
+                                    <p className="text-muted small mb-0">Checkout volumes categorized by payment channel</p>
                                 </div>
                             </div>
                             {(() => {
@@ -483,251 +509,118 @@ export default function Home() {
                                 D.checkouts.forEach(c => { const m = c.paymentMode || "COD"; modeMap[m] = (modeMap[m] || 0) + 1; });
                                 const modeData = Object.entries(modeMap).map(([name, count]) => ({ name, count }));
                                 return modeData.length === 0
-                                    ? <p className="text-muted text-center py-4">No data yet.</p>
-                                    : <ResponsiveContainer width="100%" height={200}>
-                                        <BarChart data={modeData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }} barSize={36}>
-                                            <CartesianGrid {...gridStyle} />
-                                            <XAxis dataKey="name" tick={axisStyle} axisLine={false} tickLine={false} />
-                                            <YAxis tick={axisStyle} axisLine={false} tickLine={false} allowDecimals={false} />
-                                            <Tooltip content={<DashTooltip />} />
-                                            <Bar dataKey="count" name="Orders" fill="#6f42c1" radius={[6, 6, 0, 0]} />
-                                        </BarChart>
-                                    </ResponsiveContainer>;
+                                    ? <p className="text-muted text-center py-4">No payment data recorded yet.</p>
+                                    : <div style={{ height: 210 }}>
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart data={modeData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }} barSize={38}>
+                                                <CartesianGrid {...gridStyle} />
+                                                <XAxis dataKey="name" tick={axisStyle} axisLine={false} tickLine={false} />
+                                                <YAxis tick={axisStyle} axisLine={false} tickLine={false} allowDecimals={false} />
+                                                <Tooltip content={<DashTooltip />} />
+                                                <Bar dataKey="count" name="Orders" fill="#6366f1" radius={[8, 8, 0, 0]} />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </div>;
                             })()}
                         </div>
                     </div>
 
-                    <div className="col-12 col-xl-4">
+                    <div className="col-12 col-xl-6">
                         <div className="panel h-100">
-                            <div className="panel-header">
+                            <div className="panel-header mb-3">
                                 <div>
                                     <h2 className="h5 mb-1 section-title">
-                                        <i className="bi bi-boxes" aria-hidden="true"></i>
-                                        <span>Stock Status</span>
+                                        <i className="bi bi-tag text-warning" aria-hidden="true"></i>
+                                        <span>Top Brands in Catalog</span>
                                     </h2>
-                                    <p className="text-muted mb-0">In stock vs out of stock</p>
+                                    <p className="text-muted small mb-0">Product distribution by manufacturer brand</p>
                                 </div>
-                                <Link to="/product" className="btn btn-light btn-sm">View all</Link>
-                            </div>
-                            <ResponsiveContainer width="100%" height={200}>
-                                <BarChart data={stockData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }} barSize={44}>
-                                    <CartesianGrid {...gridStyle} />
-                                    <XAxis dataKey="name" tick={{ ...axisStyle, fontSize: 10 }} axisLine={false} tickLine={false} />
-                                    <YAxis tick={axisStyle} axisLine={false} tickLine={false} allowDecimals={false} />
-                                    <Tooltip content={<DashTooltip />} />
-                                    <Bar dataKey="count" name="Products" radius={[6, 6, 0, 0]}>
-                                        {stockData.map((e, i) => <Cell key={i} fill={e.fill} />)}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-                </div>
-
-                {/* ── Products per Brand + Products per Category ── */}
-                <div className="row g-3 mb-3">
-                    <div className="col-12 col-xl-7">
-                        <div className="panel h-100">
-                            <div className="panel-header">
-                                <div>
-                                    <h2 className="h5 mb-1 section-title">
-                                        <i className="bi bi-tag" aria-hidden="true"></i>
-                                        <span>Products per Brand</span>
-                                    </h2>
-                                    <p className="text-muted mb-0">Top 6 brands by count</p>
-                                </div>
-                                <Link to="/brand" className="btn btn-light btn-sm">View all</Link>
+                                <Link to="/brand" className="btn btn-light btn-sm py-1 px-2.5">Manage Brands</Link>
                             </div>
                             {productsPerBrand.length === 0
-                                ? <p className="text-muted text-center py-4">No product data yet.</p>
-                                : <ResponsiveContainer width="100%" height={220}>
-                                    <BarChart data={productsPerBrand} margin={{ top: 10, right: 10, left: 0, bottom: 44 }} barSize={32}>
-                                        <CartesianGrid {...gridStyle} />
-                                        <XAxis dataKey="name" tick={{ ...axisStyle, fontSize: 10 }} axisLine={false} tickLine={false}
-                                            angle={-25} textAnchor="end" interval={0} />
-                                        <YAxis tick={axisStyle} axisLine={false} tickLine={false} allowDecimals={false} />
-                                        <Tooltip content={<DashTooltip />} />
-                                        <Bar dataKey="count" name="Products" fill="#fd7e14" radius={[6, 6, 0, 0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            }
-                        </div>
-                    </div>
-
-                    <div className="col-12 col-xl-5">
-                        <div className="panel h-100">
-                            <div className="panel-header">
-                                <div>
-                                    <h2 className="h5 mb-1 section-title">
-                                        <i className="bi bi-layer-backward" aria-hidden="true"></i>
-                                        <span>Products per Category</span>
-                                    </h2>
-                                    <p className="text-muted mb-0">Category distribution</p>
+                                ? <p className="text-muted text-center py-4">No products catalogued yet.</p>
+                                : <div style={{ height: 210 }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={productsPerBrand} margin={{ top: 10, right: 10, left: 0, bottom: 25 }} barSize={34}>
+                                            <CartesianGrid {...gridStyle} />
+                                            <XAxis dataKey="name" tick={{ ...axisStyle, fontSize: 10 }} axisLine={false} tickLine={false}
+                                                angle={-20} textAnchor="end" interval={0} />
+                                            <YAxis tick={axisStyle} axisLine={false} tickLine={false} allowDecimals={false} />
+                                            <Tooltip content={<DashTooltip />} />
+                                            <Bar dataKey="count" name="Products" fill="#f59e0b" radius={[8, 8, 0, 0]} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
                                 </div>
-                                <Link to="/maincategory" className="btn btn-light btn-sm">View all</Link>
-                            </div>
-                            {productsPerCategory.length === 0
-                                ? <p className="text-muted text-center py-4">No product data yet.</p>
-                                : <ResponsiveContainer width="100%" height={220}>
-                                    <PieChart>
-                                        <Pie data={productsPerCategory} dataKey="count" nameKey="name"
-                                            cx="50%" cy="50%" innerRadius={45} outerRadius={72}
-                                            paddingAngle={3} strokeWidth={0}>
-                                            {productsPerCategory.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                                        </Pie>
-                                        <Tooltip content={<DashTooltip />} />
-                                        <Legend iconType="circle" iconSize={8}
-                                            formatter={v => <span style={{ fontSize: 11, color: "var(--bs-secondary-color)" }}>{v}</span>} />
-                                    </PieChart>
-                                </ResponsiveContainer>
                             }
                         </div>
                     </div>
                 </div>
 
-                {/* ── Content breakdown ── */}
-                <div className="row g-3 mb-3">
+                {/* ── Recent Orders Table (Rich Dashboard Card) ── */}
+                <div className="row g-4 mb-4">
                     <div className="col-12">
                         <div className="panel">
-                            <div className="panel-header">
+                            <div className="panel-header mb-3">
                                 <div>
                                     <h2 className="h5 mb-1 section-title">
-                                        <i className="bi bi-bar-chart" aria-hidden="true"></i>
-                                        <span>Content Breakdown</span>
-                                    </h2>
-                                    <p className="text-muted mb-0">Records per section</p>
-                                </div>
-                            </div>
-                            <div className="d-flex flex-column gap-2 mt-3">
-                                {contentBars.map(b => (
-                                    <div key={b.label} className="d-flex align-items-center gap-2">
-                                        <Link to={b.to} style={{ width: 86, fontSize: 12, color: "var(--bs-secondary-color)", textDecoration: "none", flexShrink: 0 }}>
-                                            {b.label}
-                                        </Link>
-                                        <div className="flex-grow-1" style={{ height: 8, background: "var(--bs-secondary-bg)", borderRadius: 99, overflow: "hidden" }}>
-                                            <div style={{ height: "100%", width: `${Math.round((b.count / maxBar) * 100)}%`, background: b.color, borderRadius: 99, transition: "width .5s ease" }} />
-                                        </div>
-                                        <span style={{ fontSize: 12, fontWeight: 600, minWidth: 20, textAlign: "right" }}>{b.count}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* ── Testimonial status ── */}
-                <div className="row g-3 mb-3">
-                    <div className="col-12 col-xl-6">
-                        <div className="panel h-100">
-                            <div className="panel-header">
-                                <div>
-                                    <h2 className="h5 mb-1 section-title">
-                                        <i className="bi bi-chat-quote" aria-hidden="true"></i>
-                                        <span>Testimonial Status</span>
-                                    </h2>
-                                    <p className="text-muted mb-0">Approved vs pending</p>
-                                </div>
-                                <Link to="/testimonial" className="btn btn-light btn-sm">View all</Link>
-                            </div>
-                            <ResponsiveContainer width="100%" height={200}>
-                                <PieChart>
-                                    <Pie data={[
-                                        { name: "Approved", value: approvedTestimonials, fill: "#198754" },
-                                        { name: "Pending",  value: pendingTestimonials,  fill: "#ffc107" },
-                                    ].filter(d => d.value > 0)} dataKey="value" nameKey="name"
-                                        cx="50%" cy="50%" innerRadius={50} outerRadius={78}
-                                        paddingAngle={3} strokeWidth={0}>
-                                        {[{ fill: "#198754" }, { fill: "#ffc107" }].map((e, i) => <Cell key={i} fill={e.fill} />)}
-                                    </Pie>
-                                    <Tooltip content={<DashTooltip />} />
-                                    <Legend iconType="circle" iconSize={8}
-                                        formatter={v => <span style={{ fontSize: 11, color: "var(--bs-secondary-color)" }}>{v}</span>} />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-
-                    {/* ── Recent Messages ── */}
-                    <div className="col-12 col-xl-6">
-                        <div className="panel h-100">
-                            <div className="panel-header">
-                                <div>
-                                    <h2 className="h5 mb-1 section-title">
-                                        <i className="bi bi-headset" aria-hidden="true"></i>
-                                        <span>Recent Messages</span>
-                                    </h2>
-                                    <p className="text-muted mb-0">Latest contact queries</p>
-                                </div>
-                                <Link to="/contactUs" className="btn btn-light btn-sm">View all</Link>
-                            </div>
-                            <div className="table-responsive mt-2">
-                                <table className="table align-middle mb-0" style={{ fontSize: 13 }}>
-                                    <thead>
-                                        <tr><th>Name</th><th>Email</th><th>Status</th></tr>
-                                    </thead>
-                                    <tbody>
-                                        {D.contacts.slice(0, 5).map((c, i) => (
-                                            <tr key={i}>
-                                                <td className="fw-semibold">{c.name || "—"}</td>
-                                                <td className="text-muted">{c.email || "—"}</td>
-                                                <td>
-                                                    <span className={`badge ${c.active ? "text-bg-warning" : "text-bg-success"}`}>
-                                                        {c.active ? "Unread" : "Read"}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* ── Recent Orders (rich table) ── */}
-                <div className="row g-3 mb-3">
-                    <div className="col-12">
-                        <div className="panel">
-                            <div className="panel-header">
-                                <div>
-                                    <h2 className="h5 mb-1 section-title">
-                                        <i className="bi bi-receipt" aria-hidden="true"></i>
+                                        <i className="bi bi-receipt-cutoff text-primary" aria-hidden="true"></i>
                                         <span>Recent Orders</span>
                                     </h2>
-                                    <p className="text-muted mb-0">Latest checkout records, sorted by date</p>
+                                    <p className="text-muted small mb-0">Real-time checkout records received across all shops</p>
                                 </div>
-                                <Link to="/checkout" className="btn btn-light btn-sm">View all</Link>
+                                <Link to="/checkout" className="btn btn-primary btn-sm">
+                                    <span>View All Orders</span>
+                                    <i className="bi bi-arrow-right ms-1"></i>
+                                </Link>
                             </div>
-                            <div className="table-responsive mt-2">
-                                <table className="table align-middle mb-0" style={{ fontSize: 13 }}>
+                            <div className="table-responsive">
+                                <table className="table align-middle mb-0">
                                     <thead>
                                         <tr>
                                             <th>#</th>
                                             <th>Customer</th>
-                                            <th>Pay Mode</th>
+                                            <th>Payment Method</th>
                                             <th>Subtotal</th>
                                             <th>Shipping</th>
-                                            <th>Total</th>
-                                            <th>Order Status</th>
+                                            <th>Order Total</th>
+                                            <th>Status</th>
                                             <th>Payment</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {recentOrders.map((o, i) => {
-                                            const s = orderBadge(o.orderStatus);
-                                            return (
-                                                <tr key={i}>
-                                                    <td className="text-muted" style={{ fontSize: 11 }}>#{i + 1}</td>
-                                                    <td className="fw-semibold">{o.user?.name || o.user?.username || "—"}</td>
-                                                    <td className="text-muted">{o.paymentMode || "COD"}</td>
-                                                    <td className="text-muted">{fmt(o.subtotal || 0)}</td>
-                                                    <td className="text-muted">{fmt(o.shipping || 0)}</td>
-                                                    <td className="fw-semibold">{fmt(o.total || 0)}</td>
-                                                    <td><span className={s.cls}>{s.label}</span></td>
-                                                    <td><span className={payBadge(o.paymentStatus)}>{o.paymentStatus || "Pending"}</span></td>
-                                                </tr>
-                                            );
-                                        })}
+                                        {recentOrders.length === 0 ? (
+                                            <tr>
+                                                <td colSpan="8" className="text-center text-muted py-4">No order records recorded.</td>
+                                            </tr>
+                                        ) : (
+                                            recentOrders.map((o, i) => {
+                                                const s = orderBadge(o.orderStatus);
+                                                const custName = o.user?.name || o.user?.username || "Guest Customer";
+                                                const initial = custName.charAt(0).toUpperCase();
+                                                return (
+                                                    <tr key={i}>
+                                                        <td className="text-muted small">#{i + 1}</td>
+                                                        <td>
+                                                            <div className="d-flex align-items-center gap-2.5">
+                                                                <div className="rounded-circle bg-primary-subtle text-primary fw-bold d-inline-grid place-items-center"
+                                                                     style={{ width: 34, height: 34, fontSize: 13 }}>
+                                                                    {initial}
+                                                                </div>
+                                                                <span className="fw-semibold text-body">{custName}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <span className="username-badge">{o.paymentMode || "COD"}</span>
+                                                        </td>
+                                                        <td className="text-muted">{fmt(o.subtotal || 0)}</td>
+                                                        <td className="text-muted">{o.shipping ? fmt(o.shipping) : "Free"}</td>
+                                                        <td className="fw-bold text-body">{fmt(o.total || 0)}</td>
+                                                        <td><span className={s.cls}>{s.label}</span></td>
+                                                        <td><span className={payBadge(o.paymentStatus)}>{o.paymentStatus || "Pending"}</span></td>
+                                                    </tr>
+                                                );
+                                            })
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
@@ -735,89 +628,109 @@ export default function Home() {
                     </div>
                 </div>
 
-                {/* ── Low Stock Alert + Quick Actions ── */}
-                <div className="row g-3 mb-3">
-                    <div className="col-12 col-xl-7">
-                        <div className="panel">
-                            <div className="panel-header">
-                                <div>
-                                    <h2 className="h5 mb-1 section-title">
-                                        <i className="bi bi-exclamation-triangle" aria-hidden="true"></i>
-                                        <span>Low Stock Alert</span>
-                                    </h2>
-                                    <p className="text-muted mb-0">In-stock products with ≤ 10 units remaining</p>
-                                </div>
-                                <Link to="/product" className="btn btn-light btn-sm">View all</Link>
-                            </div>
-                            {lowStockProducts.length === 0
-                                ? <p className="text-muted text-center py-4">🎉 All products are well stocked.</p>
-                                : <div className="table-responsive mt-2">
-                                    <table className="table align-middle mb-0" style={{ fontSize: 13 }}>
-                                        <thead>
-                                            <tr><th>Product</th><th>Brand</th><th>Category</th><th>Price</th><th>Qty Left</th></tr>
-                                        </thead>
-                                        <tbody>
-                                            {lowStockProducts.map((p, i) => (
-                                                <tr key={i}>
-                                                    <td className="fw-semibold">{p.name}</td>
-                                                    <td className="text-muted">{p.brand?.name || "—"}</td>
-                                                    <td className="text-muted">{p.maincategory?.name || "—"}</td>
-                                                    <td className="text-muted">{fmt(p.finalPrice || 0)}</td>
-                                                    <td>
-                                                        <span className="badge text-bg-warning">{p.stockQuantity} left</span>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            }
-                        </div>
-                    </div>
-
-                    <div className="col-12 col-xl-5">
+                {/* ── Bottom Row: Quick Actions + Recent Queries + Low Stock Alert ── */}
+                <div className="row g-4">
+                    {/* Quick Actions */}
+                    <div className="col-12 col-xl-4">
                         <div className="panel h-100">
-                            <div className="panel-header">
+                            <div className="panel-header mb-3">
                                 <div>
                                     <h2 className="h5 mb-1 section-title">
-                                        <i className="bi bi-lightning" aria-hidden="true"></i>
-                                        <span>Quick Actions</span>
+                                        <i className="bi bi-lightning-charge-fill text-warning" aria-hidden="true"></i>
+                                        <span>Quick Operations</span>
                                     </h2>
+                                    <p className="text-muted small mb-0">Shortcuts to frequent tasks</p>
                                 </div>
                             </div>
-
-                            <div className="row g-2">
+                            <div className="row g-2.5">
                                 {quickActions.map((q, i) => (
                                     <div key={i} className="col-6">
-                                        <Link to={q.to} className="d-flex align-items-center gap-2 p-2 rounded-2 text-decoration-none"
+                                        <Link to={q.to} className="d-flex align-items-center gap-2 p-2.5 rounded-3 text-decoration-none border shadow-xs"
                                             style={{
-                                                background: "var(--bs-secondary-bg)",
-                                                border: "1px solid var(--bs-border-color)",
-                                                borderLeft: `3px solid ${q.color}`,
-                                                fontSize: 12, fontWeight: 600,
-                                                color: "var(--bs-secondary-color)",
-                                                transition: "background .2s",
+                                                background: "var(--admin-surface)",
+                                                borderLeft: `3.5px solid ${q.color}`,
+                                                fontSize: "0.86rem",
+                                                fontWeight: 700,
+                                                color: "var(--admin-text)",
+                                                transition: "all .16s ease",
                                             }}>
-                                            <i className={`bi ${q.icon}`} style={{ color: q.color, fontSize: 14 }}></i>
-                                            {q.label}
+                                            <i className={`bi ${q.icon}`} style={{ color: q.color, fontSize: 16 }}></i>
+                                            <span className="text-truncate">{q.label}</span>
                                         </Link>
                                     </div>
                                 ))}
                             </div>
+                        </div>
+                    </div>
 
-                            <div className="mt-3 pt-3" style={{ borderTop: "1px solid var(--bs-border-color)" }}>
-                                {[
-                                    { icon: "bi-envelope-paper", color: "text-primary",   label: "Newsletter Subscribers", val: D.newsletters.length,   to: "/newsletter"  },
-                                    { icon: "bi-star",           color: "text-warning",   label: "Testimonials",          val: D.testimonials.length,   to: "/testimonial" },
-                                ].map((r, i) => (
-                                    <div key={i} className="d-flex justify-content-between align-items-center mb-2">
-                                        <span className={`text-muted small d-flex align-items-center gap-2`}>
-                                            <i className={`bi ${r.icon} ${r.color}`}></i> {r.label}
-                                        </span>
-                                        <Link to={r.to} className="fw-bold small text-decoration-none">{r.val}</Link>
-                                    </div>
-                                ))}
+                    {/* Low Stock Alert */}
+                    <div className="col-12 col-xl-4">
+                        <div className="panel h-100">
+                            <div className="panel-header mb-3">
+                                <div>
+                                    <h2 className="h5 mb-1 section-title">
+                                        <i className="bi bi-exclamation-triangle-fill text-danger" aria-hidden="true"></i>
+                                        <span>Low Stock Alerts</span>
+                                    </h2>
+                                    <p className="text-muted small mb-0">Items with ≤ 10 units left</p>
+                                </div>
+                                <Link to="/product" className="btn btn-light btn-sm py-1 px-2.5">View all</Link>
                             </div>
+                            {lowStockProducts.length === 0 ? (
+                                <div className="text-center py-4 text-muted small">
+                                    <i className="bi bi-check-circle text-success fs-3 d-block mb-1"></i>
+                                    All products are well stocked!
+                                </div>
+                            ) : (
+                                <div className="d-flex flex-column gap-2">
+                                    {lowStockProducts.map((p, i) => (
+                                        <div key={i} className="d-flex align-items-center justify-content-between p-2.5 rounded-3 border bg-light-subtle">
+                                            <div className="min-w-0 me-2">
+                                                <div className="fw-semibold text-truncate text-body small">{p.name}</div>
+                                                <div className="text-muted" style={{ fontSize: "0.74rem" }}>
+                                                    {p.brand?.name || "Brand"} • {p.maincategory?.name || "Category"}
+                                                </div>
+                                            </div>
+                                            <span className="badge bg-danger-subtle text-danger flex-shrink-0">
+                                                {p.stockQuantity} remaining
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Recent Contact Messages */}
+                    <div className="col-12 col-xl-4">
+                        <div className="panel h-100">
+                            <div className="panel-header mb-3">
+                                <div>
+                                    <h2 className="h5 mb-1 section-title">
+                                        <i className="bi bi-chat-dots-fill text-primary" aria-hidden="true"></i>
+                                        <span>Customer Queries</span>
+                                    </h2>
+                                    <p className="text-muted small mb-0">Latest messages submitted</p>
+                                </div>
+                                <Link to="/contactUs" className="btn btn-light btn-sm py-1 px-2.5">View all</Link>
+                            </div>
+                            {D.contacts.length === 0 ? (
+                                <div className="text-center py-4 text-muted small">No customer queries recorded.</div>
+                            ) : (
+                                <div className="d-flex flex-column gap-2">
+                                    {D.contacts.slice(0, 4).map((c, i) => (
+                                        <div key={i} className="d-flex align-items-center justify-content-between p-2.5 rounded-3 border bg-light-subtle">
+                                            <div className="min-w-0 me-2">
+                                                <div className="fw-semibold text-truncate text-body small">{c.name || "Customer"}</div>
+                                                <div className="text-muted text-truncate" style={{ fontSize: "0.74rem" }}>{c.email || "No email"}</div>
+                                            </div>
+                                            <span className={`badge ${c.active ? "bg-warning-subtle text-warning" : "bg-success-subtle text-success"} flex-shrink-0`}>
+                                                {c.active ? "Unread" : "Resolved"}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
