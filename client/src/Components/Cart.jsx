@@ -676,8 +676,11 @@ export default function Cart({ title, data }) {
                   >
                     <div style={{ position: 'relative' }}>
                       <img
-                        src={item.variant?.pic?.[0]}
-                        alt={item.product?.name}
+                        src={item.variant?.pic?.[0] || item.product?.variants?.[0]?.pic?.[0] || (typeof item.pic === 'string' ? item.pic : "/img/noimage.jpg")}
+                        alt={item.product?.name || "Product"}
+                        onError={(e) => {
+                          e.currentTarget.src = "/img/noimage.jpg";
+                        }}
                         style={{
                           width: 72, height: 72,
                           borderRadius: 10,

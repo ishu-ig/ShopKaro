@@ -709,41 +709,50 @@ export default function OrderDetailPage() {
                         minWidth: 0,
                       }}
                     >
-                      {prod.variant?.pic?.[0] ? (
-                        <img
-                          src={prod.variant.pic[0].replace(/\\/g, "/")}
-                          alt={prod.product?.name}
-                          style={{
-                            width: 52,
-                            height: 52,
-                            borderRadius: 10,
-                            objectFit: "cover",
-                            flexShrink: 0,
-                            border: "1px solid rgba(200,64,10,0.12)",
-                          }}
-                          onError={(e) => {
-                            e.currentTarget.style.display = "none";
-                            e.currentTarget.nextSibling.style.display = "flex";
-                          }}
-                        />
-                      ) : null}
+                      {(() => {
+                        const prodImg = prod.variant?.pic?.[0] || prod.product?.variants?.[0]?.pic?.[0] || prod.product?.pic?.[0] || prod.pic?.[0] || (typeof prod.pic === "string" ? prod.pic : null);
+                        return (
+                          <>
+                            {prodImg ? (
+                              <img
+                                src={prodImg.replace(/\\/g, "/")}
+                                alt={prod.product?.name || "Product"}
+                                style={{
+                                  width: 52,
+                                  height: 52,
+                                  borderRadius: 10,
+                                  objectFit: "cover",
+                                  flexShrink: 0,
+                                  border: "1px solid rgba(200,64,10,0.12)",
+                                }}
+                                onError={(e) => {
+                                  e.currentTarget.style.display = "none";
+                                  if (e.currentTarget.nextSibling) {
+                                    e.currentTarget.nextSibling.style.display = "flex";
+                                  }
+                                }}
+                              />
+                            ) : null}
 
-                      {/* Fallback icon (shown if image fails or is missing) */}
-                      <div
-                        style={{
-                          width: 52,
-                          height: 52,
-                          borderRadius: 10,
-                          background: "rgba(201,168,76,0.1)",
-                          display: prod.variant?.pic?.[0] ? "none" : "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          color: "var(--sk-gold, #c9a84c)",
-                          flexShrink: 0,
-                        }}
-                      >
-                        <i className="fa fa-utensils" style={{ fontSize: "1rem" }}></i>
-                      </div>
+                            {/* Fallback icon (shown if image fails or is missing) */}
+                            <div
+                              style={{
+                                width: 52,
+                                height: 52,
+                                borderRadius: 10,
+                                background: "rgba(201,168,76,0.1)",
+                                display: prodImg ? "none" : "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                color: "var(--sk-gold, #c9a84c)",
+                                flexShrink: 0,
+                              }}
+                            >
+                              <i className="fa fa-box" style={{ fontSize: "1rem" }}></i>
+                            </div>
+                          </>
+                        );
+                      })()}
 
                       {/* Product name + redirect hint */}
                       <div style={{ minWidth: 0 }}>

@@ -65,9 +65,12 @@ export default function CategorySlider({ title, data }) {
                 <SwiperSlide key={item.id || item._id}>
                   <Link to={targetUrl} className="sk-cat-card text-decoration-none">
                     <img
-                      src={item.pic}
+                      src={item.pic || "/img/noimage.jpg"}
                       alt={item.name}
                       loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.src = "/img/noimage.jpg";
+                      }}
                     />
                     <div className="sk-cat-card-gradient"></div>
                     <div className="sk-cat-card-body">

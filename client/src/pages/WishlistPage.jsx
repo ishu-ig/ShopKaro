@@ -63,20 +63,26 @@ export default function WishlistPage() {
                                         <tr key={item._id}>
                                             <td className="wl-img-cell">
                                                 <Link
-                                                    to={item.variant?.pic?.[0]}
-                                                    target="_blank"
-                                                    rel="noreferrer"
+                                                    to={`/product/${item.product?._id}`}
                                                     className="wl-img-link"
                                                 >
                                                     <img
-                                                        src={item.variant?.pic?.[0]}
-                                                        alt={item.product?.name}
+                                                        src={item.variant?.pic?.[0] || item.product?.variants?.[0]?.pic?.[0] || "/img/noimage.jpg"}
+                                                        alt={item.product?.name || "Product"}
                                                         className="wl-img"
+                                                        onError={(e) => {
+                                                            e.currentTarget.src = "/img/noimage.jpg";
+                                                        }}
                                                     />
                                                 </Link>
                                             </td>
                                             <td>
-                                                <div className="wl-product-name">{item.product?.name}</div>
+                                                <Link
+                                                    to={`/product/${item.product?._id}`}
+                                                    style={{ textDecoration: "none", color: "inherit" }}
+                                                >
+                                                    <div className="wl-product-name">{item.product?.name}</div>
+                                                </Link>
                                                 <div className="wl-product-brand">{item.product?.brand?.name}</div>
                                             </td>
                                             <td>

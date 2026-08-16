@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -156,8 +156,8 @@ export default function ProductPage() {
 
   const basePrice = selectedVariant?.price ?? selectedVariant?.finalPrice ?? 0;
   const finalPrice = selectedVariant?.finalPrice ?? 0;
-  const savings = basePrice - finalPrice;
-  const gallery = selectedVariant?.pic || [];
+  const savings = basePrice - finalPrice;  
+  const gallery = (selectedVariant?.pic?.length ? selectedVariant.pic : data.variants?.find(v => v.pic?.length)?.pic) || [];
 
   const deliveryDate = (days) => {
     const d = new Date();
@@ -188,54 +188,60 @@ export default function ProductPage() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            authorization: localStorage.getItem("token"),
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
           body: JSON.stringify({
-            user: localStorage.getItem("userid"),
-            name: localStorage.getItem("name") || "Anonymous",
             rating: reviewRating,
             comment: reviewComment.trim(),
           }),
         },
       );
-      const json = await res.json();
-      if (json.result === "Done") {
-        setData((prev) => ({ ...prev, reviews: json.data }));
+      const data = await res.json();
+      if (!res.ok) {
+        setReviewError(data.message || "Failed to submit review.");
+      } else {
+        setReviewSuccess("Review submitted successfully!");
         setReviewComment("");
         setReviewRating(5);
-        setReviewSuccess("Your review has been submitted!");
-        setVisibleReviews(REVIEWS_PAGE_SIZE);
-      } else {
-        setReviewError(json.reason || "Something went wrong.");
+        dispatch(getProduct());
       }
     } catch {
-      setReviewError("Could not connect to server.");
+      setReviewError("Something went wrong. Please try again.");
     } finally {
       setReviewLoading(false);
     }
   };
 
+  const isOutOfStock = selectedVariant?.stockQuantity === 0;
+
   return (
     <>
-      {" "}
-      <div className="sk-pp mt-5">
-        <div className="container py-4">
+      <section className="sk-product-page">
+        <div className="container">
           {/* Breadcrumb */}
-          <div className="sk-breadcrumb">
-            <a href="/">Home</a>
-            <span className="sk-breadcrumb-sep">&#9670;</span>
-            <a href="/shop">Shop</a>
-            {data.maincategory?.name && (
+          <nav className="sk-pp-breadcrumb" aria-label="breadcrumb">
+            <Link to="/">Home</Link>
+            <span className="sk-pp-bc-sep">/</span>
+            <Link to="/shop">Shop</Link>
+            {data.maincategory && (
               <>
-                <span className="sk-breadcrumb-sep">&#9670;</span>
-                <a href={`/shop?mc=${data.maincategory.name}`}>
+                <span className="sk-pp-bc-sep">/</span>
+                <Link to={`/shop?mc=${data.maincategory.name}`}>
                   {data.maincategory.name}
-                </a>
+                </Link>
               </>
             )}
-            <span className="sk-breadcrumb-sep">&#9670;</span>
-            <span>{data.name}</span>
-          </div>
+            {data.subcategory && (
+              <>
+                <span className="sk-pp-bc-sep">/</span>
+                <Link to={`/shop?sc=${data.subcategory.name}`}>
+                  {data.subcategory.name}
+                </Link>
+              </>
+            )}
+            <span className="sk-pp-bc-sep">/</span>
+            <span className="sk-pp-bc-current">{data.name}</span>
+          </nav>
 
           <div className="row g-4 mt-1">
             {/* Gallery */}
@@ -261,12 +267,21 @@ export default function ProductPage() {
                   >
                     {gallery.map((item, index) => (
                       <SwiperSlide key={index}>
-                        <img src={item} alt={data.name} />
+                        <img
+                          src={item}
+                          alt={data.name}
+                          onError={(e) => { e.currentTarget.src = "/img/noimage.jpg"; }}
+                        />
                       </SwiperSlide>
                     ))}
                   </Swiper>
                 ) : gallery.length === 1 ? (
-                  <img src={gallery[0]} alt={data.name} className="sk-gallery-single" />
+                  <img
+                    src={gallery[0]}
+                    alt={data.name}
+                    className="sk-gallery-single"
+                    onError={(e) => { e.currentTarget.src = "/img/noimage.jpg"; }}
+                  />
                 ) : (
                   <div className="sk-gallery-placeholder">
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
@@ -296,7 +311,11 @@ export default function ProductPage() {
                   >
                     {gallery.map((item, index) => (
                       <SwiperSlide key={index}>
-                        <img src={item} alt="" />
+                        <img
+                          src={item}
+                          alt=""
+                          onError={(e) => { e.currentTarget.src = "/img/noimage.jpg"; }}
+                        />
                       </SwiperSlide>
                     ))}
                   </Swiper>
@@ -964,7 +983,7 @@ export default function ProductPage() {
             />
           </div>
         </div>
-      </div>
+      </section>
     </>
   );
 }

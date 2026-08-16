@@ -92,7 +92,9 @@ export default function OrderPage() {
                 {/* Products grid */}
                 <div style={{ padding:'16px 24px' }}>
                   <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))', gap:12 }}>
-                    {item?.products?.map((prod) => (
+                    {item?.products?.map((prod) => {
+                      const prodImg = prod.variant?.pic?.[0] || prod.product?.variants?.[0]?.pic?.[0] || prod.product?.pic?.[0] || prod.pic?.[0] || (typeof prod.pic === "string" ? prod.pic : null);
+                      return (
                       <Link
                         key={prod._id}
                         to={`/product/${prod.product?._id}`}
@@ -104,19 +106,21 @@ export default function OrderPage() {
                           onMouseLeave={e => { e.currentTarget.style.background='rgba(200,64,10,0.03)'; e.currentTarget.style.borderColor='rgba(200,64,10,0.07)'; }}
                         >
                           {/* Product image */}
-                          {prod.product?.pic?.[0] ? (
+                          {prodImg ? (
                             <img
-                              src={prod.product.pic[0].replace(/\\/g, '/')}
-                              alt={prod.product?.name}
+                              src={prodImg.replace(/\\/g, '/')}
+                              alt={prod.product?.name || "Product"}
                               style={{ width:44, height:44, borderRadius:8, objectFit:'cover', flexShrink:0, border:'1px solid rgba(200,64,10,0.12)' }}
                               onError={(e) => {
                                 e.currentTarget.style.display = 'none';
-                                e.currentTarget.nextSibling.style.display = 'flex';
+                                if (e.currentTarget.nextSibling) {
+                                  e.currentTarget.nextSibling.style.display = 'flex';
+                                }
                               }}
                             />
                           ) : null}
                           {/* Fallback icon */}
-                          <div style={{ width:44, height:44, borderRadius:8, background:'rgba(201,168,76,0.1)', display: prod.product?.pic?.[0] ? 'none' : 'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                          <div style={{ width:44, height:44, borderRadius:8, background:'rgba(201,168,76,0.1)', display: prodImg ? 'none' : 'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                             <i className="fa fa-box" style={{ color:'var(--sk-gold, #c9a84c)', fontSize:'0.85rem' }}></i>
                           </div>
 
@@ -129,7 +133,8 @@ export default function OrderPage() {
                           </div>
                         </div>
                       </Link>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 

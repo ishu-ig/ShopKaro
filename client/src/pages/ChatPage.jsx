@@ -190,9 +190,12 @@ export default function HelpDeskPage({ userId }) {
               <div className="space-y-2">
                 <h2 className="text-lg font-semibold text-blue-700">Order Details</h2>
                 <img
-                  src={`${process.env.REACT_APP_BACKEND_SERVER}/${selectedOrder.pic?.[0]}`}
-                  alt={selectedOrder.name}
+                  src={selectedOrder.pic?.[0] || selectedOrder.variants?.[0]?.pic?.[0] || (typeof selectedOrder.pic === 'string' ? selectedOrder.pic : "/img/noimage.jpg")}
+                  alt={selectedOrder.name || "Order item"}
                   className="w-full h-40 object-cover rounded-lg"
+                  onError={(e) => {
+                    e.currentTarget.src = "/img/noimage.jpg";
+                  }}
                 />
                 <p><b>{selectedOrder.name}</b></p>
                 <p>Price: ₹{selectedOrder.finalPrice}</p>

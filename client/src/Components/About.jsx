@@ -11,8 +11,18 @@ export default function About({ title }) {
             {/* Images */}
             <div className="col-lg-5 col-md-12 wow fadeIn" data-wow-delay=".3s">
               <div className="about-image-stack">
-                <img src="img/about-1.jpg" className="about-img-main" alt="ShopKaro store" />
-                <img src="img/banner8.jpg"  className="about-img-secondary" alt="ShopKaro products" />
+                <img
+                  src="/img/about-1.jpg"
+                  className="about-img-main"
+                  alt="ShopKaro store"
+                  onError={(e) => { e.currentTarget.src = "/img/noimage.jpg"; }}
+                />
+                <img
+                  src="/img/banner8.jpg"
+                  className="about-img-secondary"
+                  alt="ShopKaro products"
+                  onError={(e) => { e.currentTarget.src = "/img/noimage.jpg"; }}
+                />
                 <div className="about-badge">
                   <span className="about-badge-num">5+</span>
                   <span className="about-badge-text">Years of Trust</span>

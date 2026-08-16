@@ -76,24 +76,49 @@ export default function Home() {
                             ))}
                         </ol>
                         <div className="carousel-inner" role="listbox">
-                            {activeBanners.map((banner, index) => (
+                            {activeBanners.map((banner, index) => {
+                                const bannerUrl = banner.link || "/shop";
+                                const isExternal = /^https?:\/\//i.test(bannerUrl);
+
+                                return (
                                 <div key={banner._id} className={`carousel-item ${index === 0 ? "active" : ""}`}>
                                     <div className="position-relative w-100" style={{ minHeight: "360px", height: "clamp(380px, 64vh, 640px)", overflow: "hidden" }}>
-                                        <img
-                                            src={banner.pic}
-                                            style={{
-                                                width: "100%",
-                                                height: "100%",
-                                                objectFit: "cover",
-                                                objectPosition: "center center",
-                                                transform: "scale(1.02)",
-                                                transition: "transform 7s ease"
-                                            }}
-                                            alt={banner.title}
-                                        />
+                                        {isExternal ? (
+                                            <a href={bannerUrl} target="_blank" rel="noopener noreferrer" className="d-block w-100 h-100">
+                                                <img
+                                                    src={banner.pic}
+                                                    style={{
+                                                        width: "100%",
+                                                        height: "100%",
+                                                        objectFit: "cover",
+                                                        objectPosition: "center center",
+                                                        transform: "scale(1.02)",
+                                                        transition: "transform 7s ease"
+                                                    }}
+                                                    alt={banner.title}
+                                                    onError={(e) => { e.currentTarget.src = "/img/banner1.jpg"; }}
+                                                />
+                                            </a>
+                                        ) : (
+                                            <Link to={bannerUrl} className="d-block w-100 h-100">
+                                                <img
+                                                    src={banner.pic}
+                                                    style={{
+                                                        width: "100%",
+                                                        height: "100%",
+                                                        objectFit: "cover",
+                                                        objectPosition: "center center",
+                                                        transform: "scale(1.02)",
+                                                        transition: "transform 7s ease"
+                                                    }}
+                                                    alt={banner.title}
+                                                    onError={(e) => { e.currentTarget.src = "/img/banner1.jpg"; }}
+                                                />
+                                            </Link>
+                                        )}
                                     </div>
-                                    <div className="carousel-caption d-flex align-items-center">
-                                        <div className="container px-3 px-sm-4 px-md-5">
+                                    <div className="carousel-caption d-flex align-items-center" style={{ pointerEvents: "none" }}>
+                                        <div className="container px-3 px-sm-4 px-md-5" style={{ pointerEvents: "auto" }}>
                                             <div className="col-12 col-sm-10 col-md-9 col-lg-7 text-start" style={{ animation: "skFadeSlideUp 0.8s ease-out" }}>
                                                 <div
                                                     className="d-inline-flex align-items-center gap-2 px-2 px-sm-3 py-1 mb-2 mb-sm-3 rounded-pill"
@@ -124,26 +149,49 @@ export default function Home() {
                                                     {banner.title}
                                                 </h1>
                                                 <div className="d-flex flex-wrap gap-2 gap-sm-3 align-items-center">
-                                                    <Link to={banner.link || "/shop"} className="text-decoration-none">
-                                                        <button
-                                                            type="button"
-                                                            className="btn sk-btn-gold px-3 px-sm-4 py-2 py-sm-3 rounded-pill d-inline-flex align-items-center gap-2"
-                                                            style={{
-                                                                background: "linear-gradient(135deg, #c9a84c, #e8c873)",
-                                                                color: "#070d14",
-                                                                fontWeight: 700,
-                                                                fontSize: "clamp(0.78rem, 2.2vw, 0.9rem)",
-                                                                letterSpacing: "0.06em",
-                                                                textTransform: "uppercase",
-                                                                boxShadow: "0 6px 20px rgba(201,168,76,0.35)",
-                                                                border: "none",
-                                                                transition: "all 0.3s ease",
-                                                            }}
-                                                        >
-                                                            <span>Explore Collection</span>
-                                                            <i className="fa fa-arrow-right" style={{ fontSize: "0.85em" }}></i>
-                                                        </button>
-                                                    </Link>
+                                                    {isExternal ? (
+                                                        <a href={bannerUrl} target="_blank" rel="noopener noreferrer" className="text-decoration-none">
+                                                            <button
+                                                                type="button"
+                                                                className="btn sk-btn-gold px-3 px-sm-4 py-2 py-sm-3 rounded-pill d-inline-flex align-items-center gap-2"
+                                                                style={{
+                                                                    background: "linear-gradient(135deg, #c9a84c, #e8c873)",
+                                                                    color: "#070d14",
+                                                                    fontWeight: 700,
+                                                                    fontSize: "clamp(0.78rem, 2.2vw, 0.9rem)",
+                                                                    letterSpacing: "0.06em",
+                                                                    textTransform: "uppercase",
+                                                                    boxShadow: "0 6px 20px rgba(201,168,76,0.35)",
+                                                                    border: "none",
+                                                                    transition: "all 0.3s ease",
+                                                                }}
+                                                            >
+                                                                <span>Explore Collection</span>
+                                                                <i className="fa fa-arrow-right" style={{ fontSize: "0.85em" }}></i>
+                                                            </button>
+                                                        </a>
+                                                    ) : (
+                                                        <Link to={bannerUrl} className="text-decoration-none">
+                                                            <button
+                                                                type="button"
+                                                                className="btn sk-btn-gold px-3 px-sm-4 py-2 py-sm-3 rounded-pill d-inline-flex align-items-center gap-2"
+                                                                style={{
+                                                                    background: "linear-gradient(135deg, #c9a84c, #e8c873)",
+                                                                    color: "#070d14",
+                                                                    fontWeight: 700,
+                                                                    fontSize: "clamp(0.78rem, 2.2vw, 0.9rem)",
+                                                                    letterSpacing: "0.06em",
+                                                                    textTransform: "uppercase",
+                                                                    boxShadow: "0 6px 20px rgba(201,168,76,0.35)",
+                                                                    border: "none",
+                                                                    transition: "all 0.3s ease",
+                                                                }}
+                                                            >
+                                                                <span>Explore Collection</span>
+                                                                <i className="fa fa-arrow-right" style={{ fontSize: "0.85em" }}></i>
+                                                            </button>
+                                                        </Link>
+                                                    )}
                                                     <Link to="/about" className="text-decoration-none">
                                                         <button
                                                             type="button"
@@ -165,7 +213,8 @@ export default function Home() {
                                         </div>
                                     </div>
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
                         <button className="carousel-control-prev" type="button" data-bs-target="#carouselId" data-bs-slide="prev">
                             <span className="carousel-control-prev-icon" aria-hidden="true"></span>

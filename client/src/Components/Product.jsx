@@ -112,7 +112,7 @@ export default function Product({ title, data }) {
               if (!item) return null;
 
               const variant = item.variants?.[0] || {};
-              const thumb = variant.pic?.[0] || "/placeholder.png";
+              const thumb = variant.pic?.[0] || item.variants?.find(v => v.pic?.[0])?.pic?.[0] || (typeof item.pic === 'string' ? item.pic : item.pic?.[0]) || "/img/noimage.jpg";
               const basePrice = variant.price ?? variant.finalPrice ?? 0;
               const finalPrice = variant.finalPrice ?? basePrice;
               const discount = item.discount || (basePrice > finalPrice ? Math.round(((basePrice - finalPrice) / basePrice) * 100) : 0);
@@ -147,6 +147,9 @@ export default function Product({ title, data }) {
                           src={thumb}
                           alt={item.name || "Product"}
                           loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.src = "/img/noimage.jpg";
+                          }}
                           style={{
                             width: "100%",
                             height: "100%",

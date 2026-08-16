@@ -437,10 +437,8 @@ export default function ProductSlider({ title, data }) {
               }}
             >
               {data.map((item) => {
-                // Pricing/images now live per-variant, not on the product
-                // itself — use the first variant as the representative one.
                 const variant = item?.variants?.[0] || {};
-                const thumb = variant.pic?.[0];
+                const thumb = variant.pic?.[0] || item?.variants?.find(v => v.pic?.[0])?.pic?.[0] || (typeof item?.pic === 'string' ? item.pic : item?.pic?.[0]);
                 const basePrice = variant.price ?? variant.finalPrice;
                 const finalPrice = variant.finalPrice;
 
