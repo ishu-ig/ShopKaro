@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { createCart, updateCart } from "../Redux/ActionCreators/CartActionCreators";
+import { createCart } from "../Redux/ActionCreators/CartActionCreators";
 
 export default function Product({ title, data }) {
   const [visibleCount, setVisibleCount] = useState(21);
@@ -30,33 +30,28 @@ export default function Product({ title, data }) {
       return;
     }
 
-    const finalPrice = variant.finalPrice ?? variant.price ?? 0;
     const existing = CartStateData.find(
       (x) =>
-        x.product?._id === item._id &&
-        String(x.variant?._id || x.variant) === String(variant._id) &&
-        x.user?._id === userId
+        String(x.product?._id || x.product) === String(item._id) &&
+        (!variant._id || String(x.variant?._id || x.variant) === String(variant._id)) &&
+        String(x.user?._id || x.user) === String(userId)
     );
 
     if (existing) {
-      dispatch(
-        updateCart({
-          ...existing,
-          qty: existing.qty + 1,
-          total: existing.total + finalPrice,
-        })
-      );
-    } else {
-      dispatch(
-        createCart({
-          user: userId,
-          product: item._id,
-          variant: variant._id,
-          qty: 1,
-          total: finalPrice,
-        })
-      );
+      navigate("/cart");
+      return;
     }
+
+    const finalPrice = variant.finalPrice ?? variant.price ?? 0;
+    dispatch(
+      createCart({
+        user: userId,
+        product: item._id,
+        variant: variant._id,
+        qty: 1,
+        total: finalPrice,
+      })
+    );
 
     // Trigger visual "Added ✓" feedback
     setAddedId(item._id);
@@ -117,6 +112,13 @@ export default function Product({ title, data }) {
               const finalPrice = variant.finalPrice ?? basePrice;
               const discount = item.discount || (basePrice > finalPrice ? Math.round(((basePrice - finalPrice) / basePrice) * 100) : 0);
               const key = item._id ?? index;
+              const userId = localStorage.getItem("userid");
+              const inCart = CartStateData.some(
+                (x) =>
+                  String(x.product?._id || x.product) === String(item._id) &&
+                  (!variant._id || String(x.variant?._id || x.variant) === String(variant._id)) &&
+                  String(x.user?._id || x.user) === String(userId)
+              );
 
               return (
                 <div key={key} className="col-6 col-md-4 col-lg-3">
@@ -168,60 +170,37 @@ export default function Product({ title, data }) {
                             left: 8,
                             background: "linear-gradient(135deg, #c9a84c, #b38b29)",
                             color: "#070d14",
-                            fontSize: "clamp(0.6rem, 1.8vw, 0.7rem)",
+                            fontSize: "clamp(0.62rem, 1.8vw, 0.72rem)",
                             fontWeight: 800,
+                            padding: "3px 7px",
+                            borderRadius: 6,
                             letterSpacing: "0.04em",
                             textTransform: "uppercase",
-                            padding: "3px 6px",
-                            borderRadius: 5,
-                            boxShadow: "0 2px 6px rgba(0,0,0,0.18)",
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
                             zIndex: 2,
                           }}
                         >
-                          {discount}% Off
+                          {discount}% OFF
                         </span>
                       )}
 
-                      {/* Floating Quick Cart Button */}
-                      <button
-                        type="button"
-                        onClick={(e) => handleAddToCart(e, item)}
-                        className="sk-quick-cart-btn"
-                        title="Add to Cart"
-                        style={{
-                          position: "absolute",
-                          bottom: 8,
-                          right: 8,
-                          width: 32,
-                          height: 32,
-                          borderRadius: "50%",
-                          background: addedId === item._id ? "#27a85a" : "#0d1b2a",
-                          color: addedId === item._id ? "#ffffff" : "#e8c873",
-                          border: "1px solid rgba(201,168,76,0.4)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          cursor: "pointer",
-                          zIndex: 4,
-                          boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
-                          transition: "all 0.22s ease",
-                        }}
-                      >
-                        <i className={`fa ${addedId === item._id ? "fa-check" : "fa-shopping-cart"}`} style={{ fontSize: 11 }} />
-                      </button>
-
-                      {/* Desktop Hover Action Overlay */}
+                      {/* Hover Overlay Actions */}
                       <div
-                        className="sk-pcard-overlay d-none d-md-flex flex-column gap-2 align-items-center justify-content-center"
+                        className="sk-pcard-overlay d-none d-md-flex"
                         style={{
                           position: "absolute",
-                          inset: 0,
-                          background: "rgba(13, 27, 42, 0.72)",
-                          backdropFilter: "blur(3px)",
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          padding: 10,
+                          background: "linear-gradient(to top, rgba(7,13,20,0.85) 0%, transparent 100%)",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 6,
                           opacity: 0,
-                          transition: "opacity 0.28s ease",
+                          transform: "translateY(8px)",
+                          transition: "all 0.25s ease",
                           zIndex: 3,
-                          padding: "16px",
                         }}
                       >
                         <button
@@ -229,8 +208,8 @@ export default function Product({ title, data }) {
                           onClick={(e) => handleAddToCart(e, item)}
                           className="btn btn-sm rounded-pill px-3 py-2 font-weight-bold w-100"
                           style={{
-                            background: addedId === item._id ? "#27a85a" : "linear-gradient(135deg, #c9a84c, #e8c873)",
-                            color: addedId === item._id ? "#fff" : "#070d14",
+                            background: inCart || addedId === item._id ? "#27a85a" : "linear-gradient(135deg, #c9a84c, #e8c873)",
+                            color: inCart || addedId === item._id ? "#fff" : "#070d14",
                             fontWeight: 700,
                             fontSize: "0.78rem",
                             letterSpacing: "0.04em",
@@ -240,8 +219,8 @@ export default function Product({ title, data }) {
                             transition: "all 0.2s ease",
                           }}
                         >
-                          <i className={`fa ${addedId === item._id ? "fa-check" : "fa-shopping-cart"} me-1`}></i>
-                          {addedId === item._id ? "Added ✓" : "Add to Cart"}
+                          <i className={`fa ${inCart || addedId === item._id ? "fa-check" : "fa-shopping-cart"} me-1`}></i>
+                          {inCart ? "In Cart" : addedId === item._id ? "Added ✓" : "Add to Cart"}
                         </button>
                         <Link
                           to={`/product/${item._id}`}
@@ -343,9 +322,9 @@ export default function Product({ title, data }) {
                           onClick={(e) => handleAddToCart(e, item)}
                           className="btn btn-sm w-100 rounded-pill mt-2 d-flex align-items-center justify-content-center gap-1"
                           style={{
-                            background: addedId === item._id ? "#27a85a" : "rgba(201,168,76,0.12)",
-                            color: addedId === item._id ? "#ffffff" : "#0d1b2a",
-                            border: addedId === item._id ? "1px solid #27a85a" : "1px solid rgba(201,168,76,0.35)",
+                            background: inCart || addedId === item._id ? "#27a85a" : "rgba(201,168,76,0.12)",
+                            color: inCart || addedId === item._id ? "#ffffff" : "#0d1b2a",
+                            border: inCart || addedId === item._id ? "1px solid #27a85a" : "1px solid rgba(201,168,76,0.35)",
                             fontWeight: 700,
                             fontSize: "clamp(0.7rem, 2vw, 0.78rem)",
                             padding: "5px 10px",
@@ -354,8 +333,8 @@ export default function Product({ title, data }) {
                             transition: "all 0.22s ease",
                           }}
                         >
-                          <i className={`fa ${addedId === item._id ? "fa-check" : "fa-shopping-cart"}`} style={{ fontSize: "0.88em" }}></i>
-                          <span>{addedId === item._id ? "Added ✓" : "Add to Cart"}</span>
+                          <i className={`fa ${inCart || addedId === item._id ? "fa-check" : "fa-shopping-cart"}`} style={{ fontSize: "0.88em" }}></i>
+                          <span>{inCart ? "In Cart" : addedId === item._id ? "Added ✓" : "Add to Cart"}</span>
                         </button>
                       </div>
                     </div>

@@ -26,6 +26,26 @@ const PRODUCT_POPULATE = {
 
 async function createRecord(req, res) {
     try {
+        let query = {
+            user: req.body.user,
+            product: req.body.product
+        };
+        if (req.body.variant) {
+            query.variant = req.body.variant;
+        }
+
+        let existing = await Cart.findOne(query);
+        if (existing) {
+            let finalData = await Cart.findOne({ _id: existing._id })
+                .populate("user", ["name", "username"])
+                .populate(PRODUCT_POPULATE);
+            return res.send({
+                result: "Done",
+                message: "Product is already in cart",
+                data: resolveVariant(finalData)
+            });
+        }
+
         let data = new Cart(req.body)
         await data.save()
         let finalData = await Cart.findOne({ _id: data._id })

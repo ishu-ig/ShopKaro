@@ -2,6 +2,10 @@ import { CREATE_CART_RED, DELETE_CART_RED, GET_CART_RED, UPDATE_CART_RED } from 
 export default function CartReducer(state=[], action) {
     switch (action.type) {
         case CREATE_CART_RED:
+            if (!action.payload) return state;
+            if (state.some(x => x._id === action.payload._id)) {
+                return state;
+            }
             let newState = [...state]
             newState.unshift(action.payload)
             return newState

@@ -131,18 +131,31 @@ export default function ProductPage() {
     navigate("/wishlist");
   };
 
+  const isInCart = CartStateData.some(
+    (x) =>
+      String(x.product?._id || x.product) === String(_id) &&
+      (!selectedVariant?._id || String(x.variant?._id || x.variant) === String(selectedVariant._id)) &&
+      String(x.user?._id || x.user) === String(localStorage.getItem("userid")),
+  );
+
   const addToCart = () => {
+    const userId = localStorage.getItem("userid");
+    if (!userId) {
+      navigate("/login");
+      return;
+    }
     if (!selectedVariant) return;
-    const item = CartStateData.find(
+
+    const existing = CartStateData.find(
       (x) =>
-        x.product?._id === _id &&
+        String(x.product?._id || x.product) === String(_id) &&
         String(x.variant?._id || x.variant) === String(selectedVariant._id) &&
-        x.user?._id === localStorage.getItem("userid"),
+        String(x.user?._id || x.user) === String(userId),
     );
-    if (!item) {
+    if (!existing) {
       dispatch(
         createCart({
-          user: localStorage.getItem("userid"),
+          user: userId,
           product: data._id,
           variant: selectedVariant._id,
           qty,
@@ -498,10 +511,15 @@ export default function ProductPage() {
                       <button
                         className="sk-pp-btn sk-pp-btn-primary"
                         onClick={addToCart}
-                        style={{ position: "relative", zIndex: 51, pointerEvents: "auto" }}
+                        style={{
+                          position: "relative",
+                          zIndex: 51,
+                          pointerEvents: "auto",
+                          ...(isInCart ? { background: "#27a85a", borderColor: "#27a85a" } : {})
+                        }}
                       >
-                        <i className="fa fa-shopping-cart" />
-                        Add to Cart
+                        <i className={`fa ${isInCart ? "fa-check" : "fa-shopping-cart"}`} />
+                        {isInCart ? "In Cart (View Cart)" : "Add to Cart"}
                       </button>
                       <button
                         className="sk-pp-btn sk-pp-btn-wish"
