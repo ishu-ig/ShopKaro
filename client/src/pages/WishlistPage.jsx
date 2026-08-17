@@ -59,11 +59,13 @@ export default function WishlistPage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {wishlist.map(item => (
+                                    {wishlist.map(item => {
+                                        const productId = item.product?._id || item.product;
+                                        return (
                                         <tr key={item._id}>
                                             <td className="wl-img-cell">
                                                 <Link
-                                                    to={`/product/${item.product?._id}`}
+                                                    to={`/product/${productId}`}
                                                     className="wl-img-link"
                                                 >
                                                     <img
@@ -78,7 +80,7 @@ export default function WishlistPage() {
                                             </td>
                                             <td>
                                                 <Link
-                                                    to={`/product/${item.product?._id}`}
+                                                    to={`/product/${productId}`}
                                                     style={{ textDecoration: "none", color: "inherit" }}
                                                 >
                                                     <div className="wl-product-name">{item.product?.name}</div>
@@ -102,7 +104,7 @@ export default function WishlistPage() {
                                             </td>
                                             <td style={{textAlign: 'center'}}>
                                                 <div style={{display:'flex', gap: 8, justifyContent:'center'}}>
-                                                    <Link to={`/product/${item.product?._id}`} className="wl-btn-cart">
+                                                    <Link to={`/product/${productId}`} className="wl-btn-cart">
                                                         <i className="fa fa-shopping-cart" />
                                                     </Link>
                                                     <button className="wl-btn-delete" onClick={() => deleteRecord(item._id)}>
@@ -111,7 +113,8 @@ export default function WishlistPage() {
                                                 </div>
                                             </td>
                                         </tr>
-                                    ))}
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>

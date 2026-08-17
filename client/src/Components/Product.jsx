@@ -144,7 +144,7 @@ export default function Product({ title, data }) {
                         cursor: "pointer",
                       }}
                     >
-                      <Link to={`/product/${item._id}`} className="d-block w-100 h-100" style={{ cursor: "pointer" }}>
+                      <Link to={`/product/${item._id || item.id}`} className="d-block w-100 h-100" style={{ cursor: "pointer", position: "relative", zIndex: 1 }}>
                         <img
                           src={thumb}
                           alt={item.name || "Product"}
@@ -178,6 +178,7 @@ export default function Product({ title, data }) {
                             textTransform: "uppercase",
                             boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
                             zIndex: 2,
+                            pointerEvents: "none",
                           }}
                         >
                           {discount}% OFF
@@ -201,6 +202,7 @@ export default function Product({ title, data }) {
                           transform: "translateY(8px)",
                           transition: "all 0.25s ease",
                           zIndex: 3,
+                          pointerEvents: "none",
                         }}
                       >
                         <button
@@ -217,13 +219,14 @@ export default function Product({ title, data }) {
                             border: "none",
                             boxShadow: "0 4px 14px rgba(0,0,0,0.3)",
                             transition: "all 0.2s ease",
+                            pointerEvents: "auto",
                           }}
                         >
                           <i className={`fa ${inCart || addedId === item._id ? "fa-check" : "fa-shopping-cart"} me-1`}></i>
                           {inCart ? "In Cart" : addedId === item._id ? "Added ✓" : "Add to Cart"}
                         </button>
                         <Link
-                          to={`/product/${item._id}`}
+                          to={`/product/${item._id || item.id}`}
                           className="btn btn-sm rounded-pill px-3 py-2 text-white font-weight-bold w-100 text-center"
                           style={{
                             background: "rgba(255,255,255,0.12)",
@@ -234,6 +237,7 @@ export default function Product({ title, data }) {
                             letterSpacing: "0.03em",
                             textTransform: "uppercase",
                             textDecoration: "none",
+                            pointerEvents: "auto",
                           }}
                         >
                           View Details <i className="fa fa-arrow-right ms-1"></i>

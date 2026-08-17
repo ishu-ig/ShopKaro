@@ -668,11 +668,10 @@ export default function Cart({ title, data }) {
                   padding: '16px 20px', flexWrap: 'wrap',
                 }}>
 
-                  {/* Thumbnail — links to the product page; image comes
-                      from the resolved variant, not the product root */}
+                  {/* Thumbnail — links to the product page */}
                   <Link
-                    to={`/product/${item.product?._id}`}
-                    style={{ flexShrink: 0 }}
+                    to={`/product/${item.product?._id || item.product}`}
+                    style={{ flexShrink: 0, textDecoration: 'none' }}
                   >
                     <div style={{ position: 'relative' }}>
                       <img
@@ -697,14 +696,19 @@ export default function Cart({ title, data }) {
 
                   {/* Info */}
                   <div style={{ flex: '1 1 140px', minWidth: 0 }}>
-                    <div style={{
-                      fontFamily: T.serif, fontWeight: 600, fontStyle: 'italic',
-                      fontSize: '1rem', color: T.textPrimary,
-                      marginBottom: 6, overflow: 'hidden',
-                      textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>
-                      {item.product?.name}
-                    </div>
+                    <Link
+                      to={`/product/${item.product?._id || item.product}`}
+                      style={{ textDecoration: 'none' }}
+                    >
+                      <div style={{
+                        fontFamily: T.serif, fontWeight: 600, fontStyle: 'italic',
+                        fontSize: '1rem', color: T.textPrimary,
+                        marginBottom: 6, overflow: 'hidden',
+                        textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>
+                        {item.product?.name}
+                      </div>
+                    </Link>
 
                     <div style={{ marginBottom: 4 }}>
                       {item.product?.brand?.name && <span className="chip">{item.product.brand.name}</span>}

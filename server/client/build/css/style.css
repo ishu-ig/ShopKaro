@@ -1811,9 +1811,14 @@ h1, h2, h3, h4, .brand-font {
           display: flex;
           align-items: flex-end;
           padding: 20px;
+          pointer-events: none;
         }
         .sk-pcard:hover .sk-pcard-overlay {
           opacity: 1;
+        }
+        .sk-pcard-overlay button,
+        .sk-pcard-overlay a {
+          pointer-events: auto;
         }
         .sk-pcard-overlay-content {
           transform: translateY(8px);

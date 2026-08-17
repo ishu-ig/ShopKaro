@@ -197,6 +197,7 @@ export default function ProductSlider({ title, data }) {
           text-transform: uppercase;
           z-index: 2;
           box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+          pointer-events: none;
         }
 
         .ps-rating {
@@ -211,6 +212,7 @@ export default function ProductSlider({ title, data }) {
           border-radius: 999px;
           z-index: 2;
           backdrop-filter: blur(4px);
+          pointer-events: none;
         }
 
         /* Desktop hover overlay */
@@ -226,6 +228,7 @@ export default function ProductSlider({ title, data }) {
           opacity: 0;
           transition: opacity 0.25s ease, transform 0.25s ease;
           z-index: 3;
+          pointer-events: none;
         }
 
         .ps-card:hover .ps-overlay {
@@ -238,6 +241,7 @@ export default function ProductSlider({ title, data }) {
           align-items: center;
           justify-content: center;
           gap: 6px;
+          pointer-events: auto;
           font-size: 0.78rem;
           font-weight: 700;
           padding: 8px 10px;
