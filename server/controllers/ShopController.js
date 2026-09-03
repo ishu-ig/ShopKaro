@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken")
 const { deleteFromCloudinary } = require("../cloudinaryMethods");
 const { login, forgetPassword1, forgetPassword2, forgetPassword3, checkEmail } = require("../Login_ForgetPassword")
 const mailer = require("../mailer/index")
+const { welcomeShopTemplate } = require("../mailer/templates")
 
 const schema = require("../Password")
 
@@ -38,35 +39,16 @@ function sendWelcomeEmail({ email, ownerName, name, plainPassword }) {
     mailer.sendMail({
         from: process.env.MAIL_SENDER,
         to: email,
-        subject: "Your Shop Account Is Ready - " + process.env.SITE_NAME,
-        html: `
-            <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9;">
-                <h2 style="color: #333;">Welcome, ${ownerName || "Partner"}!</h2>
-                <p style="color: #555;">
-                    Your shop "<strong>${name}</strong>" has been registered on ${process.env.SITE_NAME}.
-                    Here are your login credentials:
-                </p>
-                <table style="border-collapse: collapse; width: 100%;">
-                    <tr>
-                        <td style="padding: 8px; border: 1px solid #ddd;"><strong>Email:</strong></td>
-                        <td style="padding: 8px; border: 1px solid #ddd;">${email}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 8px; border: 1px solid #ddd;"><strong>Password:</strong></td>
-                        <td style="padding: 8px; border: 1px solid #ddd;">${plainPassword}</td>
-                    </tr>
-                </table>
-                <p style="color: #555;">
-                    For security, please log in and change your password as soon as possible.
-                    If you need help, visit our
-                    <a href="${process.env.SERVER}/contact" style="color: #007bff;">Contact Page</a>.
-                </p>
-                <p style="color: #555;">Best Regards, <br> Team ${process.env.SITE_NAME}</p>
-            </div>
-        `,
+        subject: `Your Shop Account Is Ready - ${process.env.SITE_NAME || "ShopKaro"}`,
+        html: welcomeShopTemplate({
+            ownerName,
+            shopName: name,
+            email,
+            plainPassword
+        }),
     }, (error) => {
-        if (error) console.log("Welcome email failed to send:", error)
-    })
+        if (error) console.log("Error sending shop welcome email:", error);
+    });
 }
 
 // ── CREATE ────────────────────────────────────────────────────────────────────

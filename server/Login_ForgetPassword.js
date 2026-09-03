@@ -1,4 +1,5 @@
 const mailer = require("./mailer/index")
+const { passwordResetOtpTemplate } = require("./mailer/templates")
 const jwt = require("jsonwebtoken")
 const bcrypt = require("bcrypt")
 const schema = require("./Password")
@@ -120,21 +121,11 @@ function forgetPassword1(Model) {
                 mailer.sendMail({
                     from: process.env.MAIL_SENDER,
                     to: data.email,
-                    subject: `Your OTP for Password Reset – Team ${process.env.SITE_NAME}`,
-                    html: `
-                        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; background-color: #f9f9f9;">
-                            <h2 style="text-align: center; color: #333;">Password Reset Request</h2>
-                            <p>Hello <strong>${data.name}</strong>,</p>
-                            <p>You have requested a password reset.</p>
-                            <div style="text-align: center; font-size: 18px; font-weight: bold; padding: 10px; background-color: #f3f3f3; border-radius: 5px;">
-                                Your OTP: <span style="color: #d32f2f; font-size: 22px;">${data.otp}</span>
-                            </div>
-                            <p style="color: #d32f2f; text-align: center; font-size: 14px;">Please do not share this OTP with anyone.</p>
-                            <p>This OTP is valid for a limited time.</p>
-                            <p>Regards,</p>
-                            <p><strong>Team ${process.env.SITE_NAME}</strong></p>
-                        </div>
-                    `
+                    subject: `Your OTP for Password Reset – ${process.env.SITE_NAME || "ShopKaro"}`,
+                    html: passwordResetOtpTemplate({
+                        name: data.name,
+                        otp: data.otp
+                    })
                 }, (error) => {
                     if (error) {
                         console.log(error);

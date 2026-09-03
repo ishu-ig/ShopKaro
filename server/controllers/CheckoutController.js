@@ -1,5 +1,6 @@
 const Checkout = require("../models/Checkout")
 const mailer = require("../mailer/index")
+const { deliveryOtpTemplate, orderStatusTemplate, orderDeliveredTemplate } = require("../mailer/templates")
 const Razorpay = require("razorpay")
 
 const PRODUCT_POPULATE = {
@@ -24,24 +25,8 @@ function sendDeliveryOtpEmail(toEmail, otp) {
     mailer.sendMail({
         from: process.env.MAIL_SENDER,
         to: toEmail,
-        subject: `Delivery Confirmation Code - Team ${process.env.SITE_NAME}`,
-        html: `
-                <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9;">
-                    <h2 style="color: #28a745;">Hello,</h2>
-                    <p style="color: #555;">
-                        Your delivery partner is confirming your order has arrived. Please
-                        share this code with them to confirm receipt:
-                    </p>
-                    <p style="font-size: 28px; font-weight: bold; letter-spacing: 4px; color: #212529;">
-                        ${otp}
-                    </p>
-                    <p style="color: #555;">
-                        This code expires in ${DELIVERY_OTP_TTL_MINUTES} minutes. If you didn't
-                        expect this, please <a href="${process.env.SERVER}/contact" style="color: #007bff;">contact us</a>.
-                    </p>
-                    <p style="color: #555;">Best Regards, <br> Team ${process.env.SITE_NAME}</p>
-                </div>
-            `,
+        subject: `Delivery Confirmation PIN - ${process.env.SITE_NAME || "ShopKaro"}`,
+        html: deliveryOtpTemplate({ otp, ttlMinutes: DELIVERY_OTP_TTL_MINUTES }),
     }, (error) => {
         if (error) console.log("Error sending delivery OTP email:", error);
     });
@@ -292,19 +277,13 @@ async function updateRecord(req, res) {
                 mailer.sendMail({
                     from: process.env.MAIL_SENDER,
                     to: finalData.user.email,
-                    subject: `Order Status Updated - Team ${process.env.SITE_NAME}`,
-                    html: `
-                            <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9;">
-                                <h2 style="color: #28a745;">Hello,</h2>
-                                <p style="color: #555;">
-                                ${statusMessage}
-                                </p>
-                                <p style="color: #555;">
-                                    If you have any questions, please <a href="${process.env.SERVER}/contact" style="color: #007bff;">contact us</a>.
-                                </p>
-                                <p style="color: #555;">Best Regards, <br> Team ${process.env.SITE_NAME}</p>
-                            </div>
-                        `,
+                    subject: `Order Status: ${req.body.orderStatus} - ${process.env.SITE_NAME || "ShopKaro"}`,
+                    html: orderStatusTemplate({
+                        customerName: finalData.user?.name,
+                        orderId: finalData._id,
+                        orderStatus: req.body.orderStatus,
+                        statusMessage
+                    }),
                 }, (error) => {
                     if (error) console.log("Error sending email:", error);
                     // else console.log("Order status update email sent successfully.");
@@ -398,19 +377,11 @@ async function verifyDelivery(req, res) {
             mailer.sendMail({
                 from: process.env.MAIL_SENDER,
                 to: finalData.user.email,
-                subject: `Order Status Updated - Team ${process.env.SITE_NAME}`,
-                html: `
-                        <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9;">
-                            <h2 style="color: #28a745;">Hello,</h2>
-                            <p style="color: #555;">
-                            Your order has been successfully delivered. Thank you for choosing us!
-                            </p>
-                            <p style="color: #555;">
-                                If you have any questions, please <a href="${process.env.SERVER}/contact" style="color: #007bff;">contact us</a>.
-                            </p>
-                            <p style="color: #555;">Best Regards, <br> Team ${process.env.SITE_NAME}</p>
-                        </div>
-                    `,
+                subject: `Order Delivered Successfully 🎉 - ${process.env.SITE_NAME || "ShopKaro"}`,
+                html: orderDeliveredTemplate({
+                    customerName: finalData.user?.name,
+                    orderId: finalData._id
+                }),
             }, (error) => {
                 if (error) console.log("Error sending email:", error);
             });
