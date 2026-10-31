@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect, useCallback, useState } from "react";
 import {
   BrowserRouter,
   Route,
@@ -9,6 +9,7 @@ import {
 import Navbar from "./Components/Navbar";
 import Footer from "./Components/Footer";
 import Sidebar from "./Components/Sidebar";
+import EcomPreloader from "./Components/EcomPreloader";
 
 // Auth Pages
 import LoginPage from "./pages/LoginPage";
@@ -101,6 +102,7 @@ function Shell() {
   const location = useLocation();
   const isPublic = publicRoutes.includes(location.pathname);
   const isLoggedIn = localStorage.getItem("login") === "true";
+  const [initialLoading, setInitialLoading] = useState(true);
 
   useEffect(() => {
     const isDesktop = window.matchMedia("(min-width: 992px)").matches;
@@ -166,21 +168,36 @@ function Shell() {
   // ── Public pages ──────────────────────────────────────────────────────────
   if (isPublic) {
     return (
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        {/* FIX: Added missing SignupPage import and route */}
-        <Route path="/register" element={<SignupPage />} />
-        {/* FIX: Multi-step forgot password routes instead of undefined <ForgetPasswordPage /> */}
-        <Route path="/forgot-password" element={<ForgetPasswordPage />} />
-      </Routes>
+      <>
+        {initialLoading && (
+          <EcomPreloader
+            minDuration={900}
+            onFinished={() => setInitialLoading(false)}
+          />
+        )}
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          {/* FIX: Added missing SignupPage import and route */}
+          <Route path="/register" element={<SignupPage />} />
+          {/* FIX: Multi-step forgot password routes instead of undefined <ForgetPasswordPage /> */}
+          <Route path="/forgot-password" element={<ForgetPasswordPage />} />
+        </Routes>
+      </>
     );
   }
 
   // ── Protected pages ───────────────────────────────────────────────────────
   return (
-    <div className="admin-shell">
-      <div className="sidebar-backdrop" onClick={closeMobileSidebar} />
-      <Sidebar onLinkClick={closeMobileSidebar} />
+    <>
+      {initialLoading && (
+        <EcomPreloader
+          minDuration={900}
+          onFinished={() => setInitialLoading(false)}
+        />
+      )}
+      <div className="admin-shell">
+        <div className="sidebar-backdrop" onClick={closeMobileSidebar} />
+        <Sidebar onLinkClick={closeMobileSidebar} />
 
       <div className="admin-main">
         <Navbar toggleSidebar={toggleSidebar} />
@@ -314,5 +331,6 @@ function Shell() {
         <Footer />
       </div>
     </div>
-  );
+  </>
+);
 }

@@ -86,11 +86,61 @@ export default function ShopPage() {
     }
   }, [ProductStateData.length, searchParams]);
 
+  // When a main category is selected, filter subcategories to only those belonging to that main category
+  const selectedMcObj = (MaincategoryStateData || []).find(
+    (m) => m?.name?.toLowerCase() === mc?.toLowerCase()
+  );
+
+  const visibleSubcategories = (SubcategoryStateData || []).filter((item) => {
+    if (!item?.active) return false;
+    if (mc === "All") return true;
+
+    // Populated maincategory name match (case-insensitive)
+    const itemMcName = item?.maincategory?.name;
+    if (itemMcName && itemMcName.toLowerCase() === mc.toLowerCase()) {
+      return true;
+    }
+
+    // Maincategory ID match
+    if (selectedMcObj) {
+      const itemMcId = item?.maincategory?._id ?? item?.maincategory;
+      if (itemMcId && String(itemMcId) === String(selectedMcObj._id)) {
+        return true;
+      }
+    }
+
+    return false;
+  });
+
+  // When "All" categories is chosen, deduplicate subcategories with the same name across main categories
+  const displayedSubcategories = mc === "All"
+    ? visibleSubcategories.filter((sub, index, self) =>
+        index === self.findIndex((s) => s.name?.trim().toLowerCase() === sub.name?.trim().toLowerCase())
+      )
+    : visibleSubcategories;
+
   const FilterSection = ({ label, items, current, paramKey }) => (
     <div className="sk-filter-group">
-      <div className="sk-filter-group-title">{label}</div>
+      <div className="sk-filter-group-title">
+        {label}
+        {paramKey === "sc" && mc !== "All" && (
+          <span
+            style={{
+              textTransform: "none",
+              letterSpacing: 0,
+              fontSize: 10,
+              color: "#888",
+              fontWeight: 500,
+              marginLeft: 4,
+            }}
+          >
+            ({mc})
+          </span>
+        )}
+      </div>
       <Link
-        to={`/shop?mc=${paramKey === 'mc' ? 'All' : mc}&sc=${paramKey === 'sc' ? 'All' : sc}&br=${paramKey === 'br' ? 'All' : br}`}
+        to={`/shop?mc=${paramKey === 'mc' ? 'All' : mc}&sc=${paramKey === 'mc' ? 'All' : (paramKey === 'sc' ? 'All' : sc)}&br=${paramKey === 'br' ? 'All' : br}`}
+        onClick={() => setSidebarOpen(false)}
         className={`sk-filter-item ${current === "All" ? "active" : ""}`}
       >
         All
@@ -98,12 +148,18 @@ export default function ShopPage() {
       {items.filter(x => x.active).map(item => (
         <Link
           key={item._id}
-          to={`/shop?mc=${paramKey === 'mc' ? item.name : mc}&sc=${paramKey === 'sc' ? item.name : sc}&br=${paramKey === 'br' ? item.name : br}`}
+          to={`/shop?mc=${paramKey === 'mc' ? item.name : mc}&sc=${paramKey === 'mc' ? 'All' : (paramKey === 'sc' ? item.name : sc)}&br=${paramKey === 'br' ? item.name : br}`}
+          onClick={() => setSidebarOpen(false)}
           className={`sk-filter-item ${current === item.name ? "active" : ""}`}
         >
           {item.name}
         </Link>
       ))}
+      {paramKey === 'sc' && mc !== 'All' && items.filter(x => x.active).length === 0 && (
+        <div style={{ fontSize: '0.8rem', fontStyle: 'italic', color: '#999', padding: '6px 12px' }}>
+          No subcategories found in {mc}
+        </div>
+      )}
     </div>
   );
 
@@ -196,7 +252,7 @@ export default function ShopPage() {
         </div>
 
         <FilterSection label="Category" items={MaincategoryStateData} current={mc} paramKey="mc" />
-        <FilterSection label="Subcategory" items={SubcategoryStateData} current={sc} paramKey="sc" />
+        <FilterSection label="Subcategory" items={displayedSubcategories} current={sc} paramKey="sc" />
         <FilterSection label="Brands" items={BrandStateData} current={br} paramKey="br" />
         {MobilePriceFilter}
       </div>
@@ -212,7 +268,7 @@ export default function ShopPage() {
                   <i className="fa fa-sliders-h"></i> Filters
                 </div>
                 <FilterSection label="Category" items={MaincategoryStateData} current={mc} paramKey="mc" />
-                <FilterSection label="Subcategory" items={SubcategoryStateData} current={sc} paramKey="sc" />
+                <FilterSection label="Subcategory" items={displayedSubcategories} current={sc} paramKey="sc" />
                 <FilterSection label="Brands" items={BrandStateData} current={br} paramKey="br" />
 
                 <div className="sk-filter-group sk-price-filter">

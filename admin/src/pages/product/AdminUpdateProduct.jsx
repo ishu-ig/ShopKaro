@@ -6,6 +6,8 @@ import "react-quill-new/dist/quill.snow.css";
 import formValidator from "../../FormValidators/formValidator";
 import { updateProduct, getProduct } from "../../Redux/ActionCreators/ProductActionCreators";
 import { getShop } from "../../Redux/ActionCreators/ShopActionCreators";
+import { getMaincategory } from "../../Redux/ActionCreators/MaincategoryActionCreators";
+import { getSubcategory } from "../../Redux/ActionCreators/SubcategoryActionCreators";
 // ASSUMPTION: a Brand action creator/state slice exists, mirroring the Shop one.
 import { getBrand } from "../../Redux/ActionCreators/BrandActionCreators";
 
@@ -15,7 +17,7 @@ const checklist = [
   {
     dot: "bg-success",
     title: "Review details",
-    body: "Confirm name, category, brand, and shop are correct.",
+    body: "Confirm name, main category, subcategory, brand, and shop are correct.",
   },
   {
     dot: "bg-primary",
@@ -36,16 +38,21 @@ function toIdString(id) {
   return id;
 }
 
-// Normalizes an entry from shop.maincategory / shop.subcategory into
-// a { _productId, name } option — same logic as the create form, so behavior matches.
+// A reference field can be a plain id, a { $oid } wrapper, or a populated
+// document ({ _id, name, ... }). This always returns a plain string id.
+function refId(ref) {
+  if (ref && typeof ref === "object") return toIdString(ref._id ?? ref);
+  return ref;
+}
+
+// Normalizes an entry into a { _productId, name } option.
 //
 // IMPORTANT: the API / Mongo documents only ever carry `_id` (Mongoose's
 // built-in primary key) — there is no `_productId` field anywhere in the
 // database or the router (`PUT /:_id`). `_productId` is this component's
 // own internal naming convention for "the id of the thing", and it is
 // always SOURCED FROM `_id`, aliased right here at the boundary where data
-// enters the component. Every read below pulls from `entry._id`, never
-// `entry._productId` — the latter would always be undefined.
+// enters the component.
 function toOption(entry) {
   if (entry && typeof entry === "object" && "name" in entry) {
     const id = entry._id?.$oid || entry._id;
@@ -55,9 +62,7 @@ function toOption(entry) {
   return { _productId: id, name: id };
 }
 
-// Normalize a product's saved variants into editable rows. Unlike the old
-// fixed Half/Full template, variants are now free-form (color/size/etc.), so
-// we just map whatever came back from the API, one row per saved variant.
+// Normalize a product's saved variants into editable rows.
 // NOTE: the current updateRecord controller does not process req.files for
 // images on update — it only re-saves whatever `pic` array is sent in the
 // variants JSON. So existing images are kept/edited as plain URL strings
@@ -101,7 +106,8 @@ export default function AdminUpdateProduct() {
   // `_id` regardless of what we call it in this file. We destructure it as
   // `_id` and immediately alias to `_productId` for use everywhere below —
   // this is the ONLY place the real param name and our naming convention meet.
-  const { _productId } = useParams();
+  const { _id, _productId: paramId } = useParams();
+  const _productId = _id || paramId;
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -130,9 +136,13 @@ export default function AdminUpdateProduct() {
   const ProductStateData = useSelector((state) => state.ProductStateData);
   const ShopStateData = useSelector((state) => state.ShopStateData);
   const BrandStateData = useSelector((state) => state.BrandStateData);
+  const MaincategoryStateData = useSelector((state) => state.MaincategoryStateData);
+  const SubcategoryStateData = useSelector((state) => state.SubcategoryStateData);
 
   useEffect(() => { dispatch(getShop()); }, [ShopStateData.length]);
   useEffect(() => { dispatch(getBrand()); }, [BrandStateData.length]);
+  useEffect(() => { dispatch(getMaincategory()); }, [MaincategoryStateData.length]);
+  useEffect(() => { dispatch(getSubcategory()); }, [SubcategoryStateData.length]);
 
   useEffect(() => {
     dispatch(getProduct());
@@ -140,25 +150,14 @@ export default function AdminUpdateProduct() {
       // ProductStateData items come straight from the API. `_id` values can
       // arrive either as a plain string OR wrapped as { $oid: "..." }
       // depending on the serializer — toIdString() normalizes either shape.
-      // This lookup previously compared raw `x._id === _productId`, which
-      // silently failed (and left every field blank) whenever `_id` came
-      // through wrapped, since an object never strictly-equals a string.
       const item = ProductStateData.find((x) => toIdString(x._id) === _productId);
       if (item) {
         setData({
           name: item.name ?? "",
-          maincategory: toIdString(
-            typeof item.maincategory === "object" ? item.maincategory?._id : item.maincategory
-          ) ?? "",
-          subcategory: toIdString(
-            typeof item.subcategory === "object" ? item.subcategory?._id : item.subcategory
-          ) ?? "",
-          brand: toIdString(
-            typeof item.brand === "object" ? item.brand?._id : item.brand
-          ) ?? "",
-          shop: toIdString(
-            typeof item.shop === "object" ? item.shop?._id : item.shop
-          ) ?? "",
+          maincategory: refId(item.maincategory) ?? "",
+          subcategory: refId(item.subcategory) ?? "",
+          brand: refId(item.brand) ?? "",
+          shop: refId(item.shop) ?? "",
           discount: item.discount ?? 0,
           description: item.description ?? "",
           active: item.active ?? true,
@@ -169,18 +168,21 @@ export default function AdminUpdateProduct() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ProductStateData.length, _productId]);
 
-  // data.shop was normalized to a plain string above via toIdString, and
-  // ShopStateData entries need the same normalization to compare correctly.
-  const selectedShop = ShopStateData.find((r) => toIdString(r._id) === data.shop);
+  // Step 1: all active main categories.
+  const maincategoryOptions = (MaincategoryStateData || [])
+    .filter((x) => x?.active || toIdString(x._id) === data.maincategory)
+    .map(toOption);
 
-  // The shop's OWN maincategory/subcategory arrays are the only
-  // source for these dropdowns — same approach as the create form.
-  const availableMaincategories = (selectedShop?.maincategory || []).map(toOption);
-  const availableSubcategories = (selectedShop?.subcategory || []).map(toOption);
+  // Step 2: subcategories belonging ONLY to the selected main category.
+  // Nothing is listed until a main category is selected.
+  const subcategoryOptions = data.maincategory
+    ? (SubcategoryStateData || [])
+      .filter((x) => x?.active || toIdString(x._id) === data.subcategory)
+      .filter((x) => refId(x.maincategory) === data.maincategory)
+      .map(toOption)
+    : [];
+
   const brandOptions = (BrandStateData || []).map(toOption);
-  // FIX: normalized the same way as brand/category options above, so this
-  // dropdown is protected against $oid-wrapped ids too, consistent with
-  // every other reference-field select in this form.
   const shopOptions = (ShopStateData || []).filter((x) => x?.active).map(toOption);
 
   function getInputData(e) {
@@ -189,6 +191,16 @@ export default function AdminUpdateProduct() {
 
     if (name !== "active") {
       setError((old) => ({ ...old, [name]: formValidator(e) }));
+    }
+
+    // Changing the main category invalidates the chosen subcategory,
+    // so clear it and make the user pick again from the new list.
+    // (Done here, not in an effect, so the saved subcategory loaded from
+    // the product isn't wiped when the form first populates.)
+    if (name === "maincategory") {
+      setError((old) => ({ ...old, subcategory: "Sub Category is Mandatory" }));
+      setData((old) => ({ ...old, maincategory: value, subcategory: "" }));
+      return;
     }
 
     setData((old) => ({
@@ -246,9 +258,7 @@ export default function AdminUpdateProduct() {
   }
 
   // New image files picked for this variant on this edit — appended to any
-  // files already selected earlier in this session (instead of replacing
-  // them), so picking files in more than one go keeps everything selected.
-  // Sent alongside any remaining existing pic URLs so the backend can append them.
+  // files already selected earlier in this session (instead of replacing them).
   function getVariantFiles(index, fileList) {
     setData((old) => {
       const variants = old.variants.map((v, i) =>
@@ -258,9 +268,7 @@ export default function AdminUpdateProduct() {
     });
   }
 
-  // Removes a single newly-selected (not-yet-uploaded) file by its index in
-  // variant.files, before the user submits — lets them back out of one new
-  // image without losing the others or touching the existing/kept images.
+  // Removes a single newly-selected (not-yet-uploaded) file by its index.
   function removeVariantFile(index, fileIndex) {
     setData((old) => {
       const variants = old.variants.map((v, i) =>
@@ -289,20 +297,17 @@ export default function AdminUpdateProduct() {
       return;
     }
 
-    // Only send variants that have color, size, AND a valid price — the
-    // schema has no product-level basePrice, so each variant's own price
-    // is the base that the common discount gets applied to.
+    // Only send variants that have color, size, AND a valid price.
     const validVariants = data.variants.filter(
       (v) => v.color.trim() !== "" && v.size.trim() !== "" && parseFloat(v.price) > 0
     );
 
     const discount = Number(data.discount) || 0; // common discount, applied to every variant's own price
 
-    // Keep the same variant sub-document id where one already existed, so
-    // the backend logic of preserving ids is unchanged. The VariantSchema
-    // subdocument field is `_id` (Mongoose default) — we translate our
-    // internal `_productId` back to `_id` here, right before it leaves
-    // the component.
+    // Keep the same variant sub-document id where one already existed. The
+    // VariantSchema subdocument field is `_id` (Mongoose default) — we
+    // translate our internal `_productId` back to `_id` here, right before
+    // it leaves the component.
     const cleanedVariants = validVariants.map((v) => {
       const variantPrice = parseFloat(v.price) || 0;
       const variantFinalPrice =
@@ -324,9 +329,7 @@ export default function AdminUpdateProduct() {
 
     const formData = new FormData();
     // The server reads the record id from the URL (req.params._id via the
-    // PUT /:_id route), not from the body — this field is sent for
-    // completeness/logging only, but it must still be keyed "_id" in case
-    // any backend code reads it from req.body.
+    // PUT /:_id route), not from the body — sent for completeness only.
     formData.append("_id", data._productId ?? _productId);
     formData.append("name", data.name);
     formData.append("maincategory", data.maincategory);
@@ -339,15 +342,16 @@ export default function AdminUpdateProduct() {
     formData.append("variants", JSON.stringify(cleanedVariants));
 
     // Flatten NEW variant image files IN VARIANT ORDER — same convention as
-    // the create form, so a backend update mirroring createRecord's file
-    // handling can slice req.files sequentially per variant using each
-    // variant's imageCount and append them onto that variant's kept `pic` URLs.
+    // the create form.
     validVariants.forEach((v) => {
       v.files.forEach((file) => formData.append("pic", file));
     });
 
-    dispatch(updateProduct(formData));
-    navigate(`/shopProduct/${localStorage.getItem("role")}/${localStorage.getItem("userid")}`);
+    if (localStorage.getItem("role") === "Admin") {
+      navigate("/product");
+    } else {
+      navigate(`/shopProduct/${localStorage.getItem("role")}/${localStorage.getItem("userid")}`);
+    }
   }
 
   return (
@@ -406,18 +410,43 @@ export default function AdminUpdateProduct() {
                   {show && error.name && <div className="text-danger small mt-1">{error.name}</div>}
                 </div>
 
-                {/* Shop */}
-                <div className="col-md-4">
-                  <label className="form-label" htmlFor="shop">Shop</label>
+                {/* Step 1: Main Category */}
+                <div className="col-md-6">
+                  <label className="form-label" htmlFor="maincategory">Main Category</label>
                   <select
-                    className="form-select" id="shop" name="shop"
-                    value={data.shop} onChange={getInputData}
+                    className={`form-select ${show && error.maincategory ? "is-invalid" : ""}`}
+                    id="maincategory" name="maincategory"
+                    value={data.maincategory} onChange={getInputData}
                   >
-                    <option value="" disabled>Select Shop</option>
-                    {shopOptions.map((item) => (
+                    <option value="" disabled>Select Main Category</option>
+                    {maincategoryOptions.map((item) => (
                       <option key={item._productId} value={item._productId}>{item.name}</option>
                     ))}
                   </select>
+                  {show && error.maincategory && <div className="text-danger small mt-1">{error.maincategory}</div>}
+                </div>
+
+                {/* Step 2: Sub Category — only those belonging to the selected main category */}
+                <div className="col-md-6">
+                  <label className="form-label" htmlFor="subcategory">Sub Category</label>
+                  <select
+                    className={`form-select ${show && error.subcategory ? "is-invalid" : ""}`}
+                    id="subcategory" name="subcategory"
+                    value={data.subcategory} onChange={getInputData}
+                    disabled={!data.maincategory}
+                  >
+                    <option value="" disabled>
+                      {!data.maincategory
+                        ? "Select a main category first"
+                        : subcategoryOptions.length
+                          ? "Select Sub Category"
+                          : "No subcategories for this main category"}
+                    </option>
+                    {subcategoryOptions.map((item) => (
+                      <option key={item._productId} value={item._productId}>{item.name}</option>
+                    ))}
+                  </select>
+                  {show && error.subcategory && <div className="text-danger small mt-1">{error.subcategory}</div>}
                 </div>
 
                 {/* Brand */}
@@ -436,38 +465,18 @@ export default function AdminUpdateProduct() {
                   {show && error.brand && <div className="text-danger small mt-1">{error.brand}</div>}
                 </div>
 
-                {/* Main Category — scoped to the selected shop's own maincategory list */}
+                {/* Shop */}
                 <div className="col-md-4">
-                  <label className="form-label" htmlFor="maincategory">Main Category</label>
+                  <label className="form-label" htmlFor="shop">Shop</label>
                   <select
-                    className={`form-select ${show && error.maincategory ? "is-invalid" : ""}`}
-                    id="maincategory" name="maincategory"
-                    value={data.maincategory} onChange={getInputData}
-                    disabled={!selectedShop}
+                    className="form-select" id="shop" name="shop"
+                    value={data.shop} onChange={getInputData}
                   >
-                    <option value="" disabled>Select Main Category</option>
-                    {availableMaincategories.map((item) => (
+                    <option value="" disabled>Select Shop</option>
+                    {shopOptions.map((item) => (
                       <option key={item._productId} value={item._productId}>{item.name}</option>
                     ))}
                   </select>
-                  {show && error.maincategory && <div className="text-danger small mt-1">{error.maincategory}</div>}
-                </div>
-
-                {/* Sub Category — scoped to the selected shop's own subcategory list */}
-                <div className="col-md-4">
-                  <label className="form-label" htmlFor="subcategory">Sub Category</label>
-                  <select
-                    className={`form-select ${show && error.subcategory ? "is-invalid" : ""}`}
-                    id="subcategory" name="subcategory"
-                    value={data.subcategory} onChange={getInputData}
-                    disabled={!selectedShop}
-                  >
-                    <option value="" disabled>Select Sub Category</option>
-                    {availableSubcategories.map((item) => (
-                      <option key={item._productId} value={item._productId}>{item.name}</option>
-                    ))}
-                  </select>
-                  {show && error.subcategory && <div className="text-danger small mt-1">{error.subcategory}</div>}
                 </div>
 
                 {/* Discount — common to every variant, used to derive each variant's finalPrice */}
@@ -536,9 +545,8 @@ export default function AdminUpdateProduct() {
                             <div className="col-md-3">
                               <label className="form-label small">Color</label>
                               <input
-                                className={`form-control ${
-                                  show && error.variants && !variant.color ? "is-invalid" : ""
-                                }`}
+                                className={`form-control ${show && error.variants && !variant.color ? "is-invalid" : ""
+                                  }`}
                                 type="text"
                                 value={variant.color}
                                 onChange={(e) => getVariantData(index, "color", e.target.value)}
@@ -547,9 +555,8 @@ export default function AdminUpdateProduct() {
                             <div className="col-md-3">
                               <label className="form-label small">Size</label>
                               <select
-                                className={`form-select ${
-                                  show && error.variants && !variant.size ? "is-invalid" : ""
-                                }`}
+                                className={`form-select ${show && error.variants && !variant.size ? "is-invalid" : ""
+                                  }`}
                                 value={variant.size}
                                 onChange={(e) => getVariantData(index, "size", e.target.value)}
                               >
@@ -571,9 +578,8 @@ export default function AdminUpdateProduct() {
                             <div className="col-md-3">
                               <label className="form-label small">Price (₹)</label>
                               <input
-                                className={`form-control ${
-                                  show && error.variants && !(parseFloat(variant.price) > 0) ? "is-invalid" : ""
-                                }`}
+                                className={`form-control ${show && error.variants && !(parseFloat(variant.price) > 0) ? "is-invalid" : ""
+                                  }`}
                                 type="number" min="0"
                                 placeholder="Required"
                                 value={variant.price}

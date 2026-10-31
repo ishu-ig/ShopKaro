@@ -46,6 +46,7 @@ export default function ProductPage() {
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewError, setReviewError] = useState("");
   const [reviewSuccess, setReviewSuccess] = useState("");
+  const [shareCopied, setShareCopied] = useState(false);
 
   useEffect(() => {
     dispatch(getProduct());
@@ -169,7 +170,7 @@ export default function ProductPage() {
 
   const basePrice = selectedVariant?.price ?? selectedVariant?.finalPrice ?? 0;
   const finalPrice = selectedVariant?.finalPrice ?? 0;
-  const savings = basePrice - finalPrice;  
+  const savings = basePrice - finalPrice;
   const gallery = (selectedVariant?.pic?.length ? selectedVariant.pic : data.variants?.find(v => v.pic?.length)?.pic) || [];
 
   const deliveryDate = (days) => {
@@ -227,12 +228,32 @@ export default function ProductPage() {
 
   const isOutOfStock = selectedVariant?.stockQuantity === 0;
 
+  const shareProduct = async () => {
+    const shareUrl = window.location.href;
+    const shareData = {
+      title: data.name || "Check out this product",
+      text: `${data.name}${selectedVariant?.finalPrice ? ` — ₹${selectedVariant.finalPrice.toLocaleString()}` : ""} | ShopKaro`,
+      url: shareUrl,
+    };
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+      try { await navigator.share(shareData); } catch { /* user cancelled */ }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2200);
+      } catch {
+        window.prompt("Copy this link:", shareUrl);
+      }
+    }
+  };
+
   return (
     <>
       <section className="sk-product-page">
-        <div className="container">
+        <div className="container mt-5">
           {/* Breadcrumb */}
-          <nav className="sk-pp-breadcrumb" aria-label="breadcrumb">
+          {/* <nav className="sk-pp-breadcrumb" aria-label="breadcrumb">
             <Link to="/">Home</Link>
             <span className="sk-pp-bc-sep">/</span>
             <Link to="/shop">Shop</Link>
@@ -254,7 +275,7 @@ export default function ProductPage() {
             )}
             <span className="sk-pp-bc-sep">/</span>
             <span className="sk-pp-bc-current">{data.name}</span>
-          </nav>
+          </nav> */}
 
           <div className="row g-4 mt-1">
             {/* Gallery */}
@@ -380,9 +401,8 @@ export default function ProductPage() {
                           key={color}
                           type="button"
                           onClick={() => selectColor(color)}
-                          className={`sk-variant-swatch ${
-                            selectedVariant?.color === color ? "active" : ""
-                          }`}
+                          className={`sk-variant-swatch ${selectedVariant?.color === color ? "active" : ""
+                            }`}
                           style={{
                             padding: "7px 16px",
                             borderRadius: 20,
@@ -423,9 +443,8 @@ export default function ProductPage() {
                           key={size}
                           type="button"
                           onClick={() => selectSize(size)}
-                          className={`sk-variant-swatch ${
-                            selectedVariant?.size === size ? "active" : ""
-                          }`}
+                          className={`sk-variant-swatch ${selectedVariant?.size === size ? "active" : ""
+                            }`}
                           style={{
                             padding: "7px 16px",
                             borderRadius: 20,
@@ -521,14 +540,35 @@ export default function ProductPage() {
                         <i className={`fa ${isInCart ? "fa-check" : "fa-shopping-cart"}`} />
                         {isInCart ? "In Cart (View Cart)" : "Add to Cart"}
                       </button>
+
                       <button
                         className="sk-pp-btn sk-pp-btn-wish"
                         onClick={addToWishlist}
                         style={{ position: "relative", zIndex: 51, pointerEvents: "auto" }}
+                        title="Add to Wishlist"
                       >
                         <i className="fa fa-heart" />
                       </button>
+                      <button
+                        className="sk-pp-btn sk-pp-btn-share"
+                        onClick={shareProduct}
+                        style={{ position: "relative", zIndex: 51, pointerEvents: "auto" }}
+                        title="Share Product"
+                      >
+                        {shareCopied ? (
+                          <><i className="fa fa-check" /> Copied!</>
+                        ) : (
+                          <i className="fa fa-share-alt" />
+                        )}
+                      </button>
                     </div>
+
+                    {/* Share toast */}
+                    {shareCopied && (
+                      <div className="sk-share-toast">
+                        <i className="fa fa-link" /> Link copied to clipboard!
+                      </div>
+                    )}
                   </>
                 )}
 
@@ -686,7 +726,7 @@ export default function ProductPage() {
                                     0,
                                   ) /
                                     data.reviews.length >=
-                                  s
+                                    s
                                     ? "#f59e0b"
                                     : "#e5e7eb",
                               }}

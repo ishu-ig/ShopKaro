@@ -7,11 +7,11 @@ import { getSubcategory, deleteSubcategory, updateSubcategory } from "../../Redu
 export default function AdminSubcategory() {
   const SubcategoryStateData = useSelector((state) => state.SubcategoryStateData);
   const dispatch = useDispatch();
-  const [flag, setFlag]     = useState(false);
+  const [flag, setFlag] = useState(false);
   const [search, setSearch] = useState("");
 
-  const totalCount    = SubcategoryStateData?.length ?? 0;
-  const activeCount   = SubcategoryStateData?.filter((i) => i.active).length ?? 0;
+  const totalCount = SubcategoryStateData?.length ?? 0;
+  const activeCount = SubcategoryStateData?.filter((i) => i.active).length ?? 0;
   const inactiveCount = totalCount - activeCount;
 
   function deleteRecord(_id) {
@@ -25,9 +25,11 @@ export default function AdminSubcategory() {
     const item = SubcategoryStateData.find((s) => s._id === _id);
     if (!item) return;
     const formData = new FormData();
-    formData.append("_id",    item._id);
-    formData.append("name",   item.name);
-    formData.append("pic",    item.pic);
+    formData.append("_id", item._id);
+    formData.append("name", item.name);
+    // maincategory is populated by the API, so send only its _id
+    formData.append("maincategory", item.maincategory?._id ?? item.maincategory);
+    formData.append("pic", item.pic);
     formData.append("active", !item.active);
     dispatch(updateSubcategory(formData));
     setFlag((f) => !f);
@@ -35,8 +37,10 @@ export default function AdminSubcategory() {
 
   useEffect(() => { dispatch(getSubcategory()); }, [flag]);
 
+  const q = search.toLowerCase();
   const filteredData = SubcategoryStateData?.filter((item) =>
-    item.name?.toLowerCase().includes(search.toLowerCase())
+    item.name?.toLowerCase().includes(q) ||
+    item.maincategory?.name?.toLowerCase().includes(q)
   ) ?? [];
 
   return (
@@ -148,7 +152,7 @@ export default function AdminSubcategory() {
                     <i className="bi bi-search text-muted"></i>
                   </span>
                   <input type="text" className="form-control border-start-0"
-                    placeholder="Search subcategories..." value={search}
+                    placeholder="Search by name or main category..." value={search}
                     onChange={(e) => setSearch(e.target.value)} />
                   {search && (
                     <button className="btn btn-outline-secondary" type="button"
@@ -167,6 +171,7 @@ export default function AdminSubcategory() {
                     <th>#</th>
                     <th>Image</th>
                     <th>Name</th>
+                    <th>Main Category</th>
                     <th>Status</th>
                     <th className="text-end">Action</th>
                   </tr>
@@ -186,6 +191,11 @@ export default function AdminSubcategory() {
                           )}
                         </td>
                         <td className="fw-semibold">{item.name}</td>
+                        <td>
+                          {item.maincategory?.name
+                            ? <span className="badge text-bg-light border">{item.maincategory.name}</span>
+                            : <span className="text-muted small">—</span>}
+                        </td>
                         <td>
                           <span className={`badge ${item.active ? "text-bg-success" : "text-bg-secondary"}`}>
                             {item.active ? "Active" : "Inactive"}
@@ -218,7 +228,7 @@ export default function AdminSubcategory() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="5" className="text-center text-muted py-4">
+                      <td colSpan="6" className="text-center text-muted py-4">
                         {search ? `No subcategories found for "${search}"` : "No subcategories available."}
                       </td>
                     </tr>

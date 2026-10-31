@@ -4,28 +4,37 @@ import { useDispatch, useSelector } from "react-redux";
 import formValidator from "../../FormValidators/formValidator";
 import imageValidator from "../../FormValidators/imageValidator";
 import { getSubcategory, updateSubcategory } from "../../Redux/ActionCreators/SubcategoryActionCreators";
+import { getMaincategory } from "../../Redux/ActionCreators/MaincategoryActionCreators";
+
+const SERVER = process.env.REACT_APP_BACKEND_SERVER || "http://localhost:8000";
 
 const checklist = [
-  { dot: "bg-success", title: "Review Name",   body: "Ensure the subcategory name is correct."        },
-  { dot: "bg-primary", title: "Update Image",  body: "Replace the subcategory image if needed."       },
-  { dot: "bg-warning", title: "Save Changes",  body: "Changes take effect immediately on the site."   },
+  { dot: "bg-success", title: "Review Name", body: "Ensure the subcategory name is correct." },
+  { dot: "bg-primary", title: "Main Category", body: "Change the parent main category if needed." },
+  { dot: "bg-primary", title: "Update Image", body: "Replace the subcategory image if needed." },
+  { dot: "bg-warning", title: "Save Changes", body: "Changes take effect immediately on the site." },
 ];
 
 export default function AdminUpdateSubcategory() {
-  const { _id }              = useParams();
-  const navigate              = useNavigate();
-  const SubcategoryStateData  = useSelector((state) => state.SubcategoryStateData);
-  const dispatch              = useDispatch();
+  const { _id } = useParams();
+  const navigate = useNavigate();
+  const SubcategoryStateData = useSelector((state) => state.SubcategoryStateData);
+  const MaincategoryStateData = useSelector((state) => state.MaincategoryStateData);
+  const dispatch = useDispatch();
 
-  const [data, setData]     = useState({ name: "", pic: "", active: true });
-  const [error, setError]   = useState({ name: "", pic: "" });
+  const [data, setData] = useState({ _id: "", name: "", maincategory: "", pic: "", active: true });
+  const [error, setError] = useState({ name: "", maincategory: "", pic: "" });
   const [imagePreview, setImagePreview] = useState(null);
-  const [show, setShow]     = useState(false);
+  const [show, setShow] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
 
   function getInputData(e) {
-    const name  = e.target.name;
+    const name = e.target.name;
     const value = e.target.files ? e.target.files[0] : e.target.value;
-    if (name !== "active") {
+    if (name === "maincategory") {
+      setError((old) => ({ ...old, maincategory: value ? "" : "Maincategory is Mandatory" }));
+    } else if (name !== "active") {
       setError((old) => ({ ...old, [name]: e.target.files ? imageValidator(e) : formValidator(e) }));
     }
     if (name === "pic" && e.target.files?.[0]) setImagePreview(URL.createObjectURL(e.target.files[0]));
@@ -37,25 +46,64 @@ export default function AdminUpdateSubcategory() {
     const errorItem = Object.values(error).find((x) => x !== "");
     if (errorItem) { setShow(true); return; }
     const duplicate = SubcategoryStateData.find(
-      (x) => x._id !== _id && x.name.toLowerCase() === data.name.toLowerCase()
+      (x) =>
+        x._id !== _id &&
+        x.name.toLowerCase() === data.name.toLowerCase() &&
+        String(x.maincategory?._id ?? x.maincategory) === String(data.maincategory)
     );
-    if (duplicate) { setShow(true); setError((old) => ({ ...old, name: "Subcategory Already Exists" })); return; }
+    if (duplicate) {
+      setShow(true);
+      setError((old) => ({ ...old, name: "Subcategory Already Exists in this Main Category" }));
+      return;
+    }
+    setLoading(true);
     const formData = new FormData();
-    formData.append("_id",    data._id);
-    formData.append("name",   data.name);
-    formData.append("pic",    data.pic);
+    formData.append("_id", data._id);
+    formData.append("name", data.name);
+    formData.append("maincategory", data.maincategory);
+    formData.append("pic", data.pic);
     formData.append("active", data.active);
     dispatch(updateSubcategory(formData));
     navigate("/subcategory");
   }
 
+  // On mount: load dropdown list via Redux, fetch THIS record fresh from the
+  // API so maincategory is always a fully populated object and the form
+  // initialises exactly once (never reset by background Redux updates).
   useEffect(() => {
+    dispatch(getMaincategory());
     dispatch(getSubcategory());
-    if (SubcategoryStateData.length) {
-      const item = SubcategoryStateData.find((x) => x._id === _id);
-      if (item) { setData({ ...item }); if (item.pic) setImagePreview(item.pic); }
-    }
-  }, [SubcategoryStateData.length]);
+
+    const token = localStorage.getItem("token");
+    const authHeader = (token && token !== "null" && token !== "undefined") ? token : "";
+
+    fetch(`${SERVER}/api/subcategory/${_id}`, {
+      headers: { authorization: authHeader },
+    })
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.result === "Done" && json.data) {
+          const item = json.data;
+          // maincategory comes back as populated object { _id, name, … }
+          const mcId = String(item.maincategory?._id ?? item.maincategory ?? "");
+          setData({
+            _id:          item._id,
+            name:         item.name   ?? "",
+            maincategory: mcId,
+            pic:          item.pic    ?? "",
+            active:       item.active ?? true,
+          });
+          setError({
+            name:         item.name ? "" : "Name Field is Mandatory",
+            maincategory: mcId      ? "" : "Maincategory is Mandatory",
+            pic:          "",   // pic is optional on update
+          });
+          if (item.pic) setImagePreview(item.pic);
+        }
+      })
+      .catch((err) => console.error("Failed to load subcategory:", err))
+      .finally(() => setFetching(false));
+  }, [_id]);
 
   return (
     <main className="dashboard-content">
@@ -83,6 +131,11 @@ export default function AdminUpdateSubcategory() {
           </div>
         )}
 
+        {fetching ? (
+          <div className="text-center py-5">
+            <span className="spinner-border text-primary" role="status" aria-label="Loading" />
+          </div>
+        ) : (
         <section className="row g-3">
           <div className="col-12 col-xl-8">
             <div className="panel">
@@ -96,7 +149,18 @@ export default function AdminUpdateSubcategory() {
                 </div>
               </div>
               <div className="row g-3">
-                <div className="col-12">
+                <div className="col-md-6">
+                  <label className="form-label" htmlFor="maincategory">Main Category</label>
+                  <select id="maincategory" name="maincategory" className="form-select"
+                    value={String(data.maincategory)} onChange={getInputData}>
+                    <option value="">Select Main Category</option>
+                    {MaincategoryStateData?.filter((m) => m.active || String(m._id) === String(data.maincategory)).map((m) => (
+                      <option key={m._id} value={String(m._id)}>{m.name}</option>
+                    ))}
+                  </select>
+                  {show && error.maincategory && <div className="text-danger small mt-1">{error.maincategory}</div>}
+                </div>
+                <div className="col-md-6">
                   <label className="form-label" htmlFor="name">Subcategory Name</label>
                   <input id="name" type="text" name="name" className="form-control"
                     placeholder="e.g. Laptops, T-Shirts" value={data.name} onChange={getInputData} />
@@ -126,8 +190,17 @@ export default function AdminUpdateSubcategory() {
               </div>
               <div className="d-flex flex-wrap justify-content-end gap-2 mt-4">
                 <Link className="btn btn-outline-secondary" to="/subcategory">Cancel</Link>
-                <button className="btn btn-primary" type="button" onClick={postSubmit}>
-                  <i className="bi bi-check-circle" aria-hidden="true"></i> Update Subcategory
+                <button className="btn btn-primary" type="button" onClick={postSubmit} disabled={loading}>
+                  {loading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-check-circle" aria-hidden="true"></i> Update Subcategory
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -152,6 +225,7 @@ export default function AdminUpdateSubcategory() {
             </div>
           </div>
         </section>
+        )}
       </div>
     </main>
   );

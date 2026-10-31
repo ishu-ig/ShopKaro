@@ -14,7 +14,7 @@ const checklist = [
   {
     dot: "bg-success",
     title: "Name & categorize",
-    body: "Use a clear product name and pick the right category, subcategory, and brand.",
+    body: "Pick the main category first, then its subcategory, and the brand.",
   },
   {
     dot: "bg-primary",
@@ -33,6 +33,13 @@ const checklist = [
 function toIdString(id) {
   if (id && typeof id === "object" && "$oid" in id) return id.$oid;
   return id;
+}
+
+// A reference field can be a plain id, a { $oid } wrapper, or a populated
+// document ({ _id, name, ... }). This always returns a plain string id.
+function refId(ref) {
+  if (ref && typeof ref === "object") return toIdString(ref._id ?? ref);
+  return ref;
 }
 
 function makeEmptyVariant() {
@@ -84,24 +91,15 @@ export default function AdminCreateProduct() {
   useEffect(() => { dispatch(getBrand()); }, [BrandStateData.length]);
   useEffect(() => { dispatch(getShop()); }, [ShopStateData.length]);
 
-  // Whenever the selected main category changes, clear any previously
-  // picked subcategory since it may not belong to the new main category.
-  useEffect(() => {
-    setData((old) => ({ ...old, subcategory: "" }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data.maincategory]);
-
   const maincategoryOptions = (MaincategoryStateData || []).filter((x) => x?.active);
 
-  // Subcategories scoped to the currently selected main category. If a
-  // subcategory doesn't carry maincategory info, it's shown regardless —
-  // we can't filter what we don't know.
-  const subcategoryOptions = (SubcategoryStateData || [])
-    .filter((x) => x?.active)
-    .filter((x) => {
-      const mc = toIdString(typeof x.maincategory === "object" ? x.maincategory?._id : x.maincategory);
-      return !mc || mc === data.maincategory;
-    });
+  // Step 2: subcategories are listed ONLY for the selected main category.
+  // Nothing is shown until a main category is picked.
+  const subcategoryOptions = data.maincategory
+    ? (SubcategoryStateData || [])
+      .filter((x) => x?.active)
+      .filter((x) => refId(x.maincategory) === data.maincategory)
+    : [];
 
   const brandOptions = (BrandStateData || []).filter((x) => x?.active);
   const shopOptions = (ShopStateData || []).filter((x) => x?.active);
@@ -112,6 +110,14 @@ export default function AdminCreateProduct() {
 
     if (name !== "active" && name !== "shop") {
       setError((old) => ({ ...old, [name]: formValidator(e) }));
+    }
+
+    // Changing the main category invalidates the chosen subcategory,
+    // so clear it and make the user pick again from the new list.
+    if (name === "maincategory") {
+      setError((old) => ({ ...old, subcategory: "Sub Category is Mandatory" }));
+      setData((old) => ({ ...old, maincategory: value, subcategory: "" }));
+      return;
     }
 
     setData((old) => ({
@@ -199,8 +205,8 @@ export default function AdminCreateProduct() {
 
     const formData = new FormData();
     formData.append("name", data.name);
-    formData.append("maincategory", data.maincategory || maincategoryOptions[0]?._id || "");
-    formData.append("subcategory", data.subcategory || subcategoryOptions[0]?._id || "");
+    formData.append("maincategory", data.maincategory);
+    formData.append("subcategory", data.subcategory);
     formData.append("brand", data.brand || brandOptions[0]?._id || "");
     if (data.shop) formData.append("shop", data.shop); // optional on the schema — omit entirely if not picked
     formData.append("discount", discount); // real ProductSchema field
@@ -287,21 +293,51 @@ export default function AdminCreateProduct() {
                   )}
                 </div>
 
-                {/* Shop — optional; Admin can attach a product to any active shop */}
+                {/* Step 1: Main Category */}
                 <div className="col-md-6">
-                  <label className="form-label" htmlFor="shop">Shop (optional)</label>
+                  <label className="form-label" htmlFor="maincategory">Main Category</label>
                   <select
-                    className="form-select"
-                    id="shop"
-                    name="shop"
-                    value={data.shop}
+                    className={`form-select ${show && error.maincategory ? "is-invalid" : ""}`}
+                    id="maincategory"
+                    name="maincategory"
+                    value={data.maincategory}
                     onChange={getInputData}
                   >
-                    <option value="">No shop</option>
-                    {shopOptions.map((item) => (
+                    <option value="" disabled>Select Main Category</option>
+                    {maincategoryOptions.map((item) => (
                       <option key={item._id} value={item._id}>{item.name}</option>
                     ))}
                   </select>
+                  {show && error.maincategory && (
+                    <div className="text-danger small mt-1">{error.maincategory}</div>
+                  )}
+                </div>
+
+                {/* Step 2: Sub Category — only those belonging to the selected main category */}
+                <div className="col-md-6">
+                  <label className="form-label" htmlFor="subcategory">Sub Category</label>
+                  <select
+                    className={`form-select ${show && error.subcategory ? "is-invalid" : ""}`}
+                    id="subcategory"
+                    name="subcategory"
+                    value={data.subcategory}
+                    onChange={getInputData}
+                    disabled={!data.maincategory}
+                  >
+                    <option value="" disabled>
+                      {!data.maincategory
+                        ? "Select a main category first"
+                        : subcategoryOptions.length
+                          ? "Select Sub Category"
+                          : "No subcategories for this main category"}
+                    </option>
+                    {subcategoryOptions.map((item) => (
+                      <option key={item._id} value={item._id}>{item.name}</option>
+                    ))}
+                  </select>
+                  {show && error.subcategory && (
+                    <div className="text-danger small mt-1">{error.subcategory}</div>
+                  )}
                 </div>
 
                 {/* Brand */}
@@ -324,46 +360,21 @@ export default function AdminCreateProduct() {
                   )}
                 </div>
 
-                {/* Main Category — global category list */}
+                {/* Shop — optional; Admin can attach a product to any active shop */}
                 <div className="col-md-6">
-                  <label className="form-label" htmlFor="maincategory">Main Category</label>
+                  <label className="form-label" htmlFor="shop">Shop (optional)</label>
                   <select
-                    className={`form-select ${show && error.maincategory ? "is-invalid" : ""}`}
-                    id="maincategory"
-                    name="maincategory"
-                    value={data.maincategory}
+                    className="form-select"
+                    id="shop"
+                    name="shop"
+                    value={data.shop}
                     onChange={getInputData}
                   >
-                    <option value="" disabled>Select Main Category</option>
-                    {maincategoryOptions.map((item) => (
+                    <option value="">No shop</option>
+                    {shopOptions.map((item) => (
                       <option key={item._id} value={item._id}>{item.name}</option>
                     ))}
                   </select>
-                  {show && error.maincategory && (
-                    <div className="text-danger small mt-1">{error.maincategory}</div>
-                  )}
-                </div>
-
-                {/* Sub Category — scoped to the selected main category */}
-                <div className="col-md-6">
-                  <label className="form-label" htmlFor="subcategory">Sub Category</label>
-                  <select
-                    className={`form-select ${show && error.subcategory ? "is-invalid" : ""}`}
-                    id="subcategory"
-                    name="subcategory"
-                    value={data.subcategory}
-                    onChange={getInputData}
-                  >
-                    <option value="" disabled>
-                      {data.maincategory ? "Select Sub Category" : "Select a main category first"}
-                    </option>
-                    {subcategoryOptions.map((item) => (
-                      <option key={item._id} value={item._id}>{item.name}</option>
-                    ))}
-                  </select>
-                  {show && error.subcategory && (
-                    <div className="text-danger small mt-1">{error.subcategory}</div>
-                  )}
                 </div>
 
                 {/* Discount — common to every variant, used to derive each variant's finalPrice */}
@@ -440,9 +451,8 @@ export default function AdminCreateProduct() {
                             <div className="col-md-3">
                               <label className="form-label small">Color</label>
                               <input
-                                className={`form-control ${
-                                  show && error.variants && !variant.color ? "is-invalid" : ""
-                                }`}
+                                className={`form-control ${show && error.variants && !variant.color ? "is-invalid" : ""
+                                  }`}
                                 type="text"
                                 placeholder="e.g. Red"
                                 value={variant.color}
@@ -452,9 +462,8 @@ export default function AdminCreateProduct() {
                             <div className="col-md-3">
                               <label className="form-label small">Size</label>
                               <select
-                                className={`form-select ${
-                                  show && error.variants && !variant.size ? "is-invalid" : ""
-                                }`}
+                                className={`form-select ${show && error.variants && !variant.size ? "is-invalid" : ""
+                                  }`}
                                 value={variant.size}
                                 onChange={(e) => getVariantData(index, "size", e.target.value)}
                               >
@@ -479,9 +488,8 @@ export default function AdminCreateProduct() {
                             <div className="col-md-3">
                               <label className="form-label small">Price (₹)</label>
                               <input
-                                className={`form-control ${
-                                  show && error.variants && !(parseFloat(variant.price) > 0) ? "is-invalid" : ""
-                                }`}
+                                className={`form-control ${show && error.variants && !(parseFloat(variant.price) > 0) ? "is-invalid" : ""
+                                  }`}
                                 type="number"
                                 min="0"
                                 placeholder="Required"
@@ -526,7 +534,6 @@ export default function AdminCreateProduct() {
                     <div className="text-danger small mt-1">{error.variants}</div>
                   )}
                 </div>
-            
 
                 {/* Description */}
                 <div className="col-12">

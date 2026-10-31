@@ -5,26 +5,36 @@ import { useDispatch, useSelector } from "react-redux";
 import formValidator from "../../FormValidators/formValidator";
 import imageValidator from "../../FormValidators/imageValidator";
 import { createSubcategory, getSubcategory } from "../../Redux/ActionCreators/SubcategoryActionCreators";
+import { getMaincategory } from "../../Redux/ActionCreators/MaincategoryActionCreators";
 
 const checklist = [
-  { dot: "bg-primary", title: "Subcategory Name", body: "Use a specific name under a main category."     },
-  { dot: "bg-success", title: "Upload Image",     body: "Add a representative image for this subcategory." },
-  { dot: "bg-warning", title: "Set Status",       body: "Active subcategories appear in product filters."  },
+  { dot: "bg-primary", title: "Main Category", body: "Pick the main category this subcategory belongs to." },
+  { dot: "bg-primary", title: "Subcategory Name", body: "Use a specific name under a main category." },
+  { dot: "bg-success", title: "Upload Image", body: "Add a representative image for this subcategory." },
+  { dot: "bg-warning", title: "Set Status", body: "Active subcategories appear in product filters." },
 ];
 
 export default function AdminCreateSubcategory() {
-  const [data, setData]   = useState({ name: "", pic: "", active: true });
-  const [error, setError] = useState({ name: "Name Field is Mandatory", pic: "Image is required" });
+  const [data, setData] = useState({ name: "", maincategory: "", pic: "", active: true });
+  const [error, setError] = useState({
+    name: "Name Field is Mandatory",
+    maincategory: "Maincategory is Mandatory",
+    pic: "Image is required",
+  });
   const [imagePreview, setImagePreview] = useState(null);
-  const [show, setShow]   = useState(false);
-  const navigate          = useNavigate();
+  const [show, setShow] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
   const SubcategoryStateData = useSelector((state) => state.SubcategoryStateData);
-  const dispatch          = useDispatch();
+  const MaincategoryStateData = useSelector((state) => state.MaincategoryStateData);
+  const dispatch = useDispatch();
 
   function getInputData(e) {
-    const name  = e.target.name;
+    const name = e.target.name;
     const value = e.target.files ? e.target.files[0] : e.target.value;
-    if (name !== "active") {
+    if (name === "maincategory") {
+      setError((old) => ({ ...old, maincategory: value ? "" : "Maincategory is Mandatory" }));
+    } else if (name !== "active") {
       setError((old) => ({ ...old, [name]: e.target.files ? imageValidator(e) : formValidator(e) }));
     }
     if (name === "pic" && e.target.files?.[0]) setImagePreview(URL.createObjectURL(e.target.files[0]));
@@ -35,17 +45,30 @@ export default function AdminCreateSubcategory() {
     e.preventDefault();
     const errorItem = Object.values(error).find((x) => x !== "");
     if (errorItem) { setShow(true); return; }
-    const duplicate = SubcategoryStateData.find((x) => x.name.toLowerCase() === data.name.toLowerCase());
-    if (duplicate) { setShow(true); setError((old) => ({ ...old, name: "Subcategory Already Exists" })); return; }
+    const duplicate = SubcategoryStateData.find(
+      (x) =>
+        x.name.toLowerCase() === data.name.toLowerCase() &&
+        String(x.maincategory?._id ?? x.maincategory) === String(data.maincategory)
+    );
+    if (duplicate) {
+      setShow(true);
+      setError((old) => ({ ...old, name: "Subcategory Already Exists in this Main Category" }));
+      return;
+    }
+    setLoading(true);
     const formData = new FormData();
-    formData.append("name",   data.name);
-    formData.append("pic",    data.pic);
+    formData.append("name", data.name);
+    formData.append("maincategory", data.maincategory);
+    formData.append("pic", data.pic);
     formData.append("active", data.active);
     dispatch(createSubcategory(formData));
     navigate("/subcategory");
   }
 
-  useEffect(() => { dispatch(getSubcategory()); }, [SubcategoryStateData.length]);
+  useEffect(() => {
+    dispatch(getSubcategory());
+    dispatch(getMaincategory());
+  }, []);
 
   return (
     <main className="dashboard-content">
@@ -86,7 +109,18 @@ export default function AdminCreateSubcategory() {
                 </div>
               </div>
               <div className="row g-3">
-                <div className="col-12">
+                <div className="col-md-6">
+                  <label className="form-label" htmlFor="maincategory">Main Category</label>
+                  <select id="maincategory" name="maincategory" className="form-select"
+                    value={data.maincategory} onChange={getInputData}>
+                    <option value="">Select Main Category</option>
+                    {MaincategoryStateData?.filter((m) => m.active).map((m) => (
+                      <option key={m._id} value={m._id}>{m.name}</option>
+                    ))}
+                  </select>
+                  {show && error.maincategory && <div className="text-danger small mt-1">{error.maincategory}</div>}
+                </div>
+                <div className="col-md-6">
                   <label className="form-label" htmlFor="name">Subcategory Name</label>
                   <input id="name" type="text" name="name" className="form-control"
                     placeholder="e.g. Laptops, T-Shirts" value={data.name} onChange={getInputData} />
@@ -114,8 +148,17 @@ export default function AdminCreateSubcategory() {
               </div>
               <div className="d-flex flex-wrap justify-content-end gap-2 mt-4">
                 <Link className="btn btn-outline-secondary" to="/subcategory">Cancel</Link>
-                <button className="btn btn-primary" type="button" onClick={postSubmit}>
-                  <i className="bi bi-check-circle" aria-hidden="true"></i> Create Subcategory
+                <button className="btn btn-primary" type="button" onClick={postSubmit} disabled={loading}>
+                  {loading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-check-circle" aria-hidden="true"></i> Create Subcategory
+                    </>
+                  )}
                 </button>
               </div>
             </div>

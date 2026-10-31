@@ -1,4 +1,9 @@
 const mongoose = require("mongoose");
+require("./Maincategory");
+require("./Subcategory");
+require("./Brand");
+require("./Shop");
+require("./User");
 
 const VariantSchema = new mongoose.Schema(
   {
