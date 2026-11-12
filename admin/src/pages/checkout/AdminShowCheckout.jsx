@@ -100,7 +100,7 @@ export default function AdminCheckoutShow() {
             : "/checkout";
 
         navigate(path);
-      }, 10000);
+      }, 1500);
     }
   }
 
@@ -217,7 +217,19 @@ export default function AdminCheckoutShow() {
                     const isCurrent = i === currentStep;
                     return (
                       <React.Fragment key={step.key}>
-                        <div className="order-progress-step">
+                        <div 
+                          className="order-progress-step"
+                          style={{ cursor: canUpdateOrder ? "pointer" : "default" }}
+                          onClick={() => {
+                            if (canUpdateOrder) {
+                              setOrderStatus(step.key);
+                              if (step.key === "Delivered" && data?.paymentMode === "COD") {
+                                setPaymentStatus("Done");
+                              }
+                            }
+                          }}
+                          title={canUpdateOrder ? `Select ${step.label}` : step.label}
+                        >
                           <div className={`order-progress-circle ${isDone ? "done" : isCurrent ? "active" : ""}`}>
                             <i className={`bi ${isDone ? "bi-check-lg" : step.icon}`}></i>
                           </div>
@@ -378,7 +390,16 @@ export default function AdminCheckoutShow() {
                   {canUpdateOrder && (
                     <div className="col-md-4">
                       <label className="form-label">Order Status</label>
-                      <select className="form-select" value={orderStatus} onChange={(e) => setOrderStatus(e.target.value)}>
+                      <select
+                        className="form-select"
+                        value={orderStatus}
+                        onChange={(e) => {
+                          setOrderStatus(e.target.value);
+                          if (e.target.value === "Delivered" && data?.paymentMode === "COD") {
+                            setPaymentStatus("Done");
+                          }
+                        }}
+                      >
                         {ALL_STATUS_OPTIONS.map((s) => (
                           <option key={s.key} value={s.key}>{s.label}</option>
                         ))}

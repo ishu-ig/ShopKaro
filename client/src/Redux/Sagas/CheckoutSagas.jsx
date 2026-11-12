@@ -16,9 +16,9 @@ function* getSaga(action) {                             //worker saga or execute
 }
 
 function* updateSaga(action) {                          //worker saga or executer saga
-    yield updateRecord("checkout", action.payload)
+    let response = yield updateRecord("checkout", action.payload)
     // yield updateMultipartRecord("checkout", action.payload)
-    yield put({ type: UPDATE_CHECKOUT_RED, payload: action.payload })
+    yield put({ type: UPDATE_CHECKOUT_RED, payload: response?.data || action.payload })
 }
 
 function* deleteSaga(action) {                          //worker saga or executer saga

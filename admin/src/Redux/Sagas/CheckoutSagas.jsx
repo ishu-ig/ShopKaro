@@ -13,8 +13,8 @@ function* getSaga(action) {
 }
 
 function* updateSaga(action) {
-    yield updateRecord("checkout", action.payload)
-    yield put({ type: UPDATE_CHECKOUT_RED, payload: action.payload })
+    let response = yield updateRecord("checkout", action.payload)
+    yield put({ type: UPDATE_CHECKOUT_RED, payload: response?.data || action.payload })
 }
 
 function* deleteSaga(action) {
