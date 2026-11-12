@@ -67,7 +67,8 @@ const ProductSchema = new mongoose.Schema({
   },
   shop: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Shop"
+    ref: "Shop",
+    required: [true, "Shop is Mandatory"],
   },
   description: {
     type: String,
@@ -77,7 +78,19 @@ const ProductSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  isreturnAble: {
+    type: Boolean,
+    default: true,
+  },
+  returnDuration: {
+    type: Number,
+    default: 7
+  },
 
+  warranty: {
+    type: String,
+    default: "1 Year"
+  },
 
   variants: [VariantSchema],
 

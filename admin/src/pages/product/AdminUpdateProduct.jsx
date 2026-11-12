@@ -13,6 +13,9 @@ import { getBrand } from "../../Redux/ActionCreators/BrandActionCreators";
 
 const SIZE_OPTIONS = ["Free Size", "XS", "S", "M", "L", "XL", "XXL"];
 
+// Fields that are optional / not validated by formValidator
+const SKIP_VALIDATION = ["active", "isreturnAble", "returnDuration", "warranty"];
+
 const checklist = [
   {
     dot: "bg-success",
@@ -28,6 +31,11 @@ const checklist = [
     dot: "bg-warning",
     title: "Review variant images",
     body: "Confirm each variant still lists the right image paths.",
+  },
+  {
+    dot: "bg-info",
+    title: "Check return & warranty",
+    body: "Confirm whether the product is returnable, its return window, and the warranty text.",
   },
 ];
 
@@ -62,29 +70,6 @@ function toOption(entry) {
   return { _productId: id, name: id };
 }
 
-// Normalize a product's saved variants into editable rows.
-// NOTE: the current updateRecord controller does not process req.files for
-// images on update — it only re-saves whatever `pic` array is sent in the
-// variants JSON. So existing images are kept/edited as plain URL strings
-// here rather than as a file upload.
-function mapVariantsForEdit(savedVariants) {
-  const saved = Array.isArray(savedVariants) ? savedVariants : [];
-  if (saved.length === 0) return [makeEmptyVariant()];
-  return saved.map((v) => ({
-    // Same aliasing rule: subdocuments only ever carry `_id`, read that here.
-    key: v._id?.$oid || v._id || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-    _productId: v._id?.$oid || v._id, // preserved so the same sub-document id is reused on save
-    color: v.color ?? "",
-    size: v.size ?? "",
-    stockQuantity: v.stockQuantity ?? 0,
-    stock: v.stock ?? true,
-    price: v.price ?? "",
-    sku: v.sku ?? "",
-    pic: Array.isArray(v.pic) ? v.pic : [], // existing image URLs, editable as text
-    files: [], // new File[] chosen for this variant on this edit, if any
-  }));
-}
-
 function makeEmptyVariant() {
   return {
     key: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -98,6 +83,45 @@ function makeEmptyVariant() {
     pic: [],
     files: [],
   };
+}
+
+// Normalize a product's saved variants into editable rows.
+// NOTE: the current updateRecord controller does not process req.files for
+// images on update — it only re-saves whatever `pic` array is sent in the
+// variants JSON. So existing images are kept/edited as plain URL strings
+// here rather than as a file upload.
+function mapVariantsForEdit(savedVariants, rootItem) {
+  const saved = Array.isArray(savedVariants) ? savedVariants : [];
+  if (saved.length === 0) {
+    if (rootItem && (rootItem.color || rootItem.basePrice || rootItem.price || (rootItem.pic && rootItem.pic.length))) {
+      return [{
+        key: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        _productId: undefined,
+        color: rootItem.color ?? "",
+        size: rootItem.size ?? "",
+        stockQuantity: rootItem.stockQuantity ?? 0,
+        stock: rootItem.stock ?? true,
+        price: rootItem.basePrice ?? rootItem.price ?? "",
+        sku: rootItem.sku ?? "",
+        pic: Array.isArray(rootItem.pic) ? rootItem.pic : [],
+        files: [],
+      }];
+    }
+    return [makeEmptyVariant()];
+  }
+  return saved.map((v) => ({
+    // Same aliasing rule: subdocuments only ever carry `_id`, read that here.
+    key: v._id?.$oid || v._id || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    _productId: v._id?.$oid || v._id, // preserved so the same sub-document id is reused on save
+    color: v.color ?? "",
+    size: v.size ?? "",
+    stockQuantity: v.stockQuantity ?? 0,
+    stock: v.stock ?? true,
+    price: v.price ?? "",
+    sku: v.sku ?? "",
+    pic: Array.isArray(v.pic) ? v.pic : [], // existing image URLs, editable as text
+    files: [], // new File[] chosen for this variant on this edit, if any
+  }));
 }
 
 export default function AdminUpdateProduct() {
@@ -118,6 +142,9 @@ export default function AdminUpdateProduct() {
     brand: "",
     shop: "",
     discount: 0, // common discount, applied to every variant's own price
+    isreturnAble: true, // whether the product can be returned at all
+    returnDuration: 7, // days a customer may return the product
+    warranty: "1 Year",
     description: "",
     active: true,
     variants: [makeEmptyVariant()],
@@ -128,6 +155,7 @@ export default function AdminUpdateProduct() {
     maincategory: "",
     subcategory: "",
     brand: "",
+    shop: "",
     variants: "",
   });
 
@@ -159,9 +187,12 @@ export default function AdminUpdateProduct() {
           brand: refId(item.brand) ?? "",
           shop: refId(item.shop) ?? "",
           discount: item.discount ?? 0,
+          isreturnAble: item.isreturnAble ?? true,
+          returnDuration: item.returnDuration ?? 7,
+          warranty: item.warranty ?? "1 Year",
           description: item.description ?? "",
           active: item.active ?? true,
-          variants: mapVariantsForEdit(item.variants),
+          variants: mapVariantsForEdit(item.variants, item),
         });
       }
     }
@@ -189,7 +220,7 @@ export default function AdminUpdateProduct() {
     const name = e.target.name;
     const value = e.target.value;
 
-    if (name !== "active") {
+    if (!SKIP_VALIDATION.includes(name)) {
       setError((old) => ({ ...old, [name]: formValidator(e) }));
     }
 
@@ -203,9 +234,13 @@ export default function AdminUpdateProduct() {
       return;
     }
 
+    if (name === "shop") {
+      setError((old) => ({ ...old, shop: value ? "" : "Shop is Mandatory" }));
+    }
+
     setData((old) => ({
       ...old,
-      [name]: name === "active" ? value === "1" : value,
+      [name]: name === "active" || name === "isreturnAble" ? value === "1" : value,
     }));
   }
 
@@ -218,7 +253,7 @@ export default function AdminUpdateProduct() {
       // Price is required per variant since there's no product-level
       // basePrice to fall back on.
       const hasValidVariant = variants.some(
-        (v) => v.color.trim() !== "" && v.size.trim() !== "" && parseFloat(v.price) > 0
+        (v) => String(v.color).trim() !== "" && String(v.size).trim() !== "" && parseFloat(v.price) > 0
       );
       setError((oldError) => ({
         ...oldError,
@@ -291,6 +326,11 @@ export default function AdminUpdateProduct() {
 
   function postSubmit(e) {
     e.preventDefault();
+    if (!data.shop) {
+      setError((old) => ({ ...old, shop: "Shop is Mandatory" }));
+      setShow(true);
+      return;
+    }
     const errorItem = Object.values(error).find((x) => x !== "");
     if (errorItem) {
       setShow(true);
@@ -299,10 +339,13 @@ export default function AdminUpdateProduct() {
 
     // Only send variants that have color, size, AND a valid price.
     const validVariants = data.variants.filter(
-      (v) => v.color.trim() !== "" && v.size.trim() !== "" && parseFloat(v.price) > 0
+      (v) => String(v.color).trim() !== "" && String(v.size).trim() !== "" && parseFloat(v.price) > 0
     );
 
     const discount = Number(data.discount) || 0; // common discount, applied to every variant's own price
+    const isreturnAble = !!data.isreturnAble;
+    const returnDuration = isreturnAble ? Math.max(0, Number(data.returnDuration) || 0) : 0;
+    const warranty = String(data.warranty ?? "").trim() || "No Warranty";
 
     // Keep the same variant sub-document id where one already existed. The
     // VariantSchema subdocument field is `_id` (Mongoose default) — we
@@ -330,13 +373,16 @@ export default function AdminUpdateProduct() {
     const formData = new FormData();
     // The server reads the record id from the URL (req.params._id via the
     // PUT /:_id route), not from the body — sent for completeness only.
-    formData.append("_id", data._productId ?? _productId);
+    formData.append("_id", _productId);
     formData.append("name", data.name);
     formData.append("maincategory", data.maincategory);
     formData.append("subcategory", data.subcategory);
     formData.append("brand", data.brand);
     formData.append("shop", data.shop);
     formData.append("discount", discount); // real ProductSchema field
+    formData.append("isreturnAble", isreturnAble); // real ProductSchema field
+    formData.append("returnDuration", returnDuration); // real ProductSchema field
+    formData.append("warranty", warranty); // real ProductSchema field
     formData.append("description", data.description);
     formData.append("active", data.active);
     formData.append("variants", JSON.stringify(cleanedVariants));
@@ -346,6 +392,10 @@ export default function AdminUpdateProduct() {
     validVariants.forEach((v) => {
       v.files.forEach((file) => formData.append("pic", file));
     });
+
+    // FIX: the original version built the FormData but never dispatched it,
+    // so edits were silently discarded.
+    dispatch(updateProduct(formData));
 
     if (localStorage.getItem("role") === "Admin") {
       navigate("/product");
@@ -366,7 +416,7 @@ export default function AdminUpdateProduct() {
               <p className="eyebrow mb-1">Management</p>
               <h1 className="h3 mb-1">Update Product</h1>
               <p className="text-muted mb-0">
-                Edit category, brand, shop, pricing, variants, and status.
+                Edit category, brand, shop, pricing, variants, return window, warranty, and status.
               </p>
             </div>
           </div>
@@ -465,9 +515,9 @@ export default function AdminUpdateProduct() {
                   {show && error.brand && <div className="text-danger small mt-1">{error.brand}</div>}
                 </div>
 
-                {/* Shop */}
+                {/* Shop — Mandatory */}
                 <div className="col-md-4">
-                  <label className="form-label" htmlFor="shop">Shop</label>
+                  <label className="form-label" htmlFor="shop">Shop <span className="text-danger">*</span></label>
                   <select
                     className="form-select" id="shop" name="shop"
                     value={data.shop} onChange={getInputData}
@@ -477,6 +527,7 @@ export default function AdminUpdateProduct() {
                       <option key={item._productId} value={item._productId}>{item.name}</option>
                     ))}
                   </select>
+                  {show && error.shop && <div className="text-danger small mt-1">{error.shop}</div>}
                 </div>
 
                 {/* Discount — common to every variant, used to derive each variant's finalPrice */}
@@ -490,7 +541,53 @@ export default function AdminUpdateProduct() {
                     placeholder="Enter Discount"
                   />
                   <div className="text-muted small mt-1">
-                    This discount is applied to every variant when computing its final price.
+                    Applied to every variant when computing its final price.
+                  </div>
+                </div>
+
+                {/* Returnable */}
+                <div className="col-md-4">
+                  <label className="form-label" htmlFor="isreturnAble">Returnable</label>
+                  <select
+                    className="form-select"
+                    id="isreturnAble"
+                    name="isreturnAble"
+                    value={data.isreturnAble ? "1" : "0"}
+                    onChange={getInputData}
+                  >
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                  </select>
+                </div>
+
+                {/* Return window — shown only when the product is returnable */}
+                {data.isreturnAble && (
+                  <div className="col-md-4">
+                    <label className="form-label" htmlFor="returnDuration">Return Window (days)</label>
+                    <input
+                      className="form-control"
+                      id="returnDuration" type="number" name="returnDuration"
+                      min="0"
+                      value={data.returnDuration} onChange={getInputData}
+                      placeholder="e.g. 7"
+                    />
+                    <div className="text-muted small mt-1">
+                      Days after delivery within which a return is accepted.
+                    </div>
+                  </div>
+                )}
+
+                {/* Warranty */}
+                <div className="col-md-4">
+                  <label className="form-label" htmlFor="warranty">Warranty</label>
+                  <input
+                    className="form-control"
+                    id="warranty" type="text" name="warranty"
+                    value={data.warranty} onChange={getInputData}
+                    placeholder="e.g. 1 Year, 6 Months"
+                  />
+                  <div className="text-muted small mt-1">
+                    Leave empty for "No Warranty".
                   </div>
                 </div>
 

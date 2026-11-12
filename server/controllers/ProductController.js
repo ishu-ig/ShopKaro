@@ -1,4 +1,5 @@
-const Product = require("../models/Product")
+const mongoose = require("mongoose");
+const Product = require("../models/Product");
 const { deleteFromCloudinary } = require("../cloudinaryMethods");
 
 async function createRecord(req, res) {
@@ -8,6 +9,9 @@ async function createRecord(req, res) {
         // parsed-but-still-plain array straight onto data.variants before
         // we've read imageCount off it.
         const { variants, ...rest } = req.body;
+        if (rest.shop === "" || rest.shop === "null" || rest.shop === "undefined") {
+            delete rest.shop;
+        }
 
         let data = new Product(rest);
 
@@ -87,6 +91,7 @@ async function createRecord(req, res) {
         error.errors?.maincategory ? errorMessage.maincategory = error.errors.maincategory.message : null
         error.errors?.subcategory ? errorMessage.subcategory = error.errors.subcategory.message : null
         error.errors?.brand ? errorMessage.brand = error.errors.brand.message : null
+        error.errors?.shop ? errorMessage.shop = error.errors.shop.message : null
         error.errors?.discount ? errorMessage.discount = error.errors.discount.message : null
         error.errors?.variants ? errorMessage.variants = error.errors.variants.message : null
 
@@ -197,24 +202,45 @@ async function updateRecord(req, res) {
         }
 
         // Snapshot every image URL currently on the product BEFORE we touch
-        // anything. This is the "before" picture we diff against once the
-        // save succeeds, so we know exactly which Cloudinary files became
-        // orphaned — whether the user removed one image from a variant,
-        // or removed an entire variant outright.
-        const oldImages = data.variants.flatMap(variant => variant.pic || []);
+        // anything (safely check both legacy root `pic` and `variants.pic`).
+        const oldImages = [
+            ...(Array.isArray(data.pic) ? data.pic : []),
+            ...((data.variants || []).flatMap(variant => (variant && variant.pic) ? variant.pic : []))
+        ];
 
-        data.name = req.body.name ?? data.name;
-        data.maincategory = req.body.maincategory ?? data.maincategory;
-        data.subcategory = req.body.subcategory ?? data.subcategory;
-        data.brand = req.body.brand ?? data.brand;
-        // FIX: shop was previously never re-assigned here, so changing a
-        // product's shop from the update form silently had no effect —
-        // the product kept its original shop forever even though the
-        // frontend submitted the new one.
-        data.shop = req.body.shop ?? data.shop;
-        data.discount = req.body.discount ?? data.discount;
-        data.description = req.body.description ?? data.description;
-        data.active = req.body.active ?? data.active;
+        if (req.body.name) data.name = req.body.name;
+        if (req.body.maincategory) data.maincategory = req.body.maincategory;
+        if (req.body.subcategory) data.subcategory = req.body.subcategory;
+        if (req.body.brand) data.brand = req.body.brand;
+
+        // Handle shop safely: if explicitly passed as empty or null, unset it (undefined)
+        // rather than assigning "" which throws a Mongoose ObjectId CastError.
+        if (req.body.shop !== undefined) {
+            if (req.body.shop && req.body.shop !== "" && req.body.shop !== "null" && req.body.shop !== "undefined") {
+                data.shop = req.body.shop;
+            } else {
+                data.shop = undefined;
+            }
+        }
+
+        if (req.body.discount !== undefined && req.body.discount !== "") {
+            data.discount = Number(req.body.discount) || 0;
+        }
+        if (req.body.description !== undefined) {
+            data.description = req.body.description;
+        }
+        if (req.body.active !== undefined) {
+            data.active = req.body.active === "true" || req.body.active === true || req.body.active === "1" || req.body.active === 1;
+        }
+        if (req.body.isreturnAble !== undefined) {
+            data.isreturnAble = req.body.isreturnAble === "true" || req.body.isreturnAble === true || req.body.isreturnAble === "1" || req.body.isreturnAble === 1;
+        }
+        if (req.body.returnDuration !== undefined && req.body.returnDuration !== "") {
+            data.returnDuration = Number(req.body.returnDuration) || 0;
+        }
+        if (req.body.warranty !== undefined) {
+            data.warranty = req.body.warranty;
+        }
 
         // Tracks every image URL that will exist on the product AFTER this
         // update — used below to figure out what's now orphaned.
@@ -226,19 +252,9 @@ async function updateRecord(req, res) {
                 ? JSON.parse(req.body.variants)
                 : req.body.variants;
 
-            // Same imageCount-stripping issue as createRecord: read it off
-            // the plain objects BEFORE assigning to data.variants triggers
-            // Mongoose subdocument casting.
-            //
-            // IMPORTANT: `variant.pic` here is whatever existing image URLs
-            // the frontend chose to KEEP for this variant (the user may have
-            // removed some via the "x" button). Newly uploaded files must be
-            // APPENDED onto that kept list, never used to replace it —
-            // otherwise every kept "previous" image silently disappears the
-            // moment the user also uploads a new one for that variant.
             let imageIndex = 0;
             newImages = [];
-            const variantsWithImages = rawVariants.map((variant) => {
+            const variantsWithImages = (rawVariants || []).map((variant) => {
                 const imageCount = Number(variant.imageCount || 0);
                 const keptPic = Array.isArray(variant.pic) ? variant.pic : [];
 
@@ -254,6 +270,10 @@ async function updateRecord(req, res) {
                 newImages.push(...pic);
 
                 const { imageCount: _drop, ...variantFields } = variant;
+                // If variant has an invalid _id or empty string, delete it so Mongoose assigns a new valid ObjectId
+                if (variantFields._id && !mongoose.isValidObjectId(variantFields._id)) {
+                    delete variantFields._id;
+                }
                 return { ...variantFields, pic };
             });
 
@@ -304,7 +324,7 @@ async function updateRecord(req, res) {
         });
 
     } catch (error) {
-        console.log(error);
+        console.error("Product updateRecord error:", error);
 
         if (req.files && req.files.length) {
             await Promise.all(
@@ -312,9 +332,20 @@ async function updateRecord(req, res) {
             );
         }
 
+        let errorMessage = {};
+        if (error.errors) {
+            Object.keys(error.errors).forEach(key => {
+                errorMessage[key] = error.errors[key].message;
+            });
+            return res.status(400).send({
+                result: "Fail",
+                reason: errorMessage
+            });
+        }
+
         res.status(500).send({
             result: "Fail",
-            reason: "Internal Server Error"
+            reason: error.message || "Internal Server Error"
         });
     }
 }

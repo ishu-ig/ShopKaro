@@ -88,12 +88,14 @@ export default function AdminProduct() {
   useEffect(() => { dispatch(getProduct()); }, [flag]);
 
   // No route-based scoping here — Admin sees every product across every shop.
+  const q = search.toLowerCase();
   const filteredData = ProductStateData?.filter((item) =>
-    item.name?.toLowerCase().includes(search.toLowerCase()) ||
-    item.maincategory?.name?.toLowerCase().includes(search.toLowerCase()) ||
-    item.subcategory?.name?.toLowerCase().includes(search.toLowerCase()) ||
-    item.brand?.name?.toLowerCase().includes(search.toLowerCase()) ||
-    item.shop?.name?.toLowerCase().includes(search.toLowerCase())
+    item.name?.toLowerCase().includes(q) ||
+    item.maincategory?.name?.toLowerCase().includes(q) ||
+    item.subcategory?.name?.toLowerCase().includes(q) ||
+    item.brand?.name?.toLowerCase().includes(q) ||
+    item.shop?.name?.toLowerCase().includes(q) ||
+    item.warranty?.toLowerCase().includes(q)
   ) ?? [];
 
   return (
@@ -146,6 +148,8 @@ export default function AdminProduct() {
           background: var(--bs-tertiary-bg, #f1f3f5); margin: 1px;
           display: inline-block;
         }
+        .policy-line { font-size: 0.72rem; color: #6c757d; margin-top: 2px; }
+        .policy-line i { margin-right: 3px; }
       `}</style>
 
       <main className="dashboard-content">
@@ -281,9 +285,18 @@ export default function AdminProduct() {
                             </div>
                           </td>
 
-                          {/* Name */}
+                          {/* Name + return window + warranty */}
                           <td>
                             <div className="fw-semibold">{item.name}</div>
+                            <div className="policy-line">
+                              <i className="bi bi-arrow-return-left"></i>
+                              {item.isreturnAble !== false && item.returnDuration > 0
+                                ? `${item.returnDuration}-day return`
+                                : "No returns"}
+                              <span className="mx-1">·</span>
+                              <i className="bi bi-shield-check"></i>
+                              {item.warranty || "No warranty"}
+                            </div>
                           </td>
 
                           {/* Category */}

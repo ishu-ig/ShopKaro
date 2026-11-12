@@ -79,6 +79,9 @@ export default function ShopCreateProduct() {
     brand: "",
     shop: _id || "", // default shop to the :_id route param
     discount: 0, // common discount, applied to every variant's own price
+    isreturnAble: true,
+    returnDuration: 7,
+    warranty: "1 Year",
     description: "",
     active: true,
     variants: [makeEmptyVariant()],
@@ -227,6 +230,9 @@ export default function ShopCreateProduct() {
     );
 
     const discount = Number(data.discount) || 0; // common discount, applied to every variant's own price
+    const isreturnAble = data.isreturnAble === true || data.isreturnAble === "true";
+    const returnDuration = isreturnAble ? Math.max(0, Number(data.returnDuration) || 0) : 0;
+    const warranty = String(data.warranty ?? "").trim() || "No Warranty";
 
     const cleanedVariants = validVariants.map((v) => {
       const variantPrice = parseFloat(v.price) || 0;
@@ -258,6 +264,9 @@ export default function ShopCreateProduct() {
     formData.append("brand", data.brand || brandOptions[0]?._id || "");
     formData.append("shop", data.shop || _id || ShopStateData[0]?._id);
     formData.append("discount", discount); // real ProductSchema field
+    formData.append("isreturnAble", isreturnAble);
+    formData.append("returnDuration", returnDuration);
+    formData.append("warranty", warranty);
     formData.append("description", data.description);
     formData.append("active", data.active);
     formData.append("variants", JSON.stringify(cleanedVariants));
@@ -444,6 +453,56 @@ export default function ShopCreateProduct() {
                   <div className="text-muted small mt-1">
                     This discount is applied to every variant when computing its final price.
                   </div>
+                </div>
+
+                {/* Returnable toggle */}
+                <div className="col-md-4">
+                  <label className="form-label" htmlFor="isreturnAble">Returnable</label>
+                  <select
+                    className="form-select"
+                    id="isreturnAble"
+                    name="isreturnAble"
+                    value={data.isreturnAble ? "true" : "false"}
+                    onChange={(e) =>
+                      setData((old) => ({ ...old, isreturnAble: e.target.value === "true" }))
+                    }
+                  >
+                    <option value="true">Yes</option>
+                    <option value="false">No</option>
+                  </select>
+                </div>
+
+                {/* Return Window */}
+                <div className="col-md-4">
+                  <label className="form-label" htmlFor="returnDuration">Return Window (days)</label>
+                  <input
+                    className="form-control"
+                    id="returnDuration"
+                    type="number"
+                    name="returnDuration"
+                    min="0"
+                    value={data.returnDuration}
+                    onChange={getInputData}
+                    disabled={!data.isreturnAble}
+                    placeholder="e.g. 7"
+                  />
+                  {!data.isreturnAble && (
+                    <div className="text-muted small mt-1">Enable returnable to set return days.</div>
+                  )}
+                </div>
+
+                {/* Warranty */}
+                <div className="col-md-4">
+                  <label className="form-label" htmlFor="warranty">Warranty</label>
+                  <input
+                    className="form-control"
+                    id="warranty"
+                    type="text"
+                    name="warranty"
+                    value={data.warranty}
+                    onChange={getInputData}
+                    placeholder="e.g. 1 Year, No Warranty"
+                  />
                 </div>
 
                 {/* Variants */}

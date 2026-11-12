@@ -86,6 +86,8 @@ import AssignedOrder from "./pages/deliveryBoyData/AssignedOrder";
 import OrderHistory from "./pages/deliveryBoyData/OrderHistory";
 import DeliveryConfirm from "./pages/deliveryBoyData/DeliveryConfirm";
 import DeliveryDashboard from "./pages/deliveryBoyData/DeliveryBoyDasboard";
+import AdminReturn from "./pages/returnProduct/AdminReturn";
+import AdminReturnShow from "./pages/returnProduct/AdminReturnShow";
 
 // FIX: All public routes listed here must match route paths exactly
 const publicRoutes = ["/login", "/register", "/forgot-password"];
@@ -199,138 +201,143 @@ function Shell() {
         <div className="sidebar-backdrop" onClick={closeMobileSidebar} />
         <Sidebar onLinkClick={closeMobileSidebar} />
 
-      <div className="admin-main">
-        <Navbar toggleSidebar={toggleSidebar} />
+        <div className="admin-main">
+          <Navbar toggleSidebar={toggleSidebar} />
 
-        <Routes>
-          {/* Dashboard */}
-          {/* FIX: Removed duplicate "/" route — kept only one */}
-          <Route path="/" element={<Home />} />
-          <Route path="/:role/:_id/profile" element={<ProfilePage />} />
-          <Route path="/:role/:_id/update-profile" element={<UpdateProfilePage />} />
+          <Routes>
+            {/* Dashboard */}
+            {/* FIX: Removed duplicate "/" route — kept only one */}
+            <Route path="/" element={<Home />} />
+            <Route path="/:role/:_id/profile" element={<ProfilePage />} />
+            <Route path="/:role/:_id/update-profile" element={<UpdateProfilePage />} />
 
-          <Route path="/maincategory" element={<AdminMaincategory />} />
-          <Route
-            path="/maincategory/create"
-            element={<AdminCreateMaincategory />}
-          />
-          {/* FIX: Typo "AdminUpdateMaincategorr" -> "AdminUpdateMaincategory" (matches the actual import) */}
-          <Route
-            path="/maincategory/update/:_id"
-            element={<AdminUpdateMaincategory />}
-          />
+            <Route path="/maincategory" element={<AdminMaincategory />} />
+            <Route
+              path="/maincategory/create"
+              element={<AdminCreateMaincategory />}
+            />
+            {/* FIX: Typo "AdminUpdateMaincategorr" -> "AdminUpdateMaincategory" (matches the actual import) */}
+            <Route
+              path="/maincategory/update/:_id"
+              element={<AdminUpdateMaincategory />}
+            />
 
-          {/* Subcategory Routes */}
-          <Route path="/subcategory" element={<AdminSubcategory />} />
-          <Route
-            path="/subcategory/create"
-            element={<AdminCreateSubcategory />}
-          />
-          <Route
-            path="/subcategory/update/:_id"
-            element={<AdminUpdateSubcategory />}
-          />
-          {/* Brand Routes */}
-          <Route path="/banner" element={<AdminBanner />} />
-          <Route path="/banner/create" element={<AdminCreateBanner />} />
-          <Route path="/banner/update/:_id" element={<AdminUpdateBanner />} />
+            {/* Subcategory Routes */}
+            <Route path="/subcategory" element={<AdminSubcategory />} />
+            <Route
+              path="/subcategory/create"
+              element={<AdminCreateSubcategory />}
+            />
+            <Route
+              path="/subcategory/update/:_id"
+              element={<AdminUpdateSubcategory />}
+            />
+            {/* Brand Routes */}
+            <Route path="/banner" element={<AdminBanner />} />
+            <Route path="/banner/create" element={<AdminCreateBanner />} />
+            <Route path="/banner/update/:_id" element={<AdminUpdateBanner />} />
 
-          {/* Brand Routes */}
-          <Route path="/brand" element={<AdminBrand />} />
-          <Route path="/brand/create" element={<AdminCreateBrand />} />
-          <Route path="/brand/update/:_id" element={<AdminUpdateBrand />} />
+            {/* Brand Routes */}
+            <Route path="/brand" element={<AdminBrand />} />
+            <Route path="/brand/create" element={<AdminCreateBrand />} />
+            <Route path="/brand/update/:_id" element={<AdminUpdateBrand />} />
 
-          {/* Product Routes */}
-          <Route path="/product" element={<AdminProduct />} />
-          <Route path="/product/create" element={<AdminCreateProduct />} />
-          <Route path="/product/update/:_id" element={<AdminUpdateProduct />} />
+            {/* Product Routes */}
+            <Route path="/product" element={<AdminProduct />} />
+            <Route path="/product/create" element={<AdminCreateProduct />} />
+            <Route path="/product/update/:_id" element={<AdminUpdateProduct />} />
 
-          {/* Testimonial Routes */}
-          <Route path="/testimonial" element={<AdminTestimonial />} />
-          <Route
-            path="/testimonial/create"
-            element={<AdminCreateTestimonial />}
-          />
-          <Route
-            path="/testimonial/update/:_id"
-            element={<AdminUpdateTestimonial />}
-          />
+            {/* Testimonial Routes */}
+            <Route path="/testimonial" element={<AdminTestimonial />} />
+            <Route
+              path="/testimonial/create"
+              element={<AdminCreateTestimonial />}
+            />
+            <Route
+              path="/testimonial/update/:_id"
+              element={<AdminUpdateTestimonial />}
+            />
 
-          {/* Newsletter Route */}
-          <Route path="/newsletter" element={<AdminNewsletter />} />
+            {/* Newsletter Route */}
+            <Route path="/newsletter" element={<AdminNewsletter />} />
 
-          {/* Checkout Routes */}
-          <Route path="/checkout" element={<AdminCheckout />} />
-          <Route path="/checkout/view/:_id" element={<AdminCheckoutShow />} />
-          <Route path="/checkout/product/:_id" element={<ViewProductPage />} />
-
-          {/* Admin Staff Routes */}
-          <Route path="/admins" element={<AdminUserList />} />
-          <Route path="/admins/create" element={<AdminCreateAdminUser />} />
-          <Route path="/admins/update/:_id" element={<AdminUpdateAdminUser />} />
-
-          {/* User / Customer Routes */}
-          <Route path="/user" element={<AdminUser />} />
-          <Route path="/user/create" element={<AdminCreateUser />} />
-          <Route path="/user/update/:_id" element={<AdminUpdateUser />} />
-
-          {/* Delivery Partner Management Routes */}
-          <Route path="/deliveryBoy" element={<AdminDeliver />} />
-          <Route path="/deliveryBoy/create" element={<AdminCreateDeliver />} />
-          <Route path="/deliveryBoy/update/:_id" element={<AdminUpdateDeliver />} />
-          <Route path="/deliver" element={<AdminDeliver />} />
-          <Route path="/deliver/create" element={<AdminCreateDeliver />} />
-          <Route path="/deliver/update/:_id" element={<AdminUpdateDeliver />} />
-
-          {/* ContactUS Routes */}
-          <Route path="/contactus" element={<AdminContactUs />} />
-          {/* FIX: "AdminContactUsShow" was never imported; the file actually imports AdminShowQuery from this folder */}
-          <Route path="/contactus/view/:_id" element={<AdminShowQuery />} />
-
-          {/* FIX: Removed forgot-password from protected routes — it belongs in public only */}
-
-          <Route
-            path="/shop"
-            element={<AdminShop />}
-          />
-          <Route path="/shop/create" element={<AdminCreateShop />} />
-          <Route
-            path="/shop/update/:_id"
-            element={<AdminUpdateShop />}
-          />
+            {/* Checkout Routes */}
+            <Route path="/checkout" element={<AdminCheckout />} />
+            <Route path="/checkout/view/:_id" element={<AdminCheckoutShow />} />
+            <Route path="/checkout/product/:_id" element={<ViewProductPage />} />
 
 
-          <Route
-            path="/shopProduct/:role/:_id/create"
-            element={<ShopCreateProduct />}
-          />
-          <Route path="/shopProduct/:role/:_id" element={<ShopProduct />} />
-          <Route
-            path="/shopProduct/:role/:_id/update/:_productId"
-            element={<ShopUpdateProduct />}
-          />
+            <Route path="/return" element={<AdminReturn />} />
+            <Route path="/return/view/:_id" element={<AdminReturnShow />} />
+            {/* <Route path="/checkout/product/:_id" element={<ViewProductPage />} /> */}
 
-          {/* User Routes */}
-          <Route path="/shopMaincategory/:role/:_id/add" element={<ShopAddMaincategory />} />
-          <Route path="/shopMaincategory/:role/:_id" element={<ShopMaincategory />} />
+            {/* Admin Staff Routes */}
+            <Route path="/admins" element={<AdminUserList />} />
+            <Route path="/admins/create" element={<AdminCreateAdminUser />} />
+            <Route path="/admins/update/:_id" element={<AdminUpdateAdminUser />} />
 
-          {/* User Routes */}
-          <Route path="/shopSubcategory/:role/:_id/add" element={<ShopAddSubcategory />} />
-          <Route path="/shopSubcategory/:role/:_id" element={<ShopSubcategory />} />
+            {/* User / Customer Routes */}
+            <Route path="/user" element={<AdminUser />} />
+            <Route path="/user/create" element={<AdminCreateUser />} />
+            <Route path="/user/update/:_id" element={<AdminUpdateUser />} />
 
-          <Route path="/shopCheckout/:role/:_id" element={<ShopCheckout />} />
-          <Route path="/:role/:_id" element={<ShopDashboard />} />
-          <Route path="/:role/setting" element={<AccountSetting />} />
+            {/* Delivery Partner Management Routes */}
+            <Route path="/deliveryBoy" element={<AdminDeliver />} />
+            <Route path="/deliveryBoy/create" element={<AdminCreateDeliver />} />
+            <Route path="/deliveryBoy/update/:_id" element={<AdminUpdateDeliver />} />
+            <Route path="/deliver" element={<AdminDeliver />} />
+            <Route path="/deliver/create" element={<AdminCreateDeliver />} />
+            <Route path="/deliver/update/:_id" element={<AdminUpdateDeliver />} />
 
-           <Route path="/:role/:_id/orders" element={<AssignedOrder />} />
-          <Route path="/:role/:_id/history" element={<OrderHistory />} />
-          <Route path="/deliveryBoy/:_id/order/:_orderId" element={<DeliveryConfirm />} />
-    <Route path="/deliveryBoy/:_id/dashboard" element={<DeliveryDashboard />} />
-        </Routes>
+            {/* ContactUS Routes */}
+            <Route path="/contactus" element={<AdminContactUs />} />
+            {/* FIX: "AdminContactUsShow" was never imported; the file actually imports AdminShowQuery from this folder */}
+            <Route path="/contactus/view/:_id" element={<AdminShowQuery />} />
 
-        <Footer />
+            {/* FIX: Removed forgot-password from protected routes — it belongs in public only */}
+
+            <Route
+              path="/shop"
+              element={<AdminShop />}
+            />
+            <Route path="/shop/create" element={<AdminCreateShop />} />
+            <Route
+              path="/shop/update/:_id"
+              element={<AdminUpdateShop />}
+            />
+
+
+            <Route
+              path="/shopProduct/:role/:_id/create"
+              element={<ShopCreateProduct />}
+            />
+            <Route path="/shopProduct/:role/:_id" element={<ShopProduct />} />
+            <Route
+              path="/shopProduct/:role/:_id/update/:_productId"
+              element={<ShopUpdateProduct />}
+            />
+
+            {/* User Routes */}
+            <Route path="/shopMaincategory/:role/:_id/add" element={<ShopAddMaincategory />} />
+            <Route path="/shopMaincategory/:role/:_id" element={<ShopMaincategory />} />
+
+            {/* User Routes */}
+            <Route path="/shopSubcategory/:role/:_id/add" element={<ShopAddSubcategory />} />
+            <Route path="/shopSubcategory/:role/:_id" element={<ShopSubcategory />} />
+
+            <Route path="/shopCheckout/:role/:_id" element={<ShopCheckout />} />
+            <Route path="/:role/:_id" element={<ShopDashboard />} />
+            <Route path="/:role/setting" element={<AccountSetting />} />
+
+            <Route path="/:role/:_id/orders" element={<AssignedOrder />} />
+            <Route path="/:role/:_id/history" element={<OrderHistory />} />
+            <Route path="/deliveryBoy/:_id/order/:_orderId" element={<DeliveryConfirm />} />
+            <Route path="/deliveryBoy/:_id/dashboard" element={<DeliveryDashboard />} />
+          </Routes>
+
+          <Footer />
+        </div>
       </div>
-    </div>
-  </>
-);
+    </>
+  );
 }

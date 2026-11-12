@@ -26,7 +26,15 @@ const checklist = [
     title: "Upload variant images",
     body: "Add one or more photos per variant — the first acts as that variant's cover image.",
   },
+  {
+    dot: "bg-info",
+    title: "Set return & warranty",
+    body: "Choose whether the product is returnable, the return window in days, and the warranty text.",
+  },
 ];
+
+// Fields that are optional / not validated by formValidator
+const SKIP_VALIDATION = ["active", "isreturnAble", "returnDuration", "warranty"];
 
 // Some APIs (or raw Mongo exports) return ObjectId refs wrapped as { $oid: "..." }
 // instead of plain strings. This normalizes either shape to a plain string id.
@@ -64,6 +72,9 @@ export default function AdminCreateProduct() {
     brand: "",
     shop: "", // optional — Product.shop is not a required field on the schema
     discount: 0, // common discount, applied to every variant's own price
+    isreturnAble: true, // whether the product can be returned at all
+    returnDuration: 7, // days a customer may return the product
+    warranty: "1 Year",
     description: "",
     active: true,
     variants: [makeEmptyVariant()],
@@ -74,6 +85,7 @@ export default function AdminCreateProduct() {
     maincategory: "Main Category is Mandatory",
     subcategory: "Sub Category is Mandatory",
     brand: "Brand is Mandatory",
+    shop: "Shop is Mandatory",
     variants: "At Least One Variant (Color, Size & Price) Is Mandatory",
   });
 
@@ -108,7 +120,7 @@ export default function AdminCreateProduct() {
     const name = e.target.name;
     const value = e.target.value;
 
-    if (name !== "active" && name !== "shop") {
+    if (!SKIP_VALIDATION.includes(name)) {
       setError((old) => ({ ...old, [name]: formValidator(e) }));
     }
 
@@ -120,9 +132,13 @@ export default function AdminCreateProduct() {
       return;
     }
 
+    if (name === "shop") {
+      setError((old) => ({ ...old, shop: value ? "" : "Shop is Mandatory" }));
+    }
+
     setData((old) => ({
       ...old,
-      [name]: name === "active" ? value === "1" : value,
+      [name]: name === "active" || name === "isreturnAble" ? value === "1" : value,
     }));
   }
 
@@ -185,6 +201,9 @@ export default function AdminCreateProduct() {
     );
 
     const discount = Number(data.discount) || 0; // common discount, applied to every variant's own price
+    const isreturnAble = !!data.isreturnAble;
+    const returnDuration = isreturnAble ? Math.max(0, Number(data.returnDuration) || 0) : 0;
+    const warranty = data.warranty.trim() || "No Warranty";
 
     const cleanedVariants = validVariants.map((v) => {
       const variantPrice = parseFloat(v.price) || 0;
@@ -208,8 +227,11 @@ export default function AdminCreateProduct() {
     formData.append("maincategory", data.maincategory);
     formData.append("subcategory", data.subcategory);
     formData.append("brand", data.brand || brandOptions[0]?._id || "");
-    if (data.shop) formData.append("shop", data.shop); // optional on the schema — omit entirely if not picked
+    formData.append("shop", data.shop);
     formData.append("discount", discount); // real ProductSchema field
+    formData.append("isreturnAble", isreturnAble); // real ProductSchema field
+    formData.append("returnDuration", returnDuration); // real ProductSchema field
+    formData.append("warranty", warranty); // real ProductSchema field
     formData.append("description", data.description);
     formData.append("active", data.active);
     formData.append("variants", JSON.stringify(cleanedVariants));
@@ -360,9 +382,9 @@ export default function AdminCreateProduct() {
                   )}
                 </div>
 
-                {/* Shop — optional; Admin can attach a product to any active shop */}
+                {/* Shop — Mandatory */}
                 <div className="col-md-6">
-                  <label className="form-label" htmlFor="shop">Shop (optional)</label>
+                  <label className="form-label" htmlFor="shop">Shop <span className="text-danger">*</span></label>
                   <select
                     className="form-select"
                     id="shop"
@@ -370,15 +392,18 @@ export default function AdminCreateProduct() {
                     value={data.shop}
                     onChange={getInputData}
                   >
-                    <option value="">No shop</option>
+                    <option value="" disabled>Select Shop</option>
                     {shopOptions.map((item) => (
                       <option key={item._id} value={item._id}>{item.name}</option>
                     ))}
                   </select>
+                  {show && error.shop && (
+                    <div className="text-danger small mt-1">{error.shop}</div>
+                  )}
                 </div>
 
                 {/* Discount — common to every variant, used to derive each variant's finalPrice */}
-                <div className="col-md-4">
+                <div className="col-md-3">
                   <label className="form-label" htmlFor="discount">Discount (%)</label>
                   <input
                     className="form-control"
@@ -392,7 +417,59 @@ export default function AdminCreateProduct() {
                     placeholder="Enter Discount"
                   />
                   <div className="text-muted small mt-1">
-                    This discount is applied to every variant when computing its final price.
+                    Applied to every variant when computing its final price.
+                  </div>
+                </div>
+
+                {/* Returnable */}
+                <div className="col-md-3">
+                  <label className="form-label" htmlFor="isreturnAble">Returnable</label>
+                  <select
+                    className="form-select"
+                    id="isreturnAble"
+                    name="isreturnAble"
+                    value={data.isreturnAble ? "1" : "0"}
+                    onChange={getInputData}
+                  >
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                  </select>
+                </div>
+
+                {/* Return window — shown only when the product is returnable */}
+                {data.isreturnAble && (
+                  <div className="col-md-3">
+                    <label className="form-label" htmlFor="returnDuration">Return Window (days)</label>
+                    <input
+                      className="form-control"
+                      id="returnDuration"
+                      type="number"
+                      name="returnDuration"
+                      min="0"
+                      value={data.returnDuration}
+                      onChange={getInputData}
+                      placeholder="e.g. 7"
+                    />
+                    <div className="text-muted small mt-1">
+                      Days after delivery within which a return is accepted.
+                    </div>
+                  </div>
+                )}
+
+                {/* Warranty */}
+                <div className="col-md-3">
+                  <label className="form-label" htmlFor="warranty">Warranty</label>
+                  <input
+                    className="form-control"
+                    id="warranty"
+                    type="text"
+                    name="warranty"
+                    value={data.warranty}
+                    onChange={getInputData}
+                    placeholder="e.g. 1 Year, 6 Months"
+                  />
+                  <div className="text-muted small mt-1">
+                    Leave empty for "No Warranty".
                   </div>
                 </div>
 

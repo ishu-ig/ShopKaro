@@ -53,6 +53,7 @@ export default function Sidebar({ onLinkClick }) {
         section: "Sales & Orders",
         items: [
           { to: "/checkout", icon: "bi-bag-check", label: "Orders" },
+          { to: "/return", icon: "bi-arrow-return-left", label: "Returns" },
           // { to: "/booking", icon: "bi-calendar2-check", label: "Bookings" },
           { to: "/shop", icon: "bi-shop", label: "Shops" },
         ],
