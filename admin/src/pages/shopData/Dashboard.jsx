@@ -87,7 +87,10 @@ const DashTooltip = ({ active, payload, label }) => {
 function orderBadge(status) {
     return {
         "Order is Placed":  { cls: "badge text-bg-warning",   label: "Placed"      },
+        "Ordered":          { cls: "badge text-bg-warning",   label: "Placed"      },
         "Processing":       { cls: "badge text-bg-primary",   label: "Processing"  },
+        "Packed":           { cls: "badge text-bg-primary",   label: "Packed"      },
+        "Shipped":          { cls: "badge text-bg-info",      label: "Shipped"     },
         "Out for Delivery": { cls: "badge text-bg-info",      label: "Dispatched"  },
         "Delivered":        { cls: "badge text-bg-success",   label: "Delivered"   },
         "Cancelled":        { cls: "badge text-bg-danger",    label: "Cancelled"   },
@@ -198,7 +201,7 @@ export default function ShopDashboard() {
     const totalRevenue        = D.checkouts.filter(o => o.paymentStatus === "Done").reduce((s, o) => s + (o.total || 0), 0);
     const totalRevenuePending = D.checkouts.filter(o => o.paymentStatus === "Pending").reduce((s, o) => s + (o.total || 0), 0);
 
-    const pendingOrders   = D.checkouts.filter(o => o.orderStatus === "Order is Placed").length;
+    const pendingOrders   = D.checkouts.filter(o => o.orderStatus === "Order is Placed" || o.orderStatus === "Ordered").length;
     const pendingPayments = D.checkouts.filter(o => o.paymentStatus === "Pending").length;
     const deliveredOrders = D.checkouts.filter(o => o.orderStatus === "Delivered").length;
     const cancelledOrders = D.checkouts.filter(o => o.orderStatus === "Cancelled").length;

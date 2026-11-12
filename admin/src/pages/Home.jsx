@@ -108,7 +108,10 @@ const DashTooltip = ({ active, payload, label }) => {
 function orderBadge(status) {
     return {
         "Order is Placed":  { cls: "badge text-bg-warning",   label: "Placed"      },
+        "Ordered":          { cls: "badge text-bg-warning",   label: "Placed"      },
         "Processing":       { cls: "badge text-bg-primary",   label: "Processing"  },
+        "Packed":           { cls: "badge text-bg-primary",   label: "Packed"      },
+        "Shipped":          { cls: "badge text-bg-info",      label: "Shipped"     },
         "Out for Delivery": { cls: "badge text-bg-info",      label: "Dispatched"  },
         "Delivered":        { cls: "badge text-bg-success",   label: "Delivered"   },
         "Cancelled":        { cls: "badge text-bg-danger",    label: "Cancelled"   },
@@ -172,7 +175,7 @@ export default function Home() {
     const totalRevenue         = D.checkouts.filter(o => o.paymentStatus === "Done").reduce((s, o) => s + (o.total || 0), 0);
     const totalRevenuePending  = D.checkouts.filter(o => o.paymentStatus === "Pending").reduce((s, o) => s + (o.total || 0), 0);
 
-    const pendingOrders        = D.checkouts.filter(o => o.orderStatus === "Order is Placed").length;
+    const pendingOrders        = D.checkouts.filter(o => o.orderStatus === "Order is Placed" || o.orderStatus === "Ordered").length;
     const pendingPayments      = D.checkouts.filter(o => o.paymentStatus === "Pending").length;
     const deliveredOrders      = D.checkouts.filter(o => o.orderStatus === "Delivered").length;
     const cancelledOrders      = D.checkouts.filter(o => o.orderStatus === "Cancelled").length;
@@ -202,11 +205,12 @@ export default function Home() {
 
     // ── Order status pie — all 5 statuses ────────────────────────────────────
     const orderStatusPie = [
-        { name: "Placed",          value: D.checkouts.filter(c => c.orderStatus === "Order is Placed").length,  fill: "#ffc107" },
-        { name: "Processing",      value: D.checkouts.filter(c => c.orderStatus === "Processing").length,       fill: "#0d6efd" },
-        { name: "Out for Delivery",value: D.checkouts.filter(c => c.orderStatus === "Out for Delivery").length, fill: "#0dcaf0" },
-        { name: "Delivered",       value: deliveredOrders,                                                       fill: "#198754" },
-        { name: "Cancelled",       value: cancelledOrders,                                                       fill: "#dc3545" },
+        { name: "Placed",          value: D.checkouts.filter(c => c.orderStatus === "Order is Placed" || c.orderStatus === "Ordered").length,  fill: "#ffc107" },
+        { name: "Packed",          value: D.checkouts.filter(c => c.orderStatus === "Processing" || c.orderStatus === "Packed").length,       fill: "#0d6efd" },
+        { name: "Shipped",         value: D.checkouts.filter(c => c.orderStatus === "Shipped").length,                                         fill: "#6f42c1" },
+        { name: "Out for Delivery",value: D.checkouts.filter(c => c.orderStatus === "Out for Delivery").length,                               fill: "#0dcaf0" },
+        { name: "Delivered",       value: deliveredOrders,                                                                                      fill: "#198754" },
+        { name: "Cancelled",       value: cancelledOrders,                                                                                      fill: "#dc3545" },
     ].filter(d => d.value > 0);
 
     // ── Revenue split bar ─────────────────────────────────────────────────────

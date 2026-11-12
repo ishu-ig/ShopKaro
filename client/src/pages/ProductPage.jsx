@@ -580,7 +580,10 @@ export default function ProductPage() {
                     <i className="fa fa-truck" /> Fast Delivery
                   </div>
                   <div className="sk-trust-badge">
-                    <i className="fa fa-undo" /> Easy Returns
+                    <i className="fa fa-undo" />{" "}
+                    {data?.isreturnAble !== false && data?.returnDuration > 0
+                      ? `${data.returnDuration}-day return`
+                      : "No returns"}
                   </div>
                   <div className="sk-trust-badge">
                     <i className="fa fa-headphones" /> 24/7 Support

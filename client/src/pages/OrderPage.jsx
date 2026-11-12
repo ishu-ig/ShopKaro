@@ -8,12 +8,30 @@ import { Link, useNavigate } from 'react-router-dom';
 const STATUS_COLOR = {
   'Delivered':        { bg: 'rgba(16,185,129,0.1)',  color: '#059669', dot: '#10b981' },
   'Cancelled':        { bg: 'rgba(244,63,94,0.1)',   color: '#e11d48', dot: '#f43f5e' },
-  'Ordered':          { bg: 'rgba(201,168,76,0.12)',   color: '#c8400a', dot: '#e86834' },
-  'Shipped':          { bg: 'rgba(59,130,246,0.1)',  color: '#2563eb', dot: '#3b82f6' },
+  'Ordered':          { bg: 'rgba(201,168,76,0.12)', color: '#c8400a', dot: '#e86834' },
+  'Order is Placed':  { bg: 'rgba(201,168,76,0.12)', color: '#c8400a', dot: '#e86834' },
+  'Placed':           { bg: 'rgba(201,168,76,0.12)', color: '#c8400a', dot: '#e86834' },
   'Packed':           { bg: 'rgba(245,158,11,0.1)',  color: '#d97706', dot: '#f59e0b' },
+  'Order is Packed':  { bg: 'rgba(245,158,11,0.1)',  color: '#d97706', dot: '#f59e0b' },
+  'Processing':       { bg: 'rgba(245,158,11,0.1)',  color: '#d97706', dot: '#f59e0b' },
+  'Shipped':          { bg: 'rgba(59,130,246,0.1)',  color: '#2563eb', dot: '#3b82f6' },
   'Out for Delivery': { bg: 'rgba(139,92,246,0.1)',  color: '#7c3aed', dot: '#8b5cf6' },
+  'Out For Delivery': { bg: 'rgba(139,92,246,0.1)',  color: '#7c3aed', dot: '#8b5cf6' },
 };
 const DEFAULT_STATUS = { bg: 'rgba(107,114,128,0.1)', color: '#6b7280', dot: '#9ca3af' };
+
+function getStatusStyle(status) {
+  if (!status) return DEFAULT_STATUS;
+  if (STATUS_COLOR[status]) return STATUS_COLOR[status];
+  const s = String(status).toLowerCase().trim();
+  if (s === "ordered" || s === "order is placed" || s === "placed") return STATUS_COLOR["Ordered"];
+  if (s === "packed" || s === "order is packed" || s === "processing" || s === "order is under process") return STATUS_COLOR["Packed"];
+  if (s === "shipped") return STATUS_COLOR["Shipped"];
+  if (s === "out for delivery") return STATUS_COLOR["Out for Delivery"];
+  if (s === "delivered") return STATUS_COLOR["Delivered"];
+  if (s === "cancelled") return STATUS_COLOR["Cancelled"];
+  return DEFAULT_STATUS;
+}
 
 export default function OrderPage() {
   const CheckoutStateData = useSelector((state) => state.CheckoutStateData);
@@ -48,8 +66,11 @@ export default function OrderPage() {
     navigate(0);
   }
 
-  const canCancel = (status) =>
-    !['Order is Under Process','Out For Delivery','Order is Packed','Delivered','Cancelled'].includes(status);
+  const canCancel = (status) => {
+    if (!status) return false;
+    const s = String(status).toLowerCase().trim();
+    return s === "order is placed" || s === "ordered" || s === "placed";
+  };
 
   return (
     <>
@@ -64,7 +85,7 @@ export default function OrderPage() {
           </div>
 
           {orders.length ? orders.map((item) => {
-            const s = STATUS_COLOR[item?.orderStatus] || DEFAULT_STATUS;
+            const s = getStatusStyle(item?.orderStatus);
             return (
               <div
                 key={item?._id}

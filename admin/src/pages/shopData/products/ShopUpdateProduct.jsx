@@ -141,6 +141,7 @@ export default function ShopUpdateProduct() {
     maincategory: "",
     subcategory: "",
     brand: "",
+    shop: "",
     variants: "",
   });
 
@@ -306,6 +307,14 @@ export default function ShopUpdateProduct() {
 
   function postSubmit(e) {
     e.preventDefault();
+
+    // Validate shop explicitly (not covered by formValidator since it's a select)
+    if (!data.shop) {
+      setError((old) => ({ ...old, shop: "Shop is Mandatory" }));
+      setShow(true);
+      return;
+    }
+
     const errorItem = Object.values(error).find((x) => x !== "");
     if (errorItem) {
       setShow(true);

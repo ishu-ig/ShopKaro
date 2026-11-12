@@ -213,22 +213,27 @@ async function updateRecord(req, res) {
         if (data) {
             let previousOrderStatus = data.orderStatus
 
-            // "Delivered" is never set directly. Instead we email the
-            // customer an OTP and hold the order at its current status
-            // until verifyDelivery confirms that code. Every other field/
-            // status update proceeds as normal.
+            // When a DeliveryBoy requests OTP confirmation (from DeliveryConfirm page),
+            // we email the customer an OTP and hold the order at "Out for Delivery"
+            // until verifyDelivery confirms that code.
+            // When an Admin or Shop manager updates the order to "Delivered", they have
+            // administrative authority to mark it delivered directly without an OTP gate.
             const requestingDelivered =
                 req.body.orderStatus && req.body.orderStatus.toLowerCase() === "delivered"
+            const isDeliveryBoy =
+                req.user?.role === "DeliveryBoy" || req.body.requestOtp === true
 
-            data.orderStatus = (req.body.orderStatus && !requestingDelivered)
+            const shouldHoldForOtp = requestingDelivered && isDeliveryBoy
+
+            data.orderStatus = (req.body.orderStatus && !shouldHoldForOtp)
                 ? req.body.orderStatus
                 : data.orderStatus
             data.paymentMode = req.body.paymentMode ?? data.paymentMode
-            data.paymentStatus = req.body.paymentStatus ?? data.paymentStatus,
-                data.deliveryBoy = req.body.deliveryBoy ?? data.deliveryBoy
+            data.paymentStatus = req.body.paymentStatus ?? data.paymentStatus
+            data.deliveryBoy = req.body.deliveryBoy ?? data.deliveryBoy
             data.rppid = req.body.rppid ?? data.rppid
 
-            if (requestingDelivered) {
+            if (shouldHoldForOtp) {
                 if (!data.user?.email) {
                     return res.status(400).send({
                         result: "Fail",
@@ -237,6 +242,13 @@ async function updateRecord(req, res) {
                 }
                 data.deliveryOtp = generateDeliveryOtp()
                 data.deliveryOtpExpiry = new Date(Date.now() + DELIVERY_OTP_TTL_MINUTES * 60 * 1000)
+            } else if (requestingDelivered && !shouldHoldForOtp) {
+                // Admin or Shop directly marked Delivered — clear any pending delivery OTP
+                data.deliveryOtp = undefined
+                data.deliveryOtpExpiry = undefined
+                if (data.paymentMode === "COD" && req.body.paymentStatus === "Done") {
+                    data.paymentStatus = "Done"
+                }
             }
 
             await data.save()
@@ -253,8 +265,23 @@ async function updateRecord(req, res) {
                 .populate("deliveryBoy", ["name", "username", "email", "phone", "permanentLocation"])
                 .populate(PRODUCT_POPULATE)
 
-            if (requestingDelivered) {
+            if (shouldHoldForOtp) {
                 sendDeliveryOtpEmail(finalData.user.email, data.deliveryOtp)
+            }
+            else if (requestingDelivered && !shouldHoldForOtp) {
+                if (previousOrderStatus !== "Delivered") {
+                    mailer.sendMail({
+                        from: process.env.MAIL_SENDER,
+                        to: finalData.user.email,
+                        subject: `Order Delivered Successfully 🎉 - ${process.env.SITE_NAME || "ShopKaro"}`,
+                        html: orderDeliveredTemplate({
+                            customerName: finalData.user?.name,
+                            orderId: finalData._id
+                        }),
+                    }, (error) => {
+                        if (error) console.log("Error sending email:", error);
+                    });
+                }
             }
             else if (req.body.orderStatus && req.body.orderStatus !== previousOrderStatus) {
                 let statusMessage = "";
@@ -262,13 +289,24 @@ async function updateRecord(req, res) {
                 // Customize email message based on the order status
                 switch (req.body.orderStatus.toLowerCase()) {
                     case "order is placed":
-                        statusMessage = "Your order has been shipped. It will reach you soon!";
+                    case "ordered":
+                    case "placed":
+                        statusMessage = "Your order has been placed successfully and is being processed.";
                         break;
                     case "order is packed":
-                        statusMessage = "Your order has been packed. It will reach you soon!";
+                    case "packed":
+                    case "processing":
+                    case "order is under process":
+                        statusMessage = "Your order has been packed and is ready to be shipped.";
+                        break;
+                    case "shipped":
+                        statusMessage = "Your order has been shipped. It will reach you soon!";
                         break;
                     case "out for delivery":
                         statusMessage = "Your order is out for delivery. Please be ready to receive it.";
+                        break;
+                    case "cancelled":
+                        statusMessage = "Your order has been cancelled.";
                         break;
                     default:
                         statusMessage = `Your order status has been updated to: ${req.body.orderStatus}.`;
@@ -293,7 +331,7 @@ async function updateRecord(req, res) {
             res.send({
                 result: "Done",
                 data: finalData,
-                otpRequested: requestingDelivered || undefined
+                otpRequested: shouldHoldForOtp || undefined
             })
         }
         else

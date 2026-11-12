@@ -7,7 +7,9 @@ import {
 } from "../../../Redux/ActionCreators/CheckoutActionCreators";
 
 const STATUS_BADGE = {
+  "Order is Placed": "text-bg-info",
   Ordered: "text-bg-info",
+  Processing: "text-bg-warning",
   Packed: "text-bg-warning",
   Shipped: "text-bg-warning",
   "Out for Delivery": "text-bg-warning",

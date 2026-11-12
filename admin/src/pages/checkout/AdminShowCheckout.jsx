@@ -5,11 +5,31 @@ import { getCheckout, updateCheckout } from "../../Redux/ActionCreators/Checkout
 
 const STATUS_STEPS = [
   { key: "Order is Placed",   label: "Ordered",          icon: "bi-clipboard-check" },
-  { key: "Processing",        label: "Processing",       icon: "bi-gear" },
-  { key: "Shipped",           label: "Shipped",          icon: "bi-box-seam" },
-  { key: "Out for Delivery",  label: "Out for Delivery", icon: "bi-truck" },
+  { key: "Packed",            label: "Packed",           icon: "bi-box-seam" },
+  { key: "Shipped",           label: "Shipped",          icon: "bi-truck" },
+  { key: "Out for Delivery",  label: "Out for Delivery", icon: "bi-geo-alt" },
   { key: "Delivered",         label: "Delivered",        icon: "bi-check-circle" },
 ];
+
+const ALL_STATUS_OPTIONS = [
+  { key: "Order is Placed", label: "Ordered (Order is Placed)" },
+  { key: "Packed",          label: "Packed" },
+  { key: "Shipped",         label: "Shipped" },
+  { key: "Out for Delivery",label: "Out for Delivery" },
+  { key: "Delivered",       label: "Delivered" },
+  { key: "Cancelled",       label: "Cancelled" },
+];
+
+function getStepIndex(status) {
+  if (!status) return 0;
+  const s = String(status).toLowerCase().trim();
+  if (s === "order is placed" || s === "ordered" || s === "placed") return 0;
+  if (s === "packed" || s === "processing" || s === "order is packed" || s === "order is under process") return 1;
+  if (s === "shipped") return 2;
+  if (s === "out for delivery") return 3;
+  if (s === "delivered") return 4;
+  return -1;
+}
 
 export default function AdminCheckoutShow() {
   const { _id } = useParams();
@@ -97,26 +117,18 @@ export default function AdminCheckoutShow() {
     );
   }
 
-  const currentStep = STATUS_STEPS.findIndex(
-    (s) => s.key.toLowerCase() === data.orderStatus?.toLowerCase()
-  );
-  const isCancelled = data.orderStatus === "Cancelled";
-  const isCompleted = data.orderStatus === "Delivered" && data.paymentStatus === "Done";
-  const canUpdateOrder   = data.orderStatus !== "Delivered" && !isCancelled;
+  const currentStep = getStepIndex(data.orderStatus);
+  const isCancelled = data.orderStatus?.toLowerCase() === "cancelled";
+  const isCompleted = data.orderStatus?.toLowerCase() === "delivered" && data.paymentStatus === "Done";
+  const canUpdateOrder   = data.orderStatus?.toLowerCase() !== "delivered" && !isCancelled;
   const canUpdatePayment = data.paymentStatus !== "Done";
   const showUpdatePanel  = canUpdateOrder || canUpdatePayment;
 
-  const safeStep = currentStep === -1 ? 0 : currentStep;
-  const nextStatusOptions = STATUS_STEPS.map((s, i) => ({
-    ...s,
-    disabled: i > safeStep + 1 || i < safeStep,
-  }));
-
   const statusBadgeClass = isCancelled
     ? "text-bg-danger"
-    : data.orderStatus === "Delivered"
+    : data.orderStatus?.toLowerCase() === "delivered"
     ? "text-bg-success"
-    : data.orderStatus === "Out for Delivery"
+    : data.orderStatus?.toLowerCase() === "out for delivery"
     ? "text-bg-warning"
     : "text-bg-info";
 
@@ -367,10 +379,9 @@ export default function AdminCheckoutShow() {
                     <div className="col-md-4">
                       <label className="form-label">Order Status</label>
                       <select className="form-select" value={orderStatus} onChange={(e) => setOrderStatus(e.target.value)}>
-                        {nextStatusOptions.map((s) => (
-                          <option key={s.key} value={s.key} disabled={s.disabled}>{s.label}</option>
+                        {ALL_STATUS_OPTIONS.map((s) => (
+                          <option key={s.key} value={s.key}>{s.label}</option>
                         ))}
-                        <option value="Cancelled">Cancelled</option>
                       </select>
                     </div>
                   )}

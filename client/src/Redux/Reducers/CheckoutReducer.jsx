@@ -10,12 +10,12 @@ export default function CheckoutReducer(state=[], action) {
             return action.payload
 
         case UPDATE_CHECKOUT_RED:
+            if (!action.payload) return state;
             let index = state.findIndex(x => x._id === action.payload._id)
-            state[index].orderStatus = action.payload.orderStatus
-            state[index].paymentMode = action.payload.paymentMode
-            state[index].paymentStatus = action.payload.paymentStatus
-            state[index].rppid = action.payload.rppid
-            return state
+            if (index === -1) return state;
+            let copyState = [...state]
+            copyState[index] = { ...copyState[index], ...action.payload }
+            return copyState
 
         case DELETE_CHECKOUT_RED:
             return state.filter(x => x._id !== action.payload._id)
