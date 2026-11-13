@@ -3,35 +3,50 @@ const { deleteFromCloudinary } = require("../cloudinaryMethods");
 const Razorpay = require("razorpay");
 
 const RETURN_POPULATE = [
-    {
-        path: "product",
-        select: "name brand discount variants"
-    },
-    {
-        path: "user",
-        select: "name username email phone address city state pin defaultAddress"
-    },
-    {
-        path: "deliveryBoy",
-        select: "name phone email"
-    },
-    {
-        path: "order"
-    }
+    { path: "product", select: "name brand discount variants" },
+    { path: "user", select: "name username email phone address city state pin defaultAddress" },
+    { path: "deliveryBoy", select: "name phone email" },
+    { path: "order" }
 ];
 
-// Allowed return statuses
 const RETURN_STATUSES = [
-    "pending",
-    "approved",
-    "picked_up",   // set by the delivery boy
-    "received",    // set by the delivery boy once handed to the shop
-    "rejected",
-    "completed",
-    "cancelled"
+    "pending", "approved", "picked_up", "received",
+    "rejected", "completed", "cancelled"
 ];
 
-// HELPER: delete an image from Cloudinary without ever throwing
+// Who may move a return from one status to another.
+// "completed" for online payments happens only inside refundRecord.
+// Admin received -> completed is the manual (COD) path and is checked separately below.
+const ALLOWED_TRANSITIONS = {
+    Admin: {
+        pending: ["approved", "rejected", "cancelled"],
+        approved: ["cancelled"],
+        received: ["completed"]
+    },
+    DeliveryBoy: {
+        approved: ["picked_up"],
+        picked_up: ["received"]
+    },
+    Buyer: {
+        pending: ["cancelled"]
+    }
+};
+
+// ---------- helpers ----------
+
+// Adjust these two if your auth middleware sets the user differently
+const getRole = (req) => req.user?.role;
+const getUserId = (req) => String(req.user?._id || req.user?.id || "");
+
+const idOf = (ref) => String(ref?._id || ref || "");
+
+function razorpayClient() {
+    return new Razorpay({
+        key_id: process.env.RPKEYID,
+        key_secret: process.env.RPSECRETKEY,
+    });
+}
+
 async function safeDeleteImage(path) {
     if (!path) return;
     try {
@@ -41,36 +56,36 @@ async function safeDeleteImage(path) {
     }
 }
 
-// HELPER: build validation error object from a mongoose error
 function getValidationErrors(error) {
-    let errorMessage = {};
-
-    error.errors?.product
-        ? errorMessage.product = error.errors.product.message : null;
-
-    error.errors?.user
-        ? errorMessage.user = error.errors.user.message : null;
-
-    error.errors?.order
-        ? errorMessage.order = error.errors.order.message : null;
-
-    error.errors?.reason
-        ? errorMessage.reason = error.errors.reason.message : null;
-
-    error.errors?.status
-        ? errorMessage.status = error.errors.status.message : null;
-
-    error.errors?.pics
-        ? errorMessage.pics = error.errors.pics.message : null;
-
+    const errorMessage = {};
+    ["product", "user", "order", "reason", "status", "pics"].forEach((field) => {
+        if (error.errors?.[field]) errorMessage[field] = error.errors[field].message;
+    });
     return errorMessage;
 }
 
+function sendError(res, error) {
+    const errorMessage = getValidationErrors(error);
+    const hasValidation = Object.keys(errorMessage).length > 0;
+    res.status(hasValidation ? 400 : 500).send({
+        result: "Fail",
+        reason: hasValidation ? errorMessage : "Internal Server Error"
+    });
+}
 
-// CREATE RETURN REQUEST
+// Can this requester view this return?
+function canView(req, ret) {
+    const role = getRole(req);
+    if (role === "Admin") return true;
+    if (role === "DeliveryBoy") return idOf(ret.deliveryBoy) === getUserId(req);
+    if (role === "Buyer") return idOf(ret.user) === getUserId(req);
+    return false;
+}
+
+// ---------- CREATE ----------
 async function createRecord(req, res) {
     try {
-        let data = new Return({
+        const data = new Return({
             product: req.body.product,
             user: req.body.user,
             order: req.body.order,
@@ -78,180 +93,166 @@ async function createRecord(req, res) {
             status: "pending"
         });
 
-        if (req.file) {
-            data.pics = req.file.path;
-        }
+        if (req.file) data.pics = req.file.path;
 
         await data.save();
 
-        let finalData = await Return.findById(data._id)
-            .populate(RETURN_POPULATE);
+        const finalData = await Return.findById(data._id).populate(RETURN_POPULATE);
 
         res.status(201).send({
             result: "Done",
             message: "Product return request submitted successfully",
             data: finalData
         });
-
     } catch (error) {
-        // Remove the freshly uploaded image, since the record was not saved
-        if (req.file) {
-            await safeDeleteImage(req.file.path);
-        }
-
+        if (req.file) await safeDeleteImage(req.file.path);
         console.log(error);
-
-        let errorMessage = getValidationErrors(error);
-
-        res.status(Object.keys(errorMessage).length ? 400 : 500).send({
-            result: "Fail",
-            reason: Object.keys(errorMessage).length
-                ? errorMessage
-                : "Internal Server Error"
-        });
+        sendError(res, error);
     }
 }
 
+// ---------- READ ----------
 
-// GET ALL RETURN REQUESTS (ADMIN)
+// Admin: all returns. Delivery boy: assigned returns. Buyer: user's returns.
 async function getRecord(req, res) {
     try {
-        let data = await Return.find()
+        const role = getRole(req);
+        let filter;
+
+        if (role === "Admin") filter = {};
+        else if (role === "DeliveryBoy") filter = { deliveryBoy: getUserId(req) };
+        else if (role === "Buyer") filter = { user: getUserId(req) };
+        else return res.status(403).send({ result: "Fail", reason: "Forbidden" });
+
+        const data = await Return.find(filter)
             .sort({ createdAt: -1 })
             .populate(RETURN_POPULATE);
 
-        res.send({
-            result: "Done",
-            count: data.length,
-            data: data
-        });
-
+        res.send({ result: "Done", count: data.length, data });
     } catch (error) {
         console.log(error);
-
-        res.status(500).send({
-            result: "Fail",
-            reason: "Internal Server Error"
-        });
+        res.status(500).send({ result: "Fail", reason: "Internal Server Error" });
     }
 }
 
-
-// GET USER RETURN REQUESTS
 async function getUserRecord(req, res) {
     try {
-        let data = await Return.find({
-            user: req.params.userid
-        })
+        if (getRole(req) !== "Admin" && req.params.userid !== getUserId(req)) {
+            return res.status(403).send({ result: "Fail", reason: "Forbidden" });
+        }
+
+        const data = await Return.find({ user: req.params.userid })
             .sort({ createdAt: -1 })
             .populate(RETURN_POPULATE);
 
-        res.send({
-            result: "Done",
-            count: data.length,
-            data: data
-        });
-
+        res.send({ result: "Done", count: data.length, data });
     } catch (error) {
         console.log(error);
-
-        res.status(500).send({
-            result: "Fail",
-            reason: "Internal Server Error"
-        });
+        res.status(500).send({ result: "Fail", reason: "Internal Server Error" });
     }
 }
 
-
-// GET SINGLE RETURN REQUEST
 async function getSingleRecord(req, res) {
     try {
-        let data = await Return.findById(req.params._id)
-            .populate(RETURN_POPULATE);
+        const data = await Return.findById(req.params._id).populate(RETURN_POPULATE);
 
-        if (data) {
-            let dataObj = data.toObject();
-            if (data.order?.rppid && !data.refundId) {
-                try {
-                    const instance = new Razorpay({
-                        key_id: process.env.RPKEYID,
-                        key_secret: process.env.RPSECRETKEY,
-                    });
-                    const payment = await instance.payments.fetch(data.order.rppid);
-                    if (payment) {
-                        const rem = (payment.amount - (payment.amount_refunded || 0)) / 100;
-                        dataObj.maxRefundable = Math.max(0, rem);
-                    }
-                } catch (e) {
-                    console.log("Error checking refundable amount:", e.message);
-                }
-            }
-            res.send({
-                result: "Done",
-                data: dataObj
-            });
-        } else {
-            res.status(404).send({
-                result: "Fail",
-                reason: "Return Request Not Found"
-            });
+        if (!data) {
+            return res.status(404).send({ result: "Fail", reason: "Return Request Not Found" });
+        }
+        if (!canView(req, data)) {
+            return res.status(403).send({ result: "Fail", reason: "Forbidden" });
         }
 
+        let dataObj = data.toObject();
+        if (data.order?.rppid && !data.refundId) {
+            try {
+                const payment = await razorpayClient().payments.fetch(data.order.rppid);
+                if (payment) {
+                    const rem = (payment.amount - (payment.amount_refunded || 0)) / 100;
+                    dataObj.maxRefundable = Math.max(0, rem);
+                }
+            } catch (e) {
+                console.log("Error checking refundable amount:", e.message);
+            }
+        }
+
+        res.send({ result: "Done", data: dataObj });
     } catch (error) {
         console.log(error);
-
-        res.status(500).send({
-            result: "Fail",
-            reason: "Internal Server Error"
-        });
+        res.status(500).send({ result: "Fail", reason: "Internal Server Error" });
     }
 }
 
-
-// UPDATE RETURN REQUEST (STATUS / REASON / IMAGE)
+// ---------- UPDATE ----------
 async function updateRecord(req, res) {
+    // Every early exit removes the freshly uploaded image
+    const fail = async (code, reason) => {
+        if (req.file) await safeDeleteImage(req.file.path);
+        return res.status(code).send({ result: "Fail", reason });
+    };
+
     try {
-        let data = await Return.findById(req.params._id);
+        const role = getRole(req);
+        const data = await Return.findById(req.params._id);
 
-        if (!data) {
-            // Nothing to attach the upload to, so remove it
-            if (req.file) {
-                await safeDeleteImage(req.file.path);
-            }
+        if (!data) return fail(404, "Return Request Not Found");
+        if (!canView(req, data)) return fail(403, "Forbidden");
 
-            return res.status(404).send({
-                result: "Fail",
-                reason: "Return Request Not Found"
-            });
-        }
-
+        // ----- status -----
         if (req.body.status) {
-            const newStatus = req.body.status.toLowerCase();
+            const newStatus = String(req.body.status).toLowerCase();
 
             if (!RETURN_STATUSES.includes(newStatus)) {
-                if (req.file) {
-                    await safeDeleteImage(req.file.path);
+                return fail(400, `Invalid status. Allowed statuses: ${RETURN_STATUSES.join(", ")}`);
+            }
+
+            // Staying on the same status is fine for the admin (e.g. changing the delivery boy)
+            const isNoop = newStatus === data.status;
+            if (!isNoop) {
+                const allowed = ALLOWED_TRANSITIONS[role]?.[data.status] || [];
+                if (!allowed.includes(newStatus)) {
+                    return fail(403, "This status change is not allowed.");
                 }
 
-                return res.status(400).send({
-                    result: "Fail",
-                    reason: `Invalid status. Allowed statuses: ${RETURN_STATUSES.join(", ")}`
-                });
+                // Manual completion is only for orders with no online payment
+                if (newStatus === "completed") {
+                    const full = await Return.findById(data._id).populate("order");
+                    if (full?.order?.rppid) {
+                        return fail(400, "This order was paid online. Use the Razorpay refund.");
+                    }
+                }
+
+                // Approval needs a delivery boy
+                if (newStatus === "approved" && !req.body.deliveryBoy && !data.deliveryBoy) {
+                    return fail(400, "Assign a delivery boy before approving.");
+                }
+            } else if (role !== "Admin") {
+                return fail(403, "This status change is not allowed.");
             }
 
             data.status = newStatus;
         }
 
-        if (req.body.reason !== undefined) {
-            data.reason = req.body.reason;
-        }
-
-        // Assign / change the delivery boy who will pick the item up
+        // ----- delivery boy (admin only) -----
         if (req.body.deliveryBoy) {
+            if (role !== "Admin") return fail(403, "Only an admin can assign a delivery boy.");
+            if (["picked_up", "received", "completed"].includes(data.status)) {
+                return fail(400, "Pickup is already in progress; the delivery boy can't be changed.");
+            }
             data.deliveryBoy = req.body.deliveryBoy;
         }
 
-        // Replace the image if a new one was uploaded
+        // ----- reason / image (admin, or the customer while still pending) -----
+        const touchesContent = req.body.reason !== undefined || req.file;
+        if (touchesContent) {
+            const ownerEditing = role === "Buyer" && data.status === "pending";
+            if (role !== "Admin" && !ownerEditing) {
+                return fail(403, "You can't edit this return.");
+            }
+        }
+
+        if (req.body.reason !== undefined) data.reason = req.body.reason;
+
         let oldPic = null;
         if (req.file) {
             oldPic = data.pics;
@@ -259,219 +260,150 @@ async function updateRecord(req, res) {
         }
 
         data.updatedAt = new Date();
-
         await data.save();
 
-        // Only delete the old image once the new one is safely saved
-        if (oldPic) {
-            await safeDeleteImage(oldPic);
-        }
+        // Delete the old image only after the new one is saved
+        if (oldPic) await safeDeleteImage(oldPic);
 
-        let finalData = await Return.findById(data._id)
-            .populate(RETURN_POPULATE);
+        const finalData = await Return.findById(data._id).populate(RETURN_POPULATE);
 
         res.send({
             result: "Done",
             message: "Return request updated successfully",
             data: finalData
         });
-
     } catch (error) {
-        // Save failed, so the new upload is orphaned; the old image is untouched
-        if (req.file) {
-            await safeDeleteImage(req.file.path);
+        if (req.file) await safeDeleteImage(req.file.path);
+        console.log(error);
+        sendError(res, error);
+    }
+}
+
+// ---------- REFUND (Razorpay, admin only) ----------
+async function refundRecord(req, res) {
+    let claimed = false;
+    let ret;
+
+    try {
+        if (getRole(req) !== "Admin") {
+            return res.status(403).send({ result: "Fail", reason: "Only an admin can issue refunds." });
         }
 
+        const amount = Number(req.body.refundAmount);
+        if (!amount || amount <= 0) {
+            return res.status(400).send({ result: "Fail", reason: "Enter a valid refund amount." });
+        }
+
+        // Atomically claim the return so a double click can't refund twice.
+        // $in [""/null] also matches older documents that don't have these fields.
+        ret = await Return.findOneAndUpdate(
+            {
+                _id: req.params._id,
+                status: "received",
+                refundId: { $in: ["", null] },
+                refundStatus: { $in: ["", null] }
+            },
+            { $set: { refundStatus: "initiating" } },
+            { new: true }
+        ).populate("order");
+
+        if (!ret) {
+            return res.status(409).send({
+                result: "Fail",
+                reason: "Return not found, not yet received at the shop, or already refunded."
+            });
+        }
+        claimed = true;
+
+        const order = ret.order;
+        if (!order?.rppid) {
+            throw { status: 400, reason: "No online payment found for this order." };
+        }
+
+        // Don't exceed the order total, counting refunds on other returns of the same order
+        const others = await Return.find({
+            order: order._id,
+            _id: { $ne: ret._id },
+            refundId: { $nin: ["", null] }
+        });
+        const alreadyRefunded = others.reduce((sum, r) => sum + (r.refundAmount || 0), 0);
+        const maxRefundable = Math.max(Number(order.total) - alreadyRefunded, 0);
+
+        if (amount > maxRefundable) {
+            throw {
+                status: 400,
+                reason: `Refund cannot exceed ₹${maxRefundable}.`,
+                maxRefundable
+            };
+        }
+
+        const refund = await razorpayClient().payments.refund(order.rppid, {
+            amount: Math.round(amount * 100), // paise
+            speed: "normal",
+            notes: { returnId: String(ret._id), orderId: String(order._id) }
+        });
+
+        ret.refundId = refund.id;
+        ret.refundAmount = amount;
+        ret.refundStatus = refund.status || "pending";
+        ret.refundedAt = new Date();
+        ret.status = "completed";
+        ret.updatedAt = new Date();
+        await ret.save();
+
+        return res.send({ result: "Done", message: "Refund initiated", data: ret });
+
+    } catch (error) {
         console.log(error);
 
-        let errorMessage = getValidationErrors(error);
+        // Release the claim so the admin can retry (nothing was refunded)
+        if (claimed && ret) {
+            try {
+                await Return.updateOne(
+                    { _id: ret._id, refundId: { $in: ["", null] } },
+                    { $set: { refundStatus: "" } }
+                );
+            } catch (rollbackError) {
+                console.error("Refund rollback failed:", rollbackError);
+            }
+        }
 
-        res.status(Object.keys(errorMessage).length ? 400 : 500).send({
-            result: "Fail",
-            reason: Object.keys(errorMessage).length
-                ? errorMessage
-                : "Internal Server Error"
-        });
+        // Razorpay errors look like { statusCode, error: { description } }
+        const reason = error.reason || error.error?.description || "Refund failed. Please try again.";
+        const code = error.status || error.statusCode || 500;
+        const body = { result: "Fail", reason };
+        if (error.maxRefundable != null) body.maxRefundable = error.maxRefundable;
+
+        return res.status(code >= 400 && code < 600 ? code : 500).send(body);
     }
 }
 
-
-// REFUND MONEY ONLINE VIA RAZORPAY (ADMIN)
-// body: { refundAmount: <rupees> }
-async function refundRecord(req, res) {
-    try {
-        let data = await Return.findById(req.params._id)
-            .populate("order");
-
-        if (!data) {
-            return res.status(404).send({
-                result: "Fail",
-                reason: "Return Request Not Found"
-            });
-        }
-
-        // Refund only after the shop has received the item back
-        if (data.status !== "received") {
-            return res.status(400).send({
-                result: "Fail",
-                reason: "Refund is possible only after the returned item is received at the shop"
-            });
-        }
-
-        // Prevent double refunds
-        if (data.refundId) {
-            return res.status(400).send({
-                result: "Fail",
-                reason: "Refund already initiated for this return request"
-            });
-        }
-
-        // Online refund needs the Razorpay payment id saved in verifyOrder
-        const paymentId = data.order?.rppid;
-        if (!paymentId) {
-            return res.status(400).send({
-                result: "Fail",
-                reason: "No online payment found for this order. Refund it manually (e.g. COD)"
-            });
-        }
-
-        const refundAmount = Number(req.body.refundAmount);
-        if (!refundAmount || refundAmount <= 0) {
-            return res.status(400).send({
-                result: "Fail",
-                reason: "A valid refundAmount (in rupees) is required"
-            });
-        }
-
-        const instance = new Razorpay({
-            key_id: process.env.RPKEYID,
-            key_secret: process.env.RPSECRETKEY,
-        });
-
-        // Fetch current payment status from Razorpay
-        const payment = await instance.payments.fetch(paymentId);
-
-        // Payment must be captured before it can be refunded.
-        // In test mode (or if auto-capture is off) it may still be "authorized" — capture it first.
-        if (payment.status === "authorized") {
-            await instance.payments.capture(paymentId, payment.amount, payment.currency || "INR");
-        } else if (payment.status !== "captured") {
-            return res.status(400).send({
-                result: "Fail",
-                reason: `Cannot refund — payment is in "${payment.status}" state. Only captured payments can be refunded.`
-            });
-        }
-
-        // Check remaining refundable amount (in paise)
-        const alreadyRefunded = payment.amount_refunded || 0;
-        const maxRefundablePaise = payment.amount - alreadyRefunded;
-        const requestedPaise = Math.round(refundAmount * 100);
-
-        if (requestedPaise > maxRefundablePaise) {
-            const maxRupees = (maxRefundablePaise / 100).toFixed(2);
-            return res.status(400).send({
-                result: "Fail",
-                reason: `Refund amount ₹${refundAmount} exceeds the remaining refundable amount of ₹${maxRupees}.`,
-                maxRefundable: Number(maxRupees)
-            });
-        }
-
-        // Razorpay (especially in test mode / netbanking) caps single refunds at ₹5,000 (500,000 paise).
-        // If the requested refund is larger, process it in chunks so Razorpay doesn't reject with "invalid request sent".
-        let remainingToRefundPaise = requestedPaise;
-        let lastRefund = null;
-        const refundIds = [];
-
-        while (remainingToRefundPaise > 0) {
-            const chunk = Math.min(remainingToRefundPaise, 500000);
-            lastRefund = await instance.payments.refund(paymentId, {
-                amount: chunk,
-                speed: "normal",
-                notes: {
-                    returnId: String(data._id),
-                    reason: data.reason || ""
-                }
-            });
-            if (lastRefund?.id) {
-                refundIds.push(lastRefund.id);
-            }
-            remainingToRefundPaise -= chunk;
-        }
-
-        data.refundId = refundIds.join(", ") || lastRefund?.id;
-        data.refundAmount = refundAmount;
-        data.refundStatus = lastRefund?.status || "processed";
-        data.refundedAt = new Date();
-        data.status = "completed";
-        data.updatedAt = new Date();
-
-        await data.save();
-
-        let finalData = await Return.findById(data._id)
-            .populate(RETURN_POPULATE);
-
-        res.send({
-            result: "Done",
-            message: "Refund initiated successfully",
-            data: finalData
-        });
-
-    } catch (error) {
-        console.log("Razorpay refund error:", error);
-
-        // Friendly error messages for common Razorpay errors
-        if (error?.error?.description) {
-            let desc = error.error.description;
-            if (desc === "invalid request sent") {
-                desc = "Razorpay cannot process further refunds on this payment (maximum number of partial refunds reached or payment balance exhausted). You can complete this return manually using 'Mark as Refunded & Complete'.";
-            }
-            return res.status(400).send({
-                result: "Fail",
-                reason: desc
-            });
-        }
-
-        res.status(500).send({
-            result: "Fail",
-            reason: "Internal Server Error"
-        });
-    }
-}
-
-
-// DELETE RETURN REQUEST
+// ---------- DELETE ----------
 async function deleteRecord(req, res) {
     try {
-        let data = await Return.findById(req.params._id);
+        if (getRole(req) !== "Admin") {
+            return res.status(403).send({ result: "Fail", reason: "Forbidden" });
+        }
+
+        const data = await Return.findById(req.params._id);
 
         if (!data) {
-            return res.status(404).send({
-                result: "Fail",
-                reason: "Return Request Not Found"
-            });
+            return res.status(404).send({ result: "Fail", reason: "Return Request Not Found" });
         }
 
         await data.deleteOne();
-
-        // Remove the image from Cloudinary along with the record
         await safeDeleteImage(data.pics);
 
         res.send({
             result: "Done",
             message: "Return request deleted successfully",
-            data: data
+            data
         });
-
     } catch (error) {
         console.log(error);
-
-        res.status(500).send({
-            result: "Fail",
-            reason: "Internal Server Error"
-        });
+        res.status(500).send({ result: "Fail", reason: "Internal Server Error" });
     }
 }
-
 
 module.exports = {
     createRecord,

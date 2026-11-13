@@ -21,13 +21,13 @@ ReturnProductRouter.post("/refund/:_id", verifyThree, refundRecord)
 // Create a return request (optional image in the "pics" field)
 ReturnProductRouter.post("", verifyThree, returnUploader.single("pics"), createRecord)
 
-// All returns (admin list)
-ReturnProductRouter.get("", getRecord)
+// All returns (admin list / delivery boy assigned / buyer returns)
+ReturnProductRouter.get("", verifyFour, getRecord)
 
 // A user's own returns. Must stay ABOVE "/:_id" or "user" is read as an id.
-ReturnProductRouter.get("/user/:userid", verifyThree, getUserRecord)
+ReturnProductRouter.get("/user/:userid", verifyFour, getUserRecord)
 
-ReturnProductRouter.get("/:_id", getSingleRecord)
+ReturnProductRouter.get("/:_id", verifyFour, getSingleRecord)
 
 // Update status / reason / delivery boy / replace image (verifyFour = Buyer+Admin+Shop+DeliveryBoy)
 ReturnProductRouter.put("/:_id", verifyFour, returnUploader.single("pics"), updateRecord)

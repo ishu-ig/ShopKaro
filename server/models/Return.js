@@ -20,10 +20,54 @@ const returnSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+
+    // Single image URL (optional). Was [String] + required, which broke
+    // creating a return without an image and didn't match the UI/controller.
+    pics: {
+        type: String,
+        default: "",
+    },
+
+    // pending -> approved -> picked_up -> received -> completed
+    // (or rejected / cancelled)
     status: {
         type: String,
+        enum: [
+            "pending",
+            "approved",
+            "picked_up",
+            "received",
+            "rejected",
+            "completed",
+            "cancelled",
+        ],
         default: "pending",
     },
+
+    // Pickup delivery boy.
+    // NOTE: change ref to "User" if your delivery boys are stored in the User
+    // model (role: "DeliveryBoy"). Otherwise populate("deliveryBoy") will fail.
+    deliveryBoy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "DeliveryBoy",
+    },
+
+    // Refund details (filled by refundRecord)
+    refundId: {
+        type: String,
+        default: "",
+    },
+    refundAmount: {
+        type: Number,          // no default on purpose: the admin UI falls back to order.total
+    },
+    refundStatus: {
+        type: String,
+        default: "",           // "" | initiating | pending | processed | failed
+    },
+    refundedAt: {
+        type: Date,
+    },
+
     createdAt: {
         type: Date,
         default: Date.now,
