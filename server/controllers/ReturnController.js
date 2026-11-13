@@ -346,6 +346,20 @@ async function refundRecord(req, res) {
             });
         }
 
+        // Check remaining refundable amount (in paise)
+        const alreadyRefunded = payment.amount_refunded || 0;
+        const maxRefundablePaise = payment.amount - alreadyRefunded;
+        const requestedPaise = Math.round(refundAmount * 100);
+
+        if (requestedPaise > maxRefundablePaise) {
+            const maxRupees = (maxRefundablePaise / 100).toFixed(2);
+            return res.status(400).send({
+                result: "Fail",
+                reason: `Refund amount ₹${refundAmount} exceeds the remaining refundable amount of ₹${maxRupees}.`,
+                maxRefundable: Number(maxRupees)
+            });
+        }
+
         // Razorpay expects the amount in paise, as an integer
         const refund = await instance.payments.refund(paymentId, {
             amount: Math.round(refundAmount * 100),

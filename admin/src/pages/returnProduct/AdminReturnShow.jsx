@@ -1,37 +1,78 @@
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { getReturn, updateReturn } from "../../Redux/ActionCreators/ReturnActionCreators";
 
-// Happy-path flow shown in the progress bar
+// Full return flow:
+//   pending -> approved (+ delivery boy assigned) -> picked_up -> received
+//   -> refund the customer -> completed
+// picked_up / received are set by the delivery boy from his own screen.
 const STATUS_STEPS = [
     { key: "pending", label: "Requested", icon: "bi-clipboard-check" },
     { key: "approved", label: "Approved", icon: "bi-hand-thumbs-up" },
-    { key: "completed", label: "Completed", icon: "bi-check-circle" },
+    { key: "picked_up", label: "Picked Up", icon: "bi-box-arrow-in-down" },
+    { key: "received", label: "Received", icon: "bi-shop" },
+    { key: "completed", label: "Refunded", icon: "bi-cash-coin" },
 ];
 
 // Which statuses an admin may move to from the current one
 const NEXT_STATUS = {
     pending: ["pending", "approved", "rejected", "cancelled"],
-    approved: ["approved", "completed", "cancelled"],
+    approved: ["approved", "cancelled"],
+    picked_up: [],
+    received: [],
     completed: [],
     rejected: [],
     cancelled: [],
 };
 
-const capitalize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : "");
+const STATUS_LABEL = {
+    pending: "Pending",
+    approved: "Approved",
+    picked_up: "Picked up",
+    received: "Received at shop",
+    completed: "Completed",
+    rejected: "Rejected",
+    cancelled: "Cancelled",
+};
+
+const label = (s) => STATUS_LABEL[s] || (s ? s.charAt(0).toUpperCase() + s.slice(1) : "");
+const idOf = (ref) => ref?._id?.toString?.() ?? ref?.toString?.() ?? "";
+const fmtDate = (d) =>
+    d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
 export default function AdminReturnShow() {
     const { _id } = useParams();
     const ReturnStateData = useSelector((state) => state.ReturnStateData);
     const dispatch = useDispatch();
-    const navigate = useNavigate();
 
     const [data, setData] = useState(null);
     const [status, setStatus] = useState("");
-    const [saved, setSaved] = useState(false);
+    const [deliveryBoys, setDeliveryBoys] = useState([]);
+    const [selectedDeliveryBoy, setSelectedDeliveryBoy] = useState("");
+    const [refundAmount, setRefundAmount] = useState("");
+    const [saving, setSaving] = useState(false);
+    const [refunding, setRefunding] = useState(false);
+    const [message, setMessage] = useState("");
+    const [error, setError] = useState("");
 
     useEffect(() => { dispatch(getReturn()); }, [dispatch]);
+
+    useEffect(() => {
+        async function fetchDeliveryBoys() {
+            try {
+                let res = await fetch(`${process.env.REACT_APP_BACKEND_SERVER}/api/deliveryBoy`, {
+                    headers: { authorization: localStorage.getItem("token") },
+                });
+                res = await res.json();
+                const list = Array.isArray(res) ? res : res.data || [];
+                setDeliveryBoys(list.filter((u) => u.role === "DeliveryBoy" && u.active));
+            } catch (e) {
+                console.error("Failed to fetch delivery boys", e);
+            }
+        }
+        fetchDeliveryBoys();
+    }, []);
 
     useEffect(() => {
         const list = Array.isArray(ReturnStateData) ? ReturnStateData : ReturnStateData?.data || [];
@@ -40,21 +81,103 @@ export default function AdminReturnShow() {
             if (item) {
                 setData({ ...item });
                 setStatus(item.status || "pending");
+                setSelectedDeliveryBoy(idOf(item.deliveryBoy));
+                setRefundAmount(item.refundAmount ?? item.order?.total ?? "");
             } else {
                 alert("Invalid Return ID");
             }
         }
     }, [_id, ReturnStateData]);
 
-    function updateRecord() {
-        if (window.confirm("Are you sure you want to update the return status?")) {
-            dispatch(updateReturn({ _id: data._id, status }));
-            setData({ ...data, status });
-            setSaved(true);
-            setTimeout(() => {
-                setSaved(false);
-                navigate("/return");
-            }, 2000);
+    function flash(text) {
+        setMessage(text);
+        setTimeout(() => setMessage(""), 3000);
+    }
+
+    // Approve / reject / cancel, and assign or change the pickup delivery boy
+    async function saveChanges() {
+        if (status === "approved" && !selectedDeliveryBoy) {
+            setError("Please assign a delivery boy to pick up the item before approving.");
+            return;
+        }
+        if (!window.confirm("Are you sure you want to update this return request?")) return;
+
+        setSaving(true);
+        setError("");
+        try {
+            const payload = { _id: data._id, status };
+            if (status === "approved") payload.deliveryBoy = selectedDeliveryBoy;
+            await dispatch(updateReturn(payload));
+            flash("Return request updated successfully");
+            setTimeout(() => dispatch(getReturn()), 500);
+        } catch (e) {
+            console.error(e);
+            setError("Couldn't update the return. Please try again.");
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    // Online (Razorpay) refund — the backend also marks the return completed
+    async function refundOnline() {
+        const amt = Number(refundAmount);
+        if (!amt || amt <= 0) {
+            setError("Enter a valid refund amount.");
+            return;
+        }
+        if (data.order?.total && amt > Number(data.order.total)) {
+            setError(`Refund cannot be more than the order total (₹${data.order.total}).`);
+            return;
+        }
+        if (!window.confirm(`Refund ₹${amt} to the customer via Razorpay? This cannot be undone.`)) return;
+
+        setRefunding(true);
+        setError("");
+        try {
+            let res = await fetch(
+                `${process.env.REACT_APP_BACKEND_SERVER}/api/return/refund/${data._id}`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        authorization: localStorage.getItem("token"),
+                    },
+                    body: JSON.stringify({ refundAmount: amt }),
+                }
+            );
+            res = await res.json();
+            if (res.result === "Done") {
+                flash("Refund initiated and return completed");
+                dispatch(getReturn());
+            } else {
+                setError(typeof res.reason === "string" ? res.reason : "Refund failed. Please try again.");
+                // If backend tells us the max refundable, auto-correct the input
+                if (res.maxRefundable != null) {
+                    setRefundAmount(String(res.maxRefundable));
+                }
+            }
+        } catch (e) {
+            console.error(e);
+            setError("Refund failed. Please try again.");
+        } finally {
+            setRefunding(false);
+        }
+    }
+
+    // COD / no online payment: admin refunds manually, then closes the return
+    async function completeManually() {
+        if (!window.confirm("Confirm you have refunded the customer manually and want to complete this return?")) return;
+        setSaving(true);
+        setError("");
+        try {
+            await dispatch(updateReturn({ _id: data._id, status: "completed" }));
+            flash("Return marked as completed");
+            setTimeout(() => dispatch(getReturn()), 500);
+        } catch (e) {
+            console.error(e);
+            setError("Couldn't complete the return. Please try again.");
+        } finally {
+            setSaving(false);
         }
     }
 
@@ -75,6 +198,7 @@ export default function AdminReturnShow() {
     const isRejected = data.status === "rejected";
     const isCancelled = data.status === "cancelled";
     const isCompleted = data.status === "completed";
+    const isReceived = data.status === "received";
     const isTerminalNegative = isRejected || isCancelled;
     const allowedStatuses = NEXT_STATUS[data.status] || [];
     const canUpdate = allowedStatuses.length > 1; // more than just "stay as is"
@@ -85,12 +209,27 @@ export default function AdminReturnShow() {
             ? "text-bg-secondary"
             : isCompleted
                 ? "text-bg-success"
-                : data.status === "approved"
+                : data.status === "approved" || data.status === "picked_up"
                     ? "text-bg-warning"
-                    : "text-bg-info";
+                    : isReceived
+                        ? "text-bg-primary"
+                        : "text-bg-info";
 
     const product = data.product;
     const order = data.order;
+    const hasOnlinePayment = !!order?.rppid;
+
+    // Resolve the assigned delivery boy (populated object or plain id)
+    const assignedDeliveryBoy = (() => {
+        const db = data.deliveryBoy;
+        if (!db) return null;
+        if (typeof db === "object") return db;
+        return deliveryBoys.find((d) => d._id === db) || { _id: db };
+    })();
+
+    const unchanged =
+        status === data.status &&
+        (status !== "approved" || selectedDeliveryBoy === idOf(data.deliveryBoy));
 
     return (
         <main className="dashboard-content">
@@ -139,16 +278,21 @@ export default function AdminReturnShow() {
                         </div>
                     </div>
                     <div className="heading-actions d-flex flex-wrap gap-2 align-items-center">
-                        <span className={`badge ${statusBadgeClass}`}>{capitalize(data.status)}</span>
+                        <span className={`badge ${statusBadgeClass}`}>{label(data.status)}</span>
                         <Link className="btn btn-outline-secondary btn-sm" to="/return">
                             <i className="bi bi-arrow-left" aria-hidden="true"></i> Back to Returns
                         </Link>
                     </div>
                 </div>
 
-                {saved && (
+                {message && (
                     <div className="alert alert-success" role="alert">
-                        <i className="bi bi-check-circle me-2"></i>Return status updated successfully
+                        <i className="bi bi-check-circle me-2"></i>{message}
+                    </div>
+                )}
+                {error && (
+                    <div className="alert alert-danger" role="alert">
+                        <i className="bi bi-exclamation-triangle me-2"></i>{error}
                     </div>
                 )}
 
@@ -210,7 +354,7 @@ export default function AdminReturnShow() {
                         </div>
                     )}
 
-                    <div className="col-12 col-lg-4">
+                    <div className={assignedDeliveryBoy ? "col-12 col-lg-3" : "col-12 col-lg-4"}>
                         <div className="panel h-100">
                             <h2 className="h5 mb-3 section-title">
                                 <i className="bi bi-person" aria-hidden="true"></i>
@@ -233,7 +377,36 @@ export default function AdminReturnShow() {
                         </div>
                     </div>
 
-                    <div className="col-12 col-lg-4">
+                    {assignedDeliveryBoy && (
+                        <div className="col-12 col-lg-3">
+                            <div className="panel h-100">
+                                <h2 className="h5 mb-3 section-title">
+                                    <i className="bi bi-truck" aria-hidden="true"></i>
+                                    <span>Pickup Delivery Boy</span>
+                                </h2>
+                                <div className="d-flex flex-column gap-2">
+                                    {[
+                                        { icon: "bi-person", val: assignedDeliveryBoy.name },
+                                        { icon: "bi-telephone", val: assignedDeliveryBoy.phone },
+                                        { icon: "bi-envelope", val: assignedDeliveryBoy.email },
+                                    ].filter((r) => r.val).map(({ icon, val }) => (
+                                        <div key={icon} className="detail-row">
+                                            <i className={`bi ${icon} text-primary`}></i>
+                                            <span>{val}</span>
+                                        </div>
+                                    ))}
+                                    {!assignedDeliveryBoy.name && (
+                                        <div className="text-muted small">
+                                            <i className="bi bi-info-circle me-1"></i>
+                                            Delivery boy assigned (ID: {assignedDeliveryBoy._id}).
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className={assignedDeliveryBoy ? "col-12 col-lg-3" : "col-12 col-lg-4"}>
                         <div className="panel h-100">
                             <h2 className="h5 mb-3 section-title">
                                 <i className="bi bi-box-seam" aria-hidden="true"></i>
@@ -242,7 +415,7 @@ export default function AdminReturnShow() {
                             {product ? (
                                 <>
                                     <div className="summary-row"><span>Name</span><span className="fw-semibold text-end">{product.name || "—"}</span></div>
-                                    {product.brand && <div className="summary-row"><span>Brand</span><span>{product.brand}</span></div>}
+                                    {product.brand && <div className="summary-row"><span>Brand</span><span>{product.brand?.name || product.brand}</span></div>}
                                     {product.discount !== undefined && product.discount !== null && (
                                         <div className="summary-row"><span>Discount</span><span>{product.discount}%</span></div>
                                     )}
@@ -256,7 +429,7 @@ export default function AdminReturnShow() {
                         </div>
                     </div>
 
-                    <div className="col-12 col-lg-4">
+                    <div className={assignedDeliveryBoy ? "col-12 col-lg-3" : "col-12 col-lg-4"}>
                         <div className="panel h-100">
                             <h2 className="h5 mb-3 section-title">
                                 <i className="bi bi-file-earmark-text" aria-hidden="true"></i>
@@ -264,16 +437,10 @@ export default function AdminReturnShow() {
                             </h2>
                             <div className="summary-row">
                                 <span>Status</span>
-                                <span className={`badge ${statusBadgeClass}`}>{capitalize(data.status)}</span>
+                                <span className={`badge ${statusBadgeClass}`}>{label(data.status)}</span>
                             </div>
-                            <div className="summary-row">
-                                <span>Requested On</span>
-                                <span>{data.createdAt ? new Date(data.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—"}</span>
-                            </div>
-                            <div className="summary-row">
-                                <span>Last Updated</span>
-                                <span>{data.updatedAt ? new Date(data.updatedAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—"}</span>
-                            </div>
+                            <div className="summary-row"><span>Requested On</span><span>{fmtDate(data.createdAt)}</span></div>
+                            <div className="summary-row"><span>Last Updated</span><span>{fmtDate(data.updatedAt)}</span></div>
                             <hr className="my-2" />
                             <div className="summary-row">
                                 <span>Order ID</span>
@@ -285,6 +452,18 @@ export default function AdminReturnShow() {
                             {order?.paymentMode && (
                                 <div className="summary-row"><span>Payment Mode</span><span>{order.paymentMode}</span></div>
                             )}
+                            {data.refundId && (
+                                <>
+                                    <hr className="my-2" />
+                                    <div className="summary-row"><span>Refunded</span><span className="fw-semibold">₹{data.refundAmount}</span></div>
+                                    <div className="summary-row"><span>Refund Status</span><span className="text-capitalize">{data.refundStatus || "—"}</span></div>
+                                    <div className="summary-row"><span>Refund On</span><span>{fmtDate(data.refundedAt)}</span></div>
+                                    <div className="summary-row">
+                                        <span>Refund ID</span>
+                                        <span className="small" style={{ wordBreak: "break-all" }}>{data.refundId}</span>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
 
@@ -295,31 +474,149 @@ export default function AdminReturnShow() {
                                 <span>Reason for Return</span>
                             </h2>
                             <div className="reason-box">{data.reason || "—"}</div>
+                            {data.pics && (
+                                <div className="mt-3">
+                                    <a href={data.pics} target="_blank" rel="noreferrer">
+                                        <img
+                                            src={data.pics}
+                                            alt="Return evidence"
+                                            style={{ maxHeight: 180, maxWidth: "100%", borderRadius: 8, border: "1px solid #dee2e6" }}
+                                        />
+                                    </a>
+                                </div>
+                            )}
                         </div>
                     </div>
 
+                    {/* ── Step 1: approve + assign pickup delivery boy ── */}
                     {canUpdate && (
                         <div className="col-12">
                             <div className="panel">
                                 <h2 className="h5 mb-3 section-title">
                                     <i className="bi bi-pencil-square" aria-hidden="true"></i>
-                                    <span>Update Status</span>
+                                    <span>{data.status === "approved" ? "Pickup Assignment" : "Update Status"}</span>
                                 </h2>
                                 <div className="row g-3">
                                     <div className="col-md-4">
                                         <label className="form-label">Return Status</label>
                                         <select className="form-select" value={status} onChange={(e) => setStatus(e.target.value)}>
                                             {allowedStatuses.map((s) => (
-                                                <option key={s} value={s}>{capitalize(s)}</option>
+                                                <option key={s} value={s}>{label(s)}</option>
                                             ))}
                                         </select>
                                     </div>
+                                    {status === "approved" && (
+                                        <div className="col-md-4">
+                                            <label className="form-label">Assign Delivery Boy for Pickup</label>
+                                            <select
+                                                className={`form-select ${!selectedDeliveryBoy ? "border-warning" : ""}`}
+                                                value={selectedDeliveryBoy}
+                                                onChange={(e) => setSelectedDeliveryBoy(e.target.value)}
+                                            >
+                                                <option value="">-- Select Delivery Boy --</option>
+                                                {deliveryBoys.map((db) => (
+                                                    <option key={db._id} value={db._id}>{db.name} ({db.phone})</option>
+                                                ))}
+                                            </select>
+                                            {!selectedDeliveryBoy && (
+                                                <div className="text-warning small mt-1">
+                                                    <i className="bi bi-exclamation-triangle me-1"></i>
+                                                    Assign a delivery boy to approve this return.
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="d-flex justify-content-end mt-4">
-                                    <button className="btn btn-primary" onClick={updateRecord} disabled={status === data.status}>
-                                        <i className="bi bi-check-circle" aria-hidden="true"></i> Save Changes
+                                    <button className="btn btn-primary" onClick={saveChanges} disabled={unchanged || saving}>
+                                        {saving ? (
+                                            <span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                                        ) : (
+                                            <i className="bi bi-check-circle" aria-hidden="true"></i>
+                                        )}{" "}
+                                        Save Changes
                                     </button>
                                 </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── Waiting on the delivery boy ── */}
+                    {(data.status === "approved" || data.status === "picked_up") && (
+                        <div className="col-12">
+                            <div className="alert alert-info d-flex align-items-center gap-3 mb-0" role="status">
+                                <i className="bi bi-truck fs-3"></i>
+                                <div>
+                                    <div className="fw-bold">
+                                        {data.status === "approved" ? "Waiting for pickup" : "Item picked up — on its way to the shop"}
+                                    </div>
+                                    <div className="small">
+                                        The delivery boy updates the status from his screen. You can refund the customer once the item is received at the shop.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── Step 2: refund the customer, then complete ── */}
+                    {isReceived && (
+                        <div className="col-12">
+                            <div className="panel">
+                                <h2 className="h5 mb-3 section-title">
+                                    <i className="bi bi-cash-coin" aria-hidden="true"></i>
+                                    <span>Refund Customer</span>
+                                </h2>
+
+                                {hasOnlinePayment ? (
+                                    <>
+                                        <p className="text-muted small">
+                                            The customer paid online ({order?.paymentMode || "Razorpay"}). The refund goes back to the
+                                            original payment method and the return is completed automatically.
+                                        </p>
+                                        <div className="row g-3 align-items-end">
+                                            <div className="col-md-4">
+                                                <label className="form-label">Refund Amount (₹)</label>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    step="0.01"
+                                                    className="form-control"
+                                                    value={refundAmount}
+                                                    onChange={(e) => setRefundAmount(e.target.value)}
+                                                />
+                                                {order?.total !== undefined && (
+                                                    <div className="form-text">Order total: ₹{order.total}</div>
+                                                )}
+                                            </div>
+                                            <div className="col-md-4">
+                                                <button className="btn btn-success" onClick={refundOnline} disabled={refunding}>
+                                                    {refunding ? (
+                                                        <span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                                                    ) : (
+                                                        <i className="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>
+                                                    )}{" "}
+                                                    Refund &amp; Complete
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="alert alert-warning small" role="alert">
+                                            <i className="bi bi-info-circle me-2"></i>
+                                            No online payment found for this order ({order?.paymentMode || "COD"}), so it can't be refunded
+                                            through Razorpay. Refund the customer manually, then complete the return.
+                                        </div>
+                                        <button className="btn btn-success" onClick={completeManually} disabled={saving}>
+                                            {saving ? (
+                                                <span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                                            ) : (
+                                                <i className="bi bi-check-circle me-1" aria-hidden="true"></i>
+                                            )}{" "}
+                                            Mark as Refunded &amp; Complete
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         </div>
                     )}
@@ -330,7 +627,11 @@ export default function AdminReturnShow() {
                                 <i className="bi bi-check-circle fs-3"></i>
                                 <div>
                                     <div className="fw-bold">Return Completed</div>
-                                    <div className="small">This return request has been processed and closed.</div>
+                                    <div className="small">
+                                        {data.refundId
+                                            ? `₹${data.refundAmount} was refunded to the customer and this return is closed.`
+                                            : "This return request has been processed and closed."}
+                                    </div>
                                 </div>
                             </div>
                         </div>
