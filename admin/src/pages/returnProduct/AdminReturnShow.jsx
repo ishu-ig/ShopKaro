@@ -51,6 +51,7 @@ export default function AdminReturnShow() {
     const [deliveryBoys, setDeliveryBoys] = useState([]);
     const [selectedDeliveryBoy, setSelectedDeliveryBoy] = useState("");
     const [refundAmount, setRefundAmount] = useState("");
+    const [maxRefundable, setMaxRefundable] = useState(null);
     const [saving, setSaving] = useState(false);
     const [refunding, setRefunding] = useState(false);
     const [message, setMessage] = useState("");
@@ -79,15 +80,41 @@ export default function AdminReturnShow() {
         if (list.length) {
             const item = list.find((x) => x._id === _id);
             if (item) {
-                setData({ ...item });
+                setData((prev) => ({ ...item, ...prev }));
                 setStatus(item.status || "pending");
                 setSelectedDeliveryBoy(idOf(item.deliveryBoy));
-                setRefundAmount(item.refundAmount ?? item.order?.total ?? "");
+                if (!item.refundId) {
+                    setRefundAmount(item.refundAmount ?? item.order?.total ?? "");
+                }
             } else {
                 alert("Invalid Return ID");
             }
         }
     }, [_id, ReturnStateData]);
+
+    // Fetch live return data (including real-time Razorpay remaining refundable amount)
+    useEffect(() => {
+        async function fetchLive() {
+            try {
+                const res = await fetch(`${process.env.REACT_APP_BACKEND_SERVER}/api/return/${_id}`, {
+                    headers: { authorization: localStorage.getItem("token") }
+                });
+                const json = await res.json();
+                if (json?.result === "Done" && json?.data) {
+                    setData(json.data);
+                    if (json.data.maxRefundable !== undefined) {
+                        setMaxRefundable(json.data.maxRefundable);
+                        if (!json.data.refundId) {
+                            setRefundAmount(String(json.data.maxRefundable));
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("fetchLive return error:", err);
+            }
+        }
+        if (_id) fetchLive();
+    }, [_id]);
 
     function flash(text) {
         setMessage(text);
@@ -584,19 +611,33 @@ export default function AdminReturnShow() {
                                                     value={refundAmount}
                                                     onChange={(e) => setRefundAmount(e.target.value)}
                                                 />
-                                                {order?.total !== undefined && (
+                                                {maxRefundable !== null ? (
+                                                    <div className="form-text">
+                                                        Max refundable: <strong className="text-success">₹{maxRefundable}</strong> (Order total: ₹{order?.total})
+                                                    </div>
+                                                ) : order?.total !== undefined ? (
                                                     <div className="form-text">Order total: ₹{order.total}</div>
-                                                )}
+                                                ) : null}
                                             </div>
-                                            <div className="col-md-4">
-                                                <button className="btn btn-success" onClick={refundOnline} disabled={refunding}>
-                                                    {refunding ? (
-                                                        <span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
-                                                    ) : (
-                                                        <i className="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>
-                                                    )}{" "}
-                                                    Refund &amp; Complete
-                                                </button>
+                                            <div className="col-md-8">
+                                                <div className="d-flex flex-wrap gap-2">
+                                                    <button className="btn btn-success" onClick={refundOnline} disabled={refunding || saving}>
+                                                        {refunding ? (
+                                                            <span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                                                        ) : (
+                                                            <i className="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>
+                                                        )}{" "}
+                                                        Refund Online &amp; Complete
+                                                    </button>
+                                                    <button className="btn btn-outline-secondary" onClick={completeManually} disabled={saving || refunding} title="Complete without calling Razorpay API (if already refunded via dashboard or cash)">
+                                                        {saving ? (
+                                                            <span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                                                        ) : (
+                                                            <i className="bi bi-check-circle me-1" aria-hidden="true"></i>
+                                                        )}{" "}
+                                                        Mark Completed (Manual)
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </>

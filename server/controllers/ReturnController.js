@@ -170,9 +170,25 @@ async function getSingleRecord(req, res) {
             .populate(RETURN_POPULATE);
 
         if (data) {
+            let dataObj = data.toObject();
+            if (data.order?.rppid && !data.refundId) {
+                try {
+                    const instance = new Razorpay({
+                        key_id: process.env.RPKEYID,
+                        key_secret: process.env.RPSECRETKEY,
+                    });
+                    const payment = await instance.payments.fetch(data.order.rppid);
+                    if (payment) {
+                        const rem = (payment.amount - (payment.amount_refunded || 0)) / 100;
+                        dataObj.maxRefundable = Math.max(0, rem);
+                    }
+                } catch (e) {
+                    console.log("Error checking refundable amount:", e.message);
+                }
+            }
             res.send({
                 result: "Done",
-                data: data
+                data: dataObj
             });
         } else {
             res.status(404).send({
@@ -401,13 +417,17 @@ async function refundRecord(req, res) {
         });
 
     } catch (error) {
-        console.log(error);
+        console.log("Razorpay refund error:", error);
 
-        // Razorpay SDK errors carry the details in error.error
+        // Friendly error messages for common Razorpay errors
         if (error?.error?.description) {
+            let desc = error.error.description;
+            if (desc === "invalid request sent") {
+                desc = "Razorpay cannot process further refunds on this payment (maximum number of partial refunds reached or payment balance exhausted). You can complete this return manually using 'Mark as Refunded & Complete'.";
+            }
             return res.status(400).send({
                 result: "Fail",
-                reason: error.error.description
+                reason: desc
             });
         }
 
