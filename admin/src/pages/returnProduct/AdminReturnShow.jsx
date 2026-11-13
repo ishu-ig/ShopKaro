@@ -1,12 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { getReturn, updateReturn } from "../../Redux/ActionCreators/ReturnActionCreators";
 
-// Full return flow:
-//   pending -> approved (+ delivery boy assigned) -> picked_up -> received
-//   -> refund the customer -> completed
-// picked_up / received are set by the delivery boy from his own screen.
+const API = `${process.env.REACT_APP_BACKEND_SERVER}/api`;
+const authHeader = () => ({ authorization: localStorage.getItem("token") });
+
 const STATUS_STEPS = [
     { key: "pending", label: "Requested", icon: "bi-clipboard-check" },
     { key: "approved", label: "Approved", icon: "bi-hand-thumbs-up" },
@@ -15,7 +12,8 @@ const STATUS_STEPS = [
     { key: "completed", label: "Refunded", icon: "bi-cash-coin" },
 ];
 
-// Which statuses an admin may move to from the current one
+// Statuses an admin may pick from the current one (mirrors the server rules).
+// received -> completed is NOT here: it goes through the Refund panel.
 const NEXT_STATUS = {
     pending: ["pending", "approved", "rejected", "cancelled"],
     approved: ["approved", "cancelled"],
@@ -40,31 +38,49 @@ const label = (s) => STATUS_LABEL[s] || (s ? s.charAt(0).toUpperCase() + s.slice
 const idOf = (ref) => ref?._id?.toString?.() ?? ref?.toString?.() ?? "";
 const fmtDate = (d) =>
     d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+const reasonText = (res, fallback) => (typeof res?.reason === "string" ? res.reason : fallback);
 
 export default function AdminReturnShow() {
     const { _id } = useParams();
-    const ReturnStateData = useSelector((state) => state.ReturnStateData);
-    const dispatch = useDispatch();
 
     const [data, setData] = useState(null);
+    const [loadError, setLoadError] = useState("");
     const [status, setStatus] = useState("");
     const [deliveryBoys, setDeliveryBoys] = useState([]);
     const [selectedDeliveryBoy, setSelectedDeliveryBoy] = useState("");
     const [refundAmount, setRefundAmount] = useState("");
-    const [maxRefundable, setMaxRefundable] = useState(null);
     const [saving, setSaving] = useState(false);
     const [refunding, setRefunding] = useState(false);
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
 
-    useEffect(() => { dispatch(getReturn()); }, [dispatch]);
+    // Load this one return and reset the form fields from it
+    const loadReturn = useCallback(async () => {
+        try {
+            const r = await fetch(`${API}/return/${_id}`, { headers: authHeader() });
+            const res = await r.json();
+            if (res.result === "Done" && res.data) {
+                const item = res.data;
+                setData(item);
+                setStatus(item.status || "pending");
+                setSelectedDeliveryBoy(idOf(item.deliveryBoy));
+                setRefundAmount(item.refundAmount ?? item.order?.total ?? "");
+                setLoadError("");
+            } else {
+                setLoadError(reasonText(res, "Return request not found."));
+            }
+        } catch (e) {
+            console.error(e);
+            setLoadError("Couldn't load the return request.");
+        }
+    }, [_id]);
+
+    useEffect(() => { loadReturn(); }, [loadReturn]);
 
     useEffect(() => {
         async function fetchDeliveryBoys() {
             try {
-                let res = await fetch(`${process.env.REACT_APP_BACKEND_SERVER}/api/deliveryBoy`, {
-                    headers: { authorization: localStorage.getItem("token") },
-                });
+                let res = await fetch(`${API}/deliveryBoy`, { headers: authHeader() });
                 res = await res.json();
                 const list = Array.isArray(res) ? res : res.data || [];
                 setDeliveryBoys(list.filter((u) => u.role === "DeliveryBoy" && u.active));
@@ -75,50 +91,21 @@ export default function AdminReturnShow() {
         fetchDeliveryBoys();
     }, []);
 
-    useEffect(() => {
-        const list = Array.isArray(ReturnStateData) ? ReturnStateData : ReturnStateData?.data || [];
-        if (list.length) {
-            const item = list.find((x) => x._id === _id);
-            if (item) {
-                setData((prev) => ({ ...item, ...prev }));
-                setStatus(item.status || "pending");
-                setSelectedDeliveryBoy(idOf(item.deliveryBoy));
-                if (!item.refundId) {
-                    setRefundAmount(item.refundAmount ?? item.order?.total ?? "");
-                }
-            } else {
-                alert("Invalid Return ID");
-            }
-        }
-    }, [_id, ReturnStateData]);
-
-    // Fetch live return data (including real-time Razorpay remaining refundable amount)
-    useEffect(() => {
-        async function fetchLive() {
-            try {
-                const res = await fetch(`${process.env.REACT_APP_BACKEND_SERVER}/api/return/${_id}`, {
-                    headers: { authorization: localStorage.getItem("token") }
-                });
-                const json = await res.json();
-                if (json?.result === "Done" && json?.data) {
-                    setData(json.data);
-                    if (json.data.maxRefundable !== undefined) {
-                        setMaxRefundable(json.data.maxRefundable);
-                        if (!json.data.refundId) {
-                            setRefundAmount(String(json.data.maxRefundable));
-                        }
-                    }
-                }
-            } catch (err) {
-                console.error("fetchLive return error:", err);
-            }
-        }
-        if (_id) fetchLive();
-    }, [_id]);
-
     function flash(text) {
         setMessage(text);
         setTimeout(() => setMessage(""), 3000);
+    }
+
+    // PUT /return/:id (the route uses multer, so send FormData)
+    async function putReturn(fields) {
+        const body = new FormData();
+        Object.entries(fields).forEach(([k, v]) => body.append(k, v));
+        const r = await fetch(`${API}/return/${data._id}`, {
+            method: "PUT",
+            headers: authHeader(),
+            body,
+        });
+        return r.json();
     }
 
     // Approve / reject / cancel, and assign or change the pickup delivery boy
@@ -132,11 +119,15 @@ export default function AdminReturnShow() {
         setSaving(true);
         setError("");
         try {
-            const payload = { _id: data._id, status };
-            if (status === "approved") payload.deliveryBoy = selectedDeliveryBoy;
-            await dispatch(updateReturn(payload));
-            flash("Return request updated successfully");
-            setTimeout(() => dispatch(getReturn()), 500);
+            const fields = { status };
+            if (status === "approved") fields.deliveryBoy = selectedDeliveryBoy;
+            const res = await putReturn(fields);
+            if (res.result === "Done") {
+                flash("Return request updated successfully");
+                await loadReturn();
+            } else {
+                setError(reasonText(res, "Couldn't update the return. Please try again."));
+            }
         } catch (e) {
             console.error(e);
             setError("Couldn't update the return. Please try again.");
@@ -145,7 +136,7 @@ export default function AdminReturnShow() {
         }
     }
 
-    // Online (Razorpay) refund — the backend also marks the return completed
+    // Online (Razorpay) refund. The backend also marks the return completed
     async function refundOnline() {
         const amt = Number(refundAmount);
         if (!amt || amt <= 0) {
@@ -161,27 +152,18 @@ export default function AdminReturnShow() {
         setRefunding(true);
         setError("");
         try {
-            let res = await fetch(
-                `${process.env.REACT_APP_BACKEND_SERVER}/api/return/refund/${data._id}`,
-                {
-                    method: "POST",
-                    headers: {
-                        "content-type": "application/json",
-                        authorization: localStorage.getItem("token"),
-                    },
-                    body: JSON.stringify({ refundAmount: amt }),
-                }
-            );
-            res = await res.json();
+            const r = await fetch(`${API}/return/refund/${data._id}`, {
+                method: "POST",
+                headers: { "content-type": "application/json", ...authHeader() },
+                body: JSON.stringify({ refundAmount: amt }),
+            });
+            const res = await r.json();
             if (res.result === "Done") {
                 flash("Refund initiated and return completed");
-                dispatch(getReturn());
+                await loadReturn();
             } else {
-                setError(typeof res.reason === "string" ? res.reason : "Refund failed. Please try again.");
-                // If backend tells us the max refundable, auto-correct the input
-                if (res.maxRefundable != null) {
-                    setRefundAmount(String(res.maxRefundable));
-                }
+                setError(reasonText(res, "Refund failed. Please try again."));
+                if (res.maxRefundable != null) setRefundAmount(String(res.maxRefundable));
             }
         } catch (e) {
             console.error(e);
@@ -197,15 +179,32 @@ export default function AdminReturnShow() {
         setSaving(true);
         setError("");
         try {
-            await dispatch(updateReturn({ _id: data._id, status: "completed" }));
-            flash("Return marked as completed");
-            setTimeout(() => dispatch(getReturn()), 500);
+            const res = await putReturn({ status: "completed" });
+            if (res.result === "Done") {
+                flash("Return marked as completed");
+                await loadReturn();
+            } else {
+                setError(reasonText(res, "Couldn't complete the return. Please try again."));
+            }
         } catch (e) {
             console.error(e);
             setError("Couldn't complete the return. Please try again.");
         } finally {
             setSaving(false);
         }
+    }
+
+    if (loadError) {
+        return (
+            <main className="dashboard-content">
+                <div className="container-fluid px-3 px-lg-4 py-4">
+                    <div className="alert alert-danger" role="alert">{loadError}</div>
+                    <Link className="btn btn-outline-secondary btn-sm" to="/return">
+                        <i className="bi bi-arrow-left" aria-hidden="true"></i> Back to Returns
+                    </Link>
+                </div>
+            </main>
+        );
     }
 
     if (!data) {
@@ -257,6 +256,9 @@ export default function AdminReturnShow() {
     const unchanged =
         status === data.status &&
         (status !== "approved" || selectedDeliveryBoy === idOf(data.deliveryBoy));
+
+    // Evidence image: single URL (older records may still hold an array)
+    const evidence = Array.isArray(data.pics) ? data.pics[0] : data.pics;
 
     return (
         <main className="dashboard-content">
@@ -501,11 +503,11 @@ export default function AdminReturnShow() {
                                 <span>Reason for Return</span>
                             </h2>
                             <div className="reason-box">{data.reason || "—"}</div>
-                            {data.pics && (
+                            {evidence && (
                                 <div className="mt-3">
-                                    <a href={data.pics} target="_blank" rel="noreferrer">
+                                    <a href={evidence} target="_blank" rel="noreferrer">
                                         <img
-                                            src={data.pics}
+                                            src={evidence}
                                             alt="Return evidence"
                                             style={{ maxHeight: 180, maxWidth: "100%", borderRadius: 8, border: "1px solid #dee2e6" }}
                                         />
@@ -515,7 +517,7 @@ export default function AdminReturnShow() {
                         </div>
                     </div>
 
-                    {/* ── Step 1: approve + assign pickup delivery boy ── */}
+                    {/* Step 1: approve + assign pickup delivery boy */}
                     {canUpdate && (
                         <div className="col-12">
                             <div className="panel">
@@ -568,7 +570,7 @@ export default function AdminReturnShow() {
                         </div>
                     )}
 
-                    {/* ── Waiting on the delivery boy ── */}
+                    {/* Waiting on the delivery boy */}
                     {(data.status === "approved" || data.status === "picked_up") && (
                         <div className="col-12">
                             <div className="alert alert-info d-flex align-items-center gap-3 mb-0" role="status">
@@ -585,7 +587,7 @@ export default function AdminReturnShow() {
                         </div>
                     )}
 
-                    {/* ── Step 2: refund the customer, then complete ── */}
+                    {/* Step 2: refund the customer, then complete */}
                     {isReceived && (
                         <div className="col-12">
                             <div className="panel">
@@ -611,13 +613,9 @@ export default function AdminReturnShow() {
                                                     value={refundAmount}
                                                     onChange={(e) => setRefundAmount(e.target.value)}
                                                 />
-                                                {maxRefundable !== null ? (
-                                                    <div className="form-text">
-                                                        Max refundable: <strong className="text-success">₹{maxRefundable}</strong> (Order total: ₹{order?.total})
-                                                    </div>
-                                                ) : order?.total !== undefined ? (
+                                                {order?.total !== undefined && (
                                                     <div className="form-text">Order total: ₹{order.total}</div>
-                                                ) : null}
+                                                )}
                                             </div>
                                             <div className="col-md-8">
                                                 <div className="d-flex flex-wrap gap-2">
@@ -629,7 +627,7 @@ export default function AdminReturnShow() {
                                                         )}{" "}
                                                         Refund Online &amp; Complete
                                                     </button>
-                                                    <button className="btn btn-outline-secondary" onClick={completeManually} disabled={saving || refunding} title="Complete without calling Razorpay API (if already refunded via dashboard or cash)">
+                                                    <button className="btn btn-outline-secondary" onClick={completeManually} disabled={saving || refunding} title="Complete without calling Razorpay API (if already refunded or gateway limit reached)">
                                                         {saving ? (
                                                             <span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
                                                         ) : (

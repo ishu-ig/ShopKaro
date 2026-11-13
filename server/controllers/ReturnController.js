@@ -214,12 +214,13 @@ async function updateRecord(req, res) {
                     return fail(403, "This status change is not allowed.");
                 }
 
-                // Manual completion is only for orders with no online payment
+                // If setting completed manually, only Admin is allowed
                 if (newStatus === "completed") {
-                    const full = await Return.findById(data._id).populate("order");
-                    if (full?.order?.rppid) {
-                        return fail(400, "This order was paid online. Use the Razorpay refund.");
+                    if (role !== "Admin") {
+                        return fail(403, "Only an admin can complete a return.");
                     }
+                    if (!data.refundStatus) data.refundStatus = "manual";
+                    if (!data.refundedAt) data.refundedAt = new Date();
                 }
 
                 // Approval needs a delivery boy
@@ -369,12 +370,15 @@ async function refundRecord(req, res) {
         }
 
         // Razorpay errors look like { statusCode, error: { description } }
-        const reason = error.reason || error.error?.description || "Refund failed. Please try again.";
-        const code = error.status || error.statusCode || 500;
+        let reason = error.reason || error.error?.description || "Refund failed. Please try again.";
+        if (reason === "invalid request sent") {
+            reason = "Razorpay rejected the refund: This payment has exceeded the maximum limit of partial refunds on the gateway (or is already refunded). Please complete this return using the 'Mark Completed (Manual)' button.";
+        }
+        const code = error.status || error.statusCode || 400;
         const body = { result: "Fail", reason };
         if (error.maxRefundable != null) body.maxRefundable = error.maxRefundable;
 
-        return res.status(code >= 400 && code < 600 ? code : 500).send(body);
+        return res.status(code >= 400 && code < 600 ? code : 400).send(body);
     }
 }
 

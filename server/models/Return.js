@@ -21,11 +21,11 @@ const returnSchema = new mongoose.Schema({
         required: true,
     },
 
-    // Single image URL (optional). Was [String] + required, which broke
-    // creating a return without an image and didn't match the UI/controller.
+    // Single image URL (optional). Supports legacy array values gracefully.
     pics: {
         type: String,
         default: "",
+        set: (v) => Array.isArray(v) ? (v[0] || "") : (v || "")
     },
 
     // pending -> approved -> picked_up -> received -> completed
