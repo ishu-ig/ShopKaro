@@ -164,6 +164,7 @@ export default function AdminReturnShow() {
             } else {
                 setError(reasonText(res, "Refund failed. Please try again."));
                 if (res.maxRefundable != null) setRefundAmount(String(res.maxRefundable));
+                if (r.status === 409) await loadReturn();
             }
         } catch (e) {
             console.error(e);
