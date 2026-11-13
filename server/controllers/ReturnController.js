@@ -321,32 +321,55 @@ async function refundRecord(req, res) {
             throw { status: 400, reason: "No online payment found for this order." };
         }
 
-        // Don't exceed the order total, counting refunds on other returns of the same order
-        const others = await Return.find({
-            order: order._id,
-            _id: { $ne: ret._id },
-            refundId: { $nin: ["", null] }
-        });
-        const alreadyRefunded = others.reduce((sum, r) => sum + (r.refundAmount || 0), 0);
-        const maxRefundable = Math.max(Number(order.total) - alreadyRefunded, 0);
+        // Fetch live payment status & balance directly from Razorpay
+        const payment = await razorpayClient().payments.fetch(order.rppid);
+        if (!payment) {
+            throw { status: 400, reason: "Payment not found on Razorpay." };
+        }
 
-        if (amount > maxRefundable) {
+        // Auto-capture if authorized
+        if (payment.status === "authorized") {
+            await razorpayClient().payments.capture(order.rppid, payment.amount, payment.currency || "INR");
+        } else if (payment.status !== "captured") {
             throw {
                 status: 400,
-                reason: `Refund cannot exceed ₹${maxRefundable}.`,
-                maxRefundable
+                reason: `Cannot refund — payment is in "${payment.status}" state. Only captured payments can be refunded.`
             };
         }
 
-        const refund = await razorpayClient().payments.refund(order.rppid, {
-            amount: Math.round(amount * 100), // paise
-            speed: "normal",
-            notes: { returnId: String(ret._id), orderId: String(order._id) }
-        });
+        // Check live remaining balance on Razorpay
+        const rzAlreadyRefunded = payment.amount_refunded || 0;
+        const rzMaxRefundablePaise = payment.amount - rzAlreadyRefunded;
+        const requestedPaise = Math.round(amount * 100);
 
-        ret.refundId = refund.id;
+        if (requestedPaise > rzMaxRefundablePaise) {
+            const maxRupees = (rzMaxRefundablePaise / 100).toFixed(2);
+            throw {
+                status: 400,
+                reason: `Refund amount ₹${amount} exceeds the remaining refundable balance on Razorpay (₹${maxRupees}).`,
+                maxRefundable: Number(maxRupees)
+            };
+        }
+
+        // Razorpay caps single refunds at ₹5,000 (500,000 paise). Chunk larger amounts so it never fails.
+        let remainingPaise = requestedPaise;
+        let lastRefund = null;
+        const refundIds = [];
+
+        while (remainingPaise > 0) {
+            const chunk = Math.min(remainingPaise, 500000);
+            lastRefund = await razorpayClient().payments.refund(order.rppid, {
+                amount: chunk,
+                speed: "normal",
+                notes: { returnId: String(ret._id), orderId: String(order._id) }
+            });
+            if (lastRefund?.id) refundIds.push(lastRefund.id);
+            remainingPaise -= chunk;
+        }
+
+        ret.refundId = refundIds.join(", ") || lastRefund?.id;
         ret.refundAmount = amount;
-        ret.refundStatus = refund.status || "pending";
+        ret.refundStatus = lastRefund?.status || "processed";
         ret.refundedAt = new Date();
         ret.status = "completed";
         ret.updatedAt = new Date();
