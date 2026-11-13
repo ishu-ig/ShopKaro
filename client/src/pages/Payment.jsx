@@ -122,17 +122,18 @@ export default function Payment() {
     const dispatch = useDispatch();
     const CheckoutStateData = useSelector(state => state.CheckoutStateData);
 
-    function getData() {
+    // Sync checkout object from Redux state whenever the list or _id changes
+    useEffect(() => {
         dispatch(getCheckout());
-        if (CheckoutStateData.length) {
-            const result = _id === "-1"
-                ? CheckoutStateData[0]
-                : CheckoutStateData.find(item => item._id === _id);
-            setCheckout(result);
-        }
-    }
+    }, []);
 
-    useEffect(() => { getData(); }, [CheckoutStateData.length]);
+    useEffect(() => {
+        if (!CheckoutStateData.length) return;
+        const result = _id === "-1"
+            ? CheckoutStateData[0]
+            : CheckoutStateData.find(item => item._id === _id);
+        if (result) setCheckout(result);
+    }, [CheckoutStateData, _id]);
 
     const initPayment = (data) => {
         const options = {
@@ -163,13 +164,18 @@ export default function Payment() {
     };
 
     const handlePayment = async () => {
+        if (!checkout?.total) {
+            console.error("Payment Error: checkout total is missing", checkout);
+            return;
+        }
         try {
             let response = await fetch(`${process.env.REACT_APP_BACKEND_SERVER}/api/checkout/order`, {
                 method: "post",
                 headers: { "Content-Type": "application/json", authorization: localStorage.getItem("token") },
-                body: JSON.stringify({ amount: checkout.total })
+                body: JSON.stringify({ amount: Math.round(checkout.total) })
             });
             response = await response.json();
+            if (!response.data) { console.error("Order creation failed", response); return; }
             initPayment(response.data);
         } catch (err) { console.log(err); }
     };
@@ -223,12 +229,12 @@ export default function Payment() {
                             256-bit SSL encrypted • Powered by Razorpay
                         </div>
 
-                        <button onClick={handlePayment} className="pay-btn">
+                        <button onClick={handlePayment} className="pay-btn" disabled={!checkout?.total}>
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4">
                                 <rect x="1" y="3.5" width="14" height="9" rx="1.5"/>
                                 <path d="M1 7h14"/>
                             </svg>
-                            Pay ₹{checkout.total?.toLocaleString()} Now
+                            {checkout?.total ? `Pay ₹${checkout.total?.toLocaleString()} Now` : "Loading…"}
                         </button>
 
                         <p className="pay-note">
