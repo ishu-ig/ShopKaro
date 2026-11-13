@@ -360,19 +360,31 @@ async function refundRecord(req, res) {
             });
         }
 
-        // Razorpay expects the amount in paise, as an integer
-        const refund = await instance.payments.refund(paymentId, {
-            amount: Math.round(refundAmount * 100),
-            speed: "normal",
-            notes: {
-                returnId: String(data._id),
-                reason: data.reason || ""
-            }
-        });
+        // Razorpay (especially in test mode / netbanking) caps single refunds at ₹5,000 (500,000 paise).
+        // If the requested refund is larger, process it in chunks so Razorpay doesn't reject with "invalid request sent".
+        let remainingToRefundPaise = requestedPaise;
+        let lastRefund = null;
+        const refundIds = [];
 
-        data.refundId = refund.id;
+        while (remainingToRefundPaise > 0) {
+            const chunk = Math.min(remainingToRefundPaise, 500000);
+            lastRefund = await instance.payments.refund(paymentId, {
+                amount: chunk,
+                speed: "normal",
+                notes: {
+                    returnId: String(data._id),
+                    reason: data.reason || ""
+                }
+            });
+            if (lastRefund?.id) {
+                refundIds.push(lastRefund.id);
+            }
+            remainingToRefundPaise -= chunk;
+        }
+
+        data.refundId = refundIds.join(", ") || lastRefund?.id;
         data.refundAmount = refundAmount;
-        data.refundStatus = refund.status; // pending | processed | failed
+        data.refundStatus = lastRefund?.status || "processed";
         data.refundedAt = new Date();
         data.status = "completed";
         data.updatedAt = new Date();
