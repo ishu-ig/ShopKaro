@@ -37,7 +37,7 @@ function sanitizeShop(doc) {
 
 function sendWelcomeEmail({ email, ownerName, name, plainPassword }) {
     mailer.sendMail({
-        from: process.env.MAIL_SENDER,
+        
         to: email,
         subject: `Your Shop Account Is Ready - ${process.env.SITE_NAME || "ShopKaro"}`,
         html: welcomeShopTemplate({

@@ -7,7 +7,7 @@ async function createRecord(req, res) {
         let data = new ContactUs(req.body)
         await data.save()
         mailer.sendMail({
-            from: process.env.MAIL_SENDER,
+            
             to: data.email,
             subject: "Your Query Submission - " + (process.env.SITE_NAME || "ShopKaro"),
             html: contactQueryReceivedTemplate({
@@ -94,7 +94,7 @@ async function updateRecord(req, res) {
             await data.save()
             if (data.active === false) {
                 mailer.sendMail({
-                    from: process.env.MAIL_SENDER,
+                    
                     to: data.email,
                     subject: `Query Resolved - ${process.env.SITE_NAME || "ShopKaro"}`,
                     html: contactQueryResolvedTemplate(),

@@ -29,7 +29,7 @@ function generateDeliveryOtp() {
 
 function sendDeliveryOtpEmail(toEmail, otp) {
     mailer.sendMail({
-        from: process.env.MAIL_SENDER,
+        
         to: toEmail,
         subject: `Delivery Confirmation PIN - ${process.env.SITE_NAME || "ShopKaro"}`,
         html: deliveryOtpTemplate({ otp, ttlMinutes: DELIVERY_OTP_TTL_MINUTES }),
@@ -277,7 +277,7 @@ async function updateRecord(req, res) {
             else if (requestingDelivered && !shouldHoldForOtp) {
                 if (previousOrderStatus !== "Delivered") {
                     mailer.sendMail({
-                        from: process.env.MAIL_SENDER,
+                        
                         to: finalData.user.email,
                         subject: `Order Delivered Successfully 🎉 - ${process.env.SITE_NAME || "ShopKaro"}`,
                         html: orderDeliveredTemplate({
@@ -319,7 +319,7 @@ async function updateRecord(req, res) {
                         break;
                 }
                 mailer.sendMail({
-                    from: process.env.MAIL_SENDER,
+                    
                     to: finalData.user.email,
                     subject: `Order Status: ${req.body.orderStatus} - ${process.env.SITE_NAME || "ShopKaro"}`,
                     html: orderStatusTemplate({
@@ -419,7 +419,7 @@ async function verifyDelivery(req, res) {
 
         if (previousOrderStatus !== "Delivered") {
             mailer.sendMail({
-                from: process.env.MAIL_SENDER,
+                
                 to: finalData.user.email,
                 subject: `Order Delivered Successfully 🎉 - ${process.env.SITE_NAME || "ShopKaro"}`,
                 html: orderDeliveredTemplate({

@@ -119,7 +119,7 @@ function forgetPassword1(Model) {
                 await data.save()
 
                 mailer.sendMail({
-                    from: process.env.MAIL_SENDER,
+                    
                     to: data.email,
                     subject: `Your OTP for Password Reset – ${process.env.SITE_NAME || "ShopKaro"}`,
                     html: passwordResetOtpTemplate({
