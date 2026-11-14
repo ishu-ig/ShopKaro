@@ -8,7 +8,10 @@ require("./db_connect")
 const Router = require("./routes/index")
 const app = express()
 
-var whitelist = ['http://localhost:3000', 'http://localhost:8000', 'http://localhost:4000', "https://shop-karo-ten.vercel.app", "https://shopkaro-sflc.onrender.com", 'https://admin-shopkaro.ishaanportfolio.com/', 'https://shopkaro.ishaanportfolio.com']
+var whitelist = ['http://localhost:3000',
+    'http://localhost:8000',
+    'http://localhost:4000',
+    "https://shopkaro-mnqv.onrender.com",]
 var corsOptions = {
     origin: function (origin, callback) {
         // console.log("Origin",origin)
