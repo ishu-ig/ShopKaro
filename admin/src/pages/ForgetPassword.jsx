@@ -1,35 +1,58 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+
+const BASE = process.env.REACT_APP_BACKEND_SERVER || ""
+const ROLES = ["user", "deliveryBoy"]
+const RESEND_COOLDOWN = 30 // seconds
+
+// ── API helper ────────────────────────────────────────────────────────────────
+async function callApi(role, step, body) {
+    const res = await fetch(`${BASE}/api/${role}/forgetPassword-${step}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body)
+    })
+    return res.json()
+}
 
 // ── Password strength helper ──────────────────────────────────────────────────
 function getStrength(p) {
     if (!p) return { score: 0, label: "", color: "" }
     let score = 0
-    if (p.length >= 8)          score++
-    if (/[A-Z]/.test(p))        score++
-    if (/[0-9]/.test(p))        score++
+    if (p.length >= 8) score++
+    if (/[A-Z]/.test(p)) score++
+    if (/[0-9]/.test(p)) score++
     if (/[^A-Za-z0-9]/.test(p)) score++
     const map = [
         { label: "Too short", color: "var(--admin-danger)" },
-        { label: "Weak",      color: "var(--admin-danger)" },
-        { label: "Fair",      color: "var(--admin-warning)" },
-        { label: "Good",      color: "var(--admin-success)" },
-        { label: "Strong",    color: "#22c55e" },
+        { label: "Weak", color: "var(--admin-danger)" },
+        { label: "Fair", color: "var(--admin-warning)" },
+        { label: "Good", color: "var(--admin-success)" },
+        { label: "Strong", color: "#22c55e" },
     ]
     return { score, ...map[score] }
+}
+
+// ── Small shared label ────────────────────────────────────────────────────────
+function FieldLabel({ children }) {
+    return (
+        <label className="form-label fw-semibold fp-label">
+            {children}
+        </label>
+    )
 }
 
 // ── Step indicator (left panel) ───────────────────────────────────────────────
 function StepList({ step }) {
     const steps = [
         { label: "Identify Account", desc: "Enter your username or email" },
-        { label: "Verify OTP",       desc: "Enter the code from your email" },
-        { label: "New Password",     desc: "Set a strong new password" },
+        { label: "Verify OTP", desc: "Enter the code from your email" },
+        { label: "New Password", desc: "Set a strong new password" },
     ]
     return (
         <div className="fp-steps">
             {steps.map((s, i) => {
-                const done   = i + 1 < step
+                const done = i + 1 < step
                 const active = i + 1 === step
                 return (
                     <React.Fragment key={i}>
@@ -54,24 +77,30 @@ function StepList({ step }) {
 
 // ── Step 1: Identify Account ──────────────────────────────────────────────────
 function Step1({ onNext }) {
-    const [username,     setUsername]     = useState("")
+    const [username, setUsername] = useState("")
     const [errorMessage, setErrorMessage] = useState("")
-    const [loading,      setLoading]      = useState(false)
+    const [loading, setLoading] = useState(false)
 
     async function postData(e) {
         e.preventDefault()
-        if (!username.trim()) { setErrorMessage("Please enter your username or email."); return }
+        const name = username.trim()
+        if (!name) { setErrorMessage("Please enter your username or email."); return }
+        if (!BASE) { setErrorMessage("Backend server is not configured."); return }
+
         setLoading(true)
         try {
-            let response = await fetch(`${process.env.REACT_APP_BACKEND_SERVER}/api/user/forgetPassword-1`, {
-                method: "POST",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify({ username })
-            })
-            response = await response.json()
-            if (response.result === "Done") {
-                localStorage.setItem("reset-password-username", username)
-                onNext()
+            // Try each account type in turn; remember which one matched
+            let matchedRole = null
+            for (const role of ROLES) {
+                const response = await callApi(role, 1, { username: name })
+                if (response.result === "Done") {
+                    matchedRole = role
+                    break
+                }
+            }
+
+            if (matchedRole) {
+                onNext({ username: name, role: matchedRole })
             } else {
                 setErrorMessage("No account found with this username or email.")
             }
@@ -90,9 +119,7 @@ function Step1({ onNext }) {
 
             <form onSubmit={postData}>
                 <div className="mb-3">
-                    <label className="form-label fw-semibold" style={{ fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.07em" }}>
-                        Username / Email
-                    </label>
+                    <FieldLabel>Username / Email</FieldLabel>
                     <div className="input-group">
                         <span className="input-group-text"><i className="bi bi-at"></i></span>
                         <input
@@ -101,11 +128,12 @@ function Step1({ onNext }) {
                             value={username}
                             onChange={e => { setUsername(e.target.value); setErrorMessage("") }}
                             placeholder="Enter your username or email"
+                            autoComplete="username"
                             required
                             autoFocus
                         />
-                        {errorMessage && <div className="invalid-feedback">{errorMessage}</div>}
                     </div>
+                    {errorMessage && <div className="invalid-feedback d-block">{errorMessage}</div>}
                 </div>
 
                 <button className="btn btn-primary w-100 mb-4" type="submit" disabled={loading}>
@@ -124,17 +152,27 @@ function Step1({ onNext }) {
 }
 
 // ── Step 2: Verify OTP ────────────────────────────────────────────────────────
-function Step2({ onNext, onBack }) {
-    const [otp,          setOtp]          = useState(["", "", "", "", "", ""])
+function Step2({ ctx, onNext, onBack }) {
+    const EMPTY = ["", "", "", "", "", ""]
+    const [otp, setOtp] = useState(EMPTY)
     const [errorMessage, setErrorMessage] = useState("")
-    const [loading,      setLoading]      = useState(false)
-    const [resent,       setResent]       = useState(false)
+    const [loading, setLoading] = useState(false)
+    const [resending, setResending] = useState(false)
+    const [cooldown, setCooldown] = useState(RESEND_COOLDOWN)
+    const [resentOk, setResentOk] = useState(false)
     const inputs = useRef([])
 
+    // Cooldown timer (starts right after the first OTP was sent)
+    useEffect(() => {
+        if (cooldown <= 0) return
+        const t = setTimeout(() => setCooldown(c => c - 1), 1000)
+        return () => clearTimeout(t)
+    }, [cooldown])
+
     function handleChange(e, idx) {
-        const val  = e.target.value.replace(/\D/, "")
+        const val = e.target.value.replace(/\D/g, "").slice(-1)
         const next = [...otp]
-        next[idx]  = val
+        next[idx] = val
         setOtp(next)
         setErrorMessage("")
         if (val && idx < 5) inputs.current[idx + 1]?.focus()
@@ -148,9 +186,11 @@ function Step2({ onNext, onBack }) {
     function handlePaste(e) {
         e.preventDefault()
         const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6)
-        const next   = Array(6).fill("")
+        if (!pasted) return
+        const next = [...EMPTY]
         for (let i = 0; i < pasted.length; i++) next[i] = pasted[i]
         setOtp(next)
+        setErrorMessage("")
         inputs.current[Math.min(pasted.length, 5)]?.focus()
     }
 
@@ -160,17 +200,13 @@ function Step2({ onNext, onBack }) {
         if (otpVal.length < 6) { setErrorMessage("Please enter the complete 6-digit OTP."); return }
         setLoading(true)
         try {
-            let response = await fetch(`${process.env.REACT_APP_BACKEND_SERVER}/api/user/forgetPassword-2`, {
-                method: "POST",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify({ username: localStorage.getItem("reset-password-username"), otp: otpVal })
-            })
-            response = await response.json()
+            const response = await callApi(ctx.role, 2, { username: ctx.username, otp: otpVal })
             if (response.result === "Done") {
-                onNext()
+                // Keep the verified OTP (and a reset token, if backend returns one) for Step 3
+                onNext({ otp: otpVal, token: response.token || response.resetToken || "" })
             } else {
                 setErrorMessage(response.reason || "Invalid OTP. Please try again.")
-                setOtp(["", "", "", "", "", ""])
+                setOtp(EMPTY)
                 inputs.current[0]?.focus()
             }
         } catch {
@@ -180,12 +216,25 @@ function Step2({ onNext, onBack }) {
         }
     }
 
-    function handleResend() {
-        setResent(true)
+    async function handleResend() {
+        setResending(true)
         setErrorMessage("")
-        setOtp(["", "", "", "", "", ""])
-        inputs.current[0]?.focus()
-        setTimeout(() => setResent(false), 30000)
+        try {
+            const response = await callApi(ctx.role, 1, { username: ctx.username })
+            if (response.result === "Done") {
+                setResentOk(true)
+                setCooldown(RESEND_COOLDOWN)
+                setOtp(EMPTY)
+                inputs.current[0]?.focus()
+                setTimeout(() => setResentOk(false), 4000)
+            } else {
+                setErrorMessage(response.reason || "Could not resend OTP. Please try again.")
+            }
+        } catch {
+            setErrorMessage("Could not resend OTP. Please try again.")
+        } finally {
+            setResending(false)
+        }
     }
 
     const otpFilled = otp.join("").length === 6
@@ -198,24 +247,25 @@ function Step2({ onNext, onBack }) {
 
             <div className="alert alert-primary py-2 d-flex align-items-center gap-2 mb-4" style={{ fontSize: 13 }}>
                 <i className="bi bi-envelope"></i>
-                OTP sent to: <strong>{localStorage.getItem("reset-password-username") || "your account"}</strong>
+                OTP sent to: <strong>{ctx.username}</strong>
             </div>
 
             <form onSubmit={postData}>
-                <label className="form-label fw-semibold" style={{ fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.07em" }}>
-                    One-Time Password
-                </label>
+                <FieldLabel>One-Time Password</FieldLabel>
                 <div className="fp-otp-row mb-3" onPaste={handlePaste}>
                     {otp.map((digit, i) => (
                         <input
                             key={i}
-                            ref={el => inputs.current[i] = el}
+                            ref={el => (inputs.current[i] = el)}
                             type="text"
                             inputMode="numeric"
+                            autoComplete={i === 0 ? "one-time-code" : "off"}
                             maxLength={1}
                             value={digit}
+                            aria-label={`OTP digit ${i + 1}`}
                             onChange={e => handleChange(e, i)}
                             onKeyDown={e => handleKeyDown(e, i)}
+                            onFocus={e => e.target.select()}
                             className={`form-control fp-otp-box ${errorMessage ? "is-invalid" : digit ? "fp-otp-box--filled" : ""}`}
                             autoFocus={i === 0}
                         />
@@ -229,14 +279,18 @@ function Step2({ onNext, onBack }) {
                 )}
 
                 <div className="text-center mb-4" style={{ fontSize: 13, color: "var(--admin-muted)" }}>
-                    {resent
-                        ? <span className="text-success"><i className="bi bi-check-circle-fill me-1"></i>OTP resent successfully</span>
-                        : <>Didn't receive it?{" "}
-                            <button type="button" className="btn btn-link btn-sm p-0 fw-semibold" onClick={handleResend}>
-                                Resend OTP
+                    {resentOk ? (
+                        <span className="text-success"><i className="bi bi-check-circle-fill me-1"></i>OTP resent successfully</span>
+                    ) : cooldown > 0 ? (
+                        <>Resend OTP in <strong>{cooldown}s</strong></>
+                    ) : (
+                        <>Didn't receive it?{" "}
+                            <button type="button" className="btn btn-link btn-sm p-0 fw-semibold"
+                                onClick={handleResend} disabled={resending}>
+                                {resending ? "Sending…" : "Resend OTP"}
                             </button>
-                          </>
-                    }
+                        </>
+                    )}
                 </div>
 
                 <button className="btn btn-primary w-100 mb-4" type="submit" disabled={loading || !otpFilled}>
@@ -255,34 +309,34 @@ function Step2({ onNext, onBack }) {
 }
 
 // ── Step 3: New Password ──────────────────────────────────────────────────────
-function Step3() {
+function Step3({ ctx }) {
     const navigate = useNavigate()
     const [showPassword, setShowPassword] = useState(false)
-    const [showConfirm,  setShowConfirm]  = useState(false)
-    const [password,     setPassword]     = useState("")
-    const [cpassword,    setCpassword]    = useState("")
+    const [showConfirm, setShowConfirm] = useState(false)
+    const [password, setPassword] = useState("")
+    const [cpassword, setCpassword] = useState("")
     const [errorMessage, setErrorMessage] = useState("")
-    const [loading,      setLoading]      = useState(false)
+    const [loading, setLoading] = useState(false)
 
     async function postData(e) {
         e.preventDefault()
-        if (!password)                { setErrorMessage("Please enter a new password."); return }
-        if (password.length < 8)      { setErrorMessage("Password must be at least 8 characters."); return }
-        if (password !== cpassword)   { setErrorMessage("Passwords do not match."); return }
+        if (!password) { setErrorMessage("Please enter a new password."); return }
+        if (password.length < 8) { setErrorMessage("Password must be at least 8 characters."); return }
+        if (password !== cpassword) { setErrorMessage("Passwords do not match."); return }
         setLoading(true)
         try {
-            let response = await fetch(`${process.env.REACT_APP_BACKEND_SERVER}/api/user/forgetPassword-3`, {
-                method: "POST",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify({ username: localStorage.getItem("reset-password-username"), password })
+            // OTP and token are sent again so the backend can re-validate them
+            const response = await callApi(ctx.role, 3, {
+                username: ctx.username,
+                password,
+                otp: ctx.otp,
+                token: ctx.token
             })
-            response = await response.json()
             if (response.result === "Done") {
-                localStorage.removeItem("reset-password-username")
                 navigate("/login")
             } else {
                 const reason = response.reason
-                setErrorMessage(Array.isArray(reason) ? reason[0] : reason || "Something went wrong.")
+                setErrorMessage((Array.isArray(reason) ? reason[0] : reason) || "Something went wrong.")
             }
         } catch {
             setErrorMessage("Server error. Please try again.")
@@ -291,14 +345,14 @@ function Step3() {
         }
     }
 
-    const strength       = getStrength(password)
+    const strength = getStrength(password)
     const passwordsMatch = cpassword && password === cpassword
 
     const rules = [
-        { label: "8+ characters",    met: password.length >= 8 },
+        { label: "8+ characters", met: password.length >= 8 },
         { label: "Uppercase letter", met: /[A-Z]/.test(password) },
-        { label: "Number",           met: /[0-9]/.test(password) },
-        { label: "Special char",     met: /[^A-Za-z0-9]/.test(password) },
+        { label: "Number", met: /[0-9]/.test(password) },
+        { label: "Special char", met: /[^A-Za-z0-9]/.test(password) },
     ]
 
     return (
@@ -310,9 +364,7 @@ function Step3() {
             <form onSubmit={postData}>
                 {/* New Password */}
                 <div className="mb-2">
-                    <label className="form-label fw-semibold" style={{ fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.07em" }}>
-                        New Password
-                    </label>
+                    <FieldLabel>New Password</FieldLabel>
                     <div className="input-group">
                         <span className="input-group-text"><i className="bi bi-lock"></i></span>
                         <input
@@ -321,9 +373,11 @@ function Step3() {
                             value={password}
                             onChange={e => { setPassword(e.target.value); setErrorMessage("") }}
                             placeholder="Enter new password"
+                            autoComplete="new-password"
                             required autoFocus
                         />
                         <button type="button" className="input-group-text" style={{ cursor: "pointer" }}
+                            aria-label={showPassword ? "Hide password" : "Show password"}
                             onClick={() => setShowPassword(v => !v)}>
                             <i className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`}></i>
                         </button>
@@ -334,7 +388,7 @@ function Step3() {
                 {password && (
                     <div className="d-flex align-items-center gap-2 mb-3">
                         <div className="d-flex gap-1 flex-grow-1">
-                            {[1,2,3,4].map(n => (
+                            {[1, 2, 3, 4].map(n => (
                                 <div key={n} style={{
                                     flex: 1, height: 4, borderRadius: 4,
                                     background: n <= strength.score ? strength.color : "var(--admin-border)",
@@ -350,26 +404,26 @@ function Step3() {
 
                 {/* Confirm Password */}
                 <div className="mb-3">
-                    <label className="form-label fw-semibold" style={{ fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.07em" }}>
-                        Confirm Password
-                    </label>
+                    <FieldLabel>Confirm Password</FieldLabel>
                     <div className="input-group">
                         <span className="input-group-text"><i className="bi bi-lock-fill"></i></span>
                         <input
                             type={showConfirm ? "text" : "password"}
-                            className={`form-control ${cpassword && !passwordsMatch ? "is-invalid" : cpassword && passwordsMatch ? "is-valid" : ""}`}
+                            className={`form-control ${cpassword && !passwordsMatch ? "is-invalid" : passwordsMatch ? "is-valid" : ""}`}
                             value={cpassword}
                             onChange={e => { setCpassword(e.target.value); setErrorMessage("") }}
                             placeholder="Re-enter new password"
+                            autoComplete="new-password"
                             required
                         />
                         <button type="button" className="input-group-text" style={{ cursor: "pointer" }}
+                            aria-label={showConfirm ? "Hide confirmation" : "Show confirmation"}
                             onClick={() => setShowConfirm(v => !v)}>
                             <i className={`bi ${showConfirm ? "bi-eye-slash" : "bi-eye"}`}></i>
                         </button>
-                        <div className="invalid-feedback">Passwords do not match.</div>
-                        {passwordsMatch && <div className="valid-feedback">Passwords match!</div>}
                     </div>
+                    {cpassword && !passwordsMatch && <div className="invalid-feedback d-block">Passwords do not match.</div>}
+                    {passwordsMatch && <div className="valid-feedback d-block">Passwords match!</div>}
                 </div>
 
                 {/* Rules */}
@@ -407,45 +461,55 @@ function Step3() {
 
 // ── Step meta (left panel) ────────────────────────────────────────────────────
 const STEP_META = [
-    { icon: "bi-lock-open",         desc: "Recover access to your account in three quick steps. Your data stays safe throughout." },
-    { icon: "bi-envelope-open",     desc: "Check your email for the one-time password we sent. Enter it now before it expires." },
-    { icon: "bi-key",               desc: "Almost done! Set a strong new password to secure your account." },
+    { icon: "bi-lock-open", desc: "Recover access to your account in three quick steps. Your data stays safe throughout." },
+    { icon: "bi-envelope-open", desc: "Check your email for the one-time password we sent. Enter it now before it expires." },
+    { icon: "bi-key", desc: "Almost done! Set a strong new password to secure your account." },
 ]
 
 // ── Main component ────────────────────────────────────────────────────────────
 export default function ForgetPasswordPage() {
     const [step, setStep] = useState(1)
+    // Flow data lives in memory (not localStorage): username, role, verified otp, reset token
+    const [ctx, setCtx] = useState({ username: "", role: "user", otp: "", token: "" })
     const meta = STEP_META[step - 1]
 
     return (
         <>
-        <style>{STYLES}</style>
-        <div className="fp-page">
-            <div className="fp-split">
+            <style>{STYLES}</style>
+            <div className="fp-page">
+                <div className="fp-split">
 
-                {/* Left brand panel */}
-                <div className="fp-brand">
-                    <div>
-                        <div className="fp-brand__icon">
-                            <i className={`bi ${meta.icon}`}></i>
+                    {/* Left brand panel */}
+                    <div className="fp-brand">
+                        <div>
+                            <div className="fp-brand__icon">
+                                <i className={`bi ${meta.icon}`}></i>
+                            </div>
+                            <div className="fp-brand__title">
+                                Password<br /><span>Recovery</span>
+                            </div>
+                            <p className="fp-brand__desc">{meta.desc}</p>
                         </div>
-                        <div className="fp-brand__title">
-                            Password<br /><span>Recovery</span>
-                        </div>
-                        <p className="fp-brand__desc">{meta.desc}</p>
+                        <StepList step={step} />
                     </div>
-                    <StepList step={step} />
-                </div>
 
-                {/* Right form panel */}
-                <div className="fp-right">
-                    {step === 1 && <Step1 onNext={() => setStep(2)} />}
-                    {step === 2 && <Step2 onNext={() => setStep(3)} onBack={() => setStep(1)} />}
-                    {step === 3 && <Step3 />}
-                </div>
+                    {/* Right form panel */}
+                    <div className="fp-right">
+                        {step === 1 && (
+                            <Step1 onNext={data => { setCtx(c => ({ ...c, ...data })); setStep(2) }} />
+                        )}
+                        {step === 2 && (
+                            <Step2
+                                ctx={ctx}
+                                onNext={data => { setCtx(c => ({ ...c, ...data })); setStep(3) }}
+                                onBack={() => setStep(1)}
+                            />
+                        )}
+                        {step === 3 && <Step3 ctx={ctx} />}
+                    </div>
 
+                </div>
             </div>
-        </div>
         </>
     )
 }
@@ -474,6 +538,12 @@ const STYLES = `
 @keyframes fp-fade {
     from { opacity: 0; transform: translateY(18px); }
     to   { opacity: 1; transform: translateY(0); }
+}
+
+.fp-label {
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
 }
 
 /* ── Left brand panel ── */

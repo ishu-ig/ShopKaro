@@ -4,12 +4,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { getCheckout } from "../../Redux/ActionCreators/CheckoutActionCreators";
 
 const STATUS_BADGE = {
-  Ordered: "text-bg-info",
-  Packed: "text-bg-warning",
-  Shipped: "text-bg-warning",
-  "Out for Delivery": "text-bg-warning",
-  Delivered: "text-bg-success",
-  Cancelled: "text-bg-danger",
+  Ordered: "badge-status-ordered",
+  Packed: "badge-status-packed",
+  Shipped: "badge-status-shipped",
+  "Out for Delivery": "badge-status-out",
+  Delivered: "badge-status-delivered",
+  Cancelled: "badge-status-cancelled",
 };
 
 // Flat rate earned per successfully delivered order.
@@ -41,8 +41,20 @@ function isThisMonth(dateStr) {
   );
 }
 
+function formatVariant(v) {
+  if (!v) return null;
+  if (typeof v === "string") return v;
+  if (typeof v === "object") {
+    const parts = [v.color, v.size, v.storage].filter(Boolean);
+    if (parts.length > 0) return parts.join(" / ");
+    if (v.sku) return `SKU: ${v.sku}`;
+    return "Standard";
+  }
+  return String(v);
+}
+
 export default function OrderHistory() {
-  const { _id } = useParams(); // delivery boy's own userid, from /delivery/:_id/history
+  const { _id } = useParams(); // delivery boy's own userid
   const CheckoutStateData = useSelector((state) => state.CheckoutStateData);
   const dispatch = useDispatch();
 
@@ -59,7 +71,7 @@ export default function OrderHistory() {
     dispatch(getCheckout());
   }, [dispatch]);
 
-  // ── Scope to THIS delivery boy — ALL of their past orders, any status ───
+  // ── Scope to THIS delivery boy ───
   useEffect(() => {
     if (!orders.length) {
       setData([]);
@@ -83,7 +95,6 @@ export default function OrderHistory() {
     (o) => o.orderStatus === "Cancelled",
   ).length;
 
-  // Flat ₹30 earned per successfully delivered order.
   const earnedTotal = deliveredCount * DELIVERY_EARNING_PER_ORDER;
 
   const filteredData = data
@@ -91,6 +102,7 @@ export default function OrderHistory() {
       (order) =>
         order._id?.toLowerCase().includes(search.toLowerCase()) ||
         order.user?.username?.toLowerCase().includes(search.toLowerCase()) ||
+        order.user?.name?.toLowerCase().includes(search.toLowerCase()) ||
         order.orderStatus?.toLowerCase().includes(search.toLowerCase()),
     )
     .filter((order) => {
@@ -111,120 +123,116 @@ export default function OrderHistory() {
 
   return (
     <>
-      <main className="dashboard-content">
-        <div className="container-fluid px-3 px-lg-4 py-4">
-          <div className="page-heading">
-            <div className="page-heading-copy">
-              <span className="page-icon">
+      <main className="dashboard-content oh-page">
+        <style>{OH_STYLES}</style>
+        <div className="container-fluid px-2 px-sm-3 px-lg-4 py-3 py-lg-4">
+          {/* ── Page Heading ── */}
+          <div className="oh-header mb-3 mb-md-4">
+            <div className="d-flex align-items-center gap-3">
+              <span className="oh-page-icon">
                 <i className="bi bi-clock-history" aria-hidden="true"></i>
               </span>
               <div>
-                <p className="eyebrow mb-1">Delivery</p>
-                <h1 className="h3 mb-1">Order History</h1>
-                <p className="text-muted mb-0">
-                  All orders ever assigned to you.
+                <p className="eyebrow mb-0 oh-eyebrow">Delivery Partner</p>
+                <h1 className="h4 mb-0 oh-title">Order History</h1>
+                <p className="text-muted mb-0 small">
+                  Complete history of orders assigned to you.
                 </p>
               </div>
             </div>
           </div>
 
-          <section className="row g-3 mt-2 mb-1" aria-label="History summary">
-            <div className="col-12 col-sm-6 col-xl-3">
-              <article className="metric-card text-white">
-                <div className="metric-top">
-                  <span className="metric-label">Total Records</span>
-                  <span className="metric-icon">
+          {/* ── Summary Metric Cards: 2x2 on Mobile, 4x1 on Desktop ── */}
+          <section className="row g-2 g-sm-3 mb-3 mb-md-4" aria-label="History summary">
+            <div className="col-6 col-md-3">
+              <article className="oh-metric-card oh-metric-total">
+                <div className="oh-metric-top">
+                  <span className="oh-metric-label">Total Orders</span>
+                  <span className="oh-metric-icon">
                     <i className="bi bi-archive-fill"></i>
                   </span>
                 </div>
-                <div className="metric-value">{data.length}</div>
-                <div className="metric-meta">
-                  <span>past</span>
-                  <span>orders</span>
-                </div>
+                <div className="oh-metric-value">{data.length}</div>
+                <div className="oh-metric-meta">all time records</div>
               </article>
             </div>
-            <div className="col-12 col-sm-6 col-xl-3">
-              <article className="metric-card text-white">
-                <div className="metric-top">
-                  <span className="metric-label">Delivered</span>
-                  <span className="metric-icon">
+
+            <div className="col-6 col-md-3">
+              <article className="oh-metric-card oh-metric-delivered">
+                <div className="oh-metric-top">
+                  <span className="oh-metric-label">Delivered</span>
+                  <span className="oh-metric-icon">
                     <i className="bi bi-check-circle-fill"></i>
                   </span>
                 </div>
-                <div className="metric-value">{deliveredCount}</div>
-                <div className="metric-meta">
-                  <span>successfully</span>
-                  <span>completed</span>
-                </div>
+                <div className="oh-metric-value">{deliveredCount}</div>
+                <div className="oh-metric-meta">successfully completed</div>
               </article>
             </div>
-            <div className="col-12 col-sm-6 col-xl-3">
-              <article className="metric-card">
-                <div className="metric-top">
-                  <span className="metric-label">Cancelled</span>
-                  <span className="metric-icon">
+
+            <div className="col-6 col-md-3">
+              <article className="oh-metric-card oh-metric-cancelled">
+                <div className="oh-metric-top">
+                  <span className="oh-metric-label">Cancelled</span>
+                  <span className="oh-metric-icon">
                     <i className="bi bi-x-circle-fill"></i>
                   </span>
                 </div>
-                <div className="metric-value">{cancelledCount}</div>
-                <div className="metric-meta">
-                  <span>not</span>
-                  <span>fulfilled</span>
-                </div>
+                <div className="oh-metric-value">{cancelledCount}</div>
+                <div className="oh-metric-meta">not fulfilled</div>
               </article>
             </div>
-            <div className="col-12 col-sm-6 col-xl-3">
-              <article className="metric-card text-white">
-                <div className="metric-top">
-                  <span className="metric-label">Delivery Earnings</span>
-                  <span className="metric-icon">
+
+            <div className="col-6 col-md-3">
+              <article className="oh-metric-card oh-metric-earnings">
+                <div className="oh-metric-top">
+                  <span className="oh-metric-label">Earnings</span>
+                  <span className="oh-metric-icon">
                     <i className="bi bi-cash-coin"></i>
                   </span>
                 </div>
-                <div className="metric-value">₹{earnedTotal}</div>
-                <div className="metric-meta">
-                  <span>₹{DELIVERY_EARNING_PER_ORDER}</span>
-                  <span>per order</span>
-                </div>
+                <div className="oh-metric-value">₹{earnedTotal}</div>
+                <div className="oh-metric-meta">₹{DELIVERY_EARNING_PER_ORDER} / delivered order</div>
               </article>
             </div>
           </section>
 
-          <section className="panel mt-3">
-            <div className="panel-header d-flex flex-wrap align-items-center gap-2">
-              <div>
-                <h2 className="h5 mb-1 section-title">
-                  <i className="bi bi-table" aria-hidden="true"></i>
+          {/* ── Main Panel ── */}
+          <section className="oh-panel">
+            {/* ── Header: Title & Filters (Responsive Stack on Phone) ── */}
+            <div className="oh-panel-header">
+              <div className="oh-panel-title-area">
+                <h2 className="h6 mb-0 d-flex align-items-center gap-2">
+                  <i className="bi bi-table text-primary" aria-hidden="true"></i>
                   <span>Past Orders</span>
+                  <span className="badge bg-secondary-subtle text-secondary-emphasis rounded-pill ms-1">
+                    {filteredData.length}
+                  </span>
                 </h2>
-                <p className="text-muted mb-0">
-                  Search and review your delivery history.
-                </p>
               </div>
 
-              <div className="ms-auto d-flex flex-wrap align-items-center gap-2">
+              <div className="oh-filters-wrap">
                 <select
-                  className="filter-date-select"
+                  className="form-select form-select-sm oh-filter-select"
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value)}
                   aria-label="Filter by date range"
                 >
-                  <option value="all">All Time</option>
+                  <option value="all">All Dates</option>
                   <option value="today">Today</option>
                   <option value="week">This Week</option>
                   <option value="month">This Month</option>
                 </select>
 
-                <div style={{ minWidth: 200 }}>
+                <div className="oh-search-box">
                   <div className="input-group input-group-sm">
-                    <span className="input-group-text bg-white">
+                    <span className="input-group-text bg-transparent border-end-0">
                       <i className="bi bi-search text-muted"></i>
                     </span>
                     <input
                       type="text"
                       className="form-control border-start-0"
-                      placeholder="Search history..."
+                      placeholder="Search orders..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                     />
@@ -233,6 +241,7 @@ export default function OrderHistory() {
                         className="btn btn-outline-secondary"
                         type="button"
                         onClick={() => setSearch("")}
+                        aria-label="Clear search"
                       >
                         <i className="bi bi-x"></i>
                       </button>
@@ -242,93 +251,153 @@ export default function OrderHistory() {
               </div>
             </div>
 
-            <div className="table-responsive">
-              <table className="table align-middle mb-0">
+            {/* ── Desktop & Tablet View (>= 768px): Responsive Data Table ── */}
+            <div className="table-responsive d-none d-md-block">
+              <table className="table table-hover align-middle mb-0 oh-table">
                 <thead>
                   <tr>
-                    <th>#</th>
-                    <th>Customer</th>
-                    <th>Restaurant</th>
-                    <th>Status</th>
-                    <th>Payment</th>
-                    <th>Total</th>
-                    <th>Date</th>
-                    <th className="text-end">Action</th>
+                    <th style={{ width: "5%" }}>#</th>
+                    <th style={{ width: "22%" }}>Customer</th>
+                    <th style={{ width: "18%" }}>Status</th>
+                    <th style={{ width: "22%" }}>Payment</th>
+                    <th style={{ width: "13%" }}>Total</th>
+                    <th style={{ width: "12%" }}>Date</th>
+                    <th style={{ width: "8%" }} className="text-end">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredData.length > 0 ? (
                     filteredData.map((order, index) => (
                       <tr key={order._id}>
-                        <td>{index + 1}</td>
-                        <td className="fw-semibold">
-                          {order.user?.username ?? "N/A"}
-                        </td>
-                        <td className="text-muted small">
-                          {order.products?.[0]?.product?.resturent?.name ?? "—"}
+                        <td className="text-muted small">{index + 1}</td>
+                        <td>
+                          <div className="fw-semibold text-truncate" style={{ maxWidth: 180 }}>
+                            {order.user?.name || order.user?.username || "N/A"}
+                          </div>
+                          <div className="text-muted small font-monospace">
+                            #{order._id?.slice(-6)?.toUpperCase()}
+                          </div>
                         </td>
                         <td>
-                          <span
-                            className={`badge ${STATUS_BADGE[order.orderStatus] ?? "text-bg-info"}`}
-                          >
+                          <span className={`oh-badge ${STATUS_BADGE[order.orderStatus] ?? "badge-status-ordered"}`}>
                             {order.orderStatus}
                           </span>
                         </td>
                         <td>
-                          <div className="payment-cell">
-                            <span className="payment-mode-pill">
-                              {order.paymentMode}
-                            </span>
-                            <span
-                              className={`badge ${
-                                order.paymentStatus === "Pending"
-                                  ? "text-bg-danger"
-                                  : "text-bg-success"
-                              }`}
-                            >
+                          <div className="d-flex align-items-center gap-1 flex-wrap">
+                            <span className="oh-pill-mode">{order.paymentMode || "COD"}</span>
+                            <span className={`badge ${order.paymentStatus === "Pending" ? "text-bg-danger" : "text-bg-success"} rounded-pill`} style={{ fontSize: "11px" }}>
                               {order.paymentStatus}
                             </span>
                           </div>
                         </td>
-                        <td className="total-cell">
-                          ₹{order.total ?? order.finalReservationPrice}
+                        <td className="fw-bold text-success">
+                          ₹{(order.total ?? order.finalReservationPrice ?? 0).toLocaleString("en-IN")}
                         </td>
                         <td className="text-muted small">
                           {order.createdAt
-                            ? new Date(order.createdAt).toLocaleDateString()
+                            ? new Date(order.createdAt).toLocaleDateString("en-IN", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              })
                             : "—"}
                         </td>
                         <td className="text-end">
-                          <div className="act-strip">
-                            <button
-                              type="button"
-                              className="act-btn act-btn-view"
-                              onClick={() => openOrder(order)}
-                              data-tip="View"
-                            >
-                              <i className="bi bi-eye"></i>
-                            </button>
-                          </div>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-primary rounded-pill px-2 py-1"
+                            onClick={() => openOrder(order)}
+                            title="View Details"
+                          >
+                            <i className="bi bi-eye me-1"></i> View
+                          </button>
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="8" className="text-center text-muted py-4">
+                      <td colSpan="7" className="text-center text-muted py-5">
+                        <i className="bi bi-inbox fs-3 d-block mb-2 text-muted opacity-50"></i>
                         {search
-                          ? `No orders found for "${search}"`
-                          : "No order history in this range."}
+                          ? `No orders found matching "${search}"`
+                          : "No order history found for the selected time range."}
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
+
+            {/* ── Mobile Phone View (< 768px): Touch-Friendly Cards ── */}
+            <div className="d-md-none p-2">
+              {filteredData.length > 0 ? (
+                <div className="oh-mobile-cards-list">
+                  {filteredData.map((order, index) => (
+                    <article
+                      key={order._id}
+                      className="oh-mobile-card"
+                      onClick={() => openOrder(order)}
+                    >
+                      <div className="d-flex align-items-center justify-content-between mb-2">
+                        <span className="oh-mobile-id font-monospace">
+                          #{order._id?.slice(-6)?.toUpperCase()}
+                        </span>
+                        <span className={`oh-badge ${STATUS_BADGE[order.orderStatus] ?? "badge-status-ordered"}`}>
+                          {order.orderStatus}
+                        </span>
+                      </div>
+
+                      <div className="d-flex align-items-center justify-content-between mb-2">
+                        <div>
+                          <div className="fw-bold text-dark">
+                            <i className="bi bi-person me-1 text-muted"></i>
+                            {order.user?.name || order.user?.username || "N/A"}
+                          </div>
+                          <div className="text-muted small">
+                            <i className="bi bi-calendar3 me-1"></i>
+                            {order.createdAt
+                              ? new Date(order.createdAt).toLocaleDateString("en-IN", {
+                                  day: "numeric",
+                                  month: "short",
+                                })
+                              : "—"}
+                          </div>
+                        </div>
+
+                        <div className="text-end">
+                          <div className="fs-5 fw-extrabold text-success">
+                            ₹{(order.total ?? order.finalReservationPrice ?? 0).toLocaleString("en-IN")}
+                          </div>
+                          <div className="small text-muted">{order.paymentMode || "COD"}</div>
+                        </div>
+                      </div>
+
+                      <div className="oh-mobile-card-footer">
+                        <span className={`badge ${order.paymentStatus === "Pending" ? "text-bg-danger" : "text-bg-success"} rounded-pill`} style={{ fontSize: "11px" }}>
+                          Pay: {order.paymentStatus}
+                        </span>
+                        <span className="text-primary small fw-semibold">
+                          View details <i className="bi bi-chevron-right ms-1"></i>
+                        </span>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-muted py-5">
+                  <i className="bi bi-inbox fs-2 d-block mb-2 opacity-50"></i>
+                  {search
+                    ? `No orders found matching "${search}"`
+                    : "No orders found in this period."}
+                </div>
+              )}
+            </div>
           </section>
         </div>
       </main>
 
-      {/* ── Read-only Order Details Modal ── */}
+      {/* ── Read-only Order Details Modal: Responsive Across Phone, Tab & Laptop ── */}
       {selectedOrder && (
         <div
           className="aob-overlay"
@@ -337,10 +406,13 @@ export default function OrderHistory() {
           }}
         >
           <div className="aob-modal">
+            {/* Modal Header */}
             <div className="aob-modal-header">
               <div>
-                <h2 className="h5 mb-0">Order Details</h2>
-                <p className="text-muted small mb-0">ID: {selectedOrder._id}</p>
+                <h2 className="h5 mb-0 fw-bold">Order Details</h2>
+                <p className="text-muted small mb-0 font-monospace">
+                  ID: #{selectedOrder._id}
+                </p>
               </div>
               <button
                 type="button"
@@ -352,11 +424,11 @@ export default function OrderHistory() {
               </button>
             </div>
 
+            {/* Modal Body */}
             <div className="aob-modal-body">
+              {/* Badges strip */}
               <div className="d-flex flex-wrap gap-2 mb-3">
-                <span
-                  className={`badge ${STATUS_BADGE[selectedOrder.orderStatus] ?? "text-bg-info"}`}
-                >
+                <span className={`oh-badge ${STATUS_BADGE[selectedOrder.orderStatus] ?? "badge-status-ordered"}`}>
                   {selectedOrder.orderStatus}
                 </span>
                 <span
@@ -364,28 +436,28 @@ export default function OrderHistory() {
                     selectedOrder.paymentStatus === "Pending"
                       ? "text-bg-danger"
                       : "text-bg-success"
-                  }`}
+                  } rounded-pill py-2 px-3`}
                 >
-                  {selectedOrder.paymentStatus}
+                  Payment: {selectedOrder.paymentStatus}
                 </span>
                 {selectedOrder.orderStatus === "Delivered" && (
-                  <span className="badge text-bg-primary-subtle text-primary-emphasis">
+                  <span className="badge text-bg-success-subtle text-success-emphasis rounded-pill py-2 px-3">
                     <i className="bi bi-cash-coin me-1"></i>
                     Earned ₹{DELIVERY_EARNING_PER_ORDER}
                   </span>
                 )}
               </div>
 
-              <h3 className="h6 text-uppercase text-muted mb-2">Customer</h3>
-              <div className="mb-3">
+              {/* Customer section */}
+              <div className="oh-modal-card mb-3">
+                <h3 className="oh-card-header-label">Customer</h3>
                 {[
                   {
                     icon: "bi-person",
-                    val:
-                      selectedOrder.user?.name || selectedOrder.user?.username,
+                    val: selectedOrder.user?.name || selectedOrder.user?.username,
                   },
                   { icon: "bi-envelope", val: selectedOrder.user?.email },
-                  { icon: "bi-telephone", val: selectedOrder.user?.phone },
+                  { icon: "bi-telephone", val: selectedOrder.user?.phone, isPhone: true },
                   {
                     icon: "bi-geo-alt",
                     val: [
@@ -399,71 +471,25 @@ export default function OrderHistory() {
                   },
                 ]
                   .filter((r) => r.val)
-                  .map(({ icon, val }) => (
+                  .map(({ icon, val, isPhone }) => (
                     <div key={icon} className="aob-detail-row">
-                      <i className={`bi ${icon} text-primary`}></i>
-                      <span>{val}</span>
+                      <i className={`bi ${icon} text-primary flex-shrink-0`}></i>
+                      {isPhone ? (
+                        <a href={`tel:${val}`} className="text-decoration-none fw-semibold">
+                          {val}
+                        </a>
+                      ) : (
+                        <span>{val}</span>
+                      )}
                     </div>
                   ))}
               </div>
 
-              <h3 className="h6 text-uppercase text-muted mb-2">
-                Order Summary
-              </h3>
-              <div className="mb-3">
-                <div className="aob-summary-row">
-                  <span>Subtotal</span>
-                  <span>₹{selectedOrder.subtotal || 0}</span>
-                </div>
-                <div className="aob-summary-row">
-                  <span>Delivery Charge</span>
-                  <span>₹{selectedOrder.deliveryCharge || 0}</span>
-                </div>
-                <hr className="my-2" />
-                <div className="aob-summary-row total">
-                  <span>Total</span>
-                  <span>₹{selectedOrder.total || 0}</span>
-                </div>
-                <div className="aob-summary-row">
-                  <span>Payment Mode</span>
-                  <span>{selectedOrder.paymentMode || "COD"}</span>
-                </div>
-                <div className="aob-summary-row">
-                  <span>Order Date</span>
-                  <span>
-                    {selectedOrder.createdAt
-                      ? new Date(selectedOrder.createdAt).toLocaleDateString(
-                          "en-IN",
-                          {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          },
-                        )
-                      : "—"}
-                  </span>
-                </div>
-                <div className="aob-summary-row">
-                  <span>Last Updated</span>
-                  <span>
-                    {selectedOrder.updatedAt
-                      ? new Date(selectedOrder.updatedAt).toLocaleDateString(
-                          "en-IN",
-                          {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          },
-                        )
-                      : "—"}
-                  </span>
-                </div>
-              </div>
-
+              {/* Order items section */}
               {selectedOrder.products?.length > 0 && (
-                <>
-                  <h3 className="h6 text-uppercase text-muted mb-2">Items</h3>
-                  <div className="table-responsive mb-3">
+                <div className="oh-modal-card mb-3">
+                  <h3 className="oh-card-header-label">Items ({selectedOrder.products.length})</h3>
+                  <div className="table-responsive">
                     <table className="table table-sm align-middle mb-0">
                       <thead>
                         <tr>
@@ -471,36 +497,82 @@ export default function OrderHistory() {
                           <th>Product</th>
                           <th>Variant</th>
                           <th>Qty</th>
-                          <th>Total</th>
+                          <th className="text-end">Total</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {selectedOrder.products.map((p, i) => (
-                          <tr key={p._id || i}>
-                            <td className="text-muted">{i + 1}</td>
-                            <td className="fw-semibold">
-                              {p.product?.name || p.name || "—"}
-                            </td>
-                            <td>{p.variant || "—"}</td>
-                            <td>{p.qty || p.quantity || 1}</td>
-                            <td>₹{p.total || p.price || 0}</td>
-                          </tr>
-                        ))}
+                        {selectedOrder.products.map((p, i) => {
+                          const variantLabel = formatVariant(p.variant) || "—";
+                          const lineTotal =
+                            p.total ??
+                            (p.variant?.finalPrice ?? p.variant?.price ?? p.price ?? 0) *
+                              (p.qty || p.quantity || 1);
+                          return (
+                            <tr key={p._id || i}>
+                              <td className="text-muted small">{i + 1}</td>
+                              <td className="fw-semibold">
+                                {p.product?.name || p.name || "—"}
+                              </td>
+                              <td className="small text-muted">{variantLabel}</td>
+                              <td>{p.qty || p.quantity || 1}</td>
+                              <td className="text-end fw-semibold">₹{Number(lineTotal).toLocaleString("en-IN")}</td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
-                </>
+                </div>
               )}
 
-              <div className="d-flex justify-content-end mt-3">
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary"
-                  onClick={closeModal}
-                >
-                  Close
-                </button>
+              {/* Order summary section */}
+              <div className="oh-modal-card mb-3">
+                <h3 className="oh-card-header-label">Summary</h3>
+                <div className="aob-summary-row">
+                  <span>Subtotal</span>
+                  <span>₹{(selectedOrder.subtotal || 0).toLocaleString("en-IN")}</span>
+                </div>
+                <div className="aob-summary-row">
+                  <span>Delivery Charge</span>
+                  <span>₹{(selectedOrder.deliveryCharge || 0).toLocaleString("en-IN")}</span>
+                </div>
+                <hr className="my-2" />
+                <div className="aob-summary-row total">
+                  <span>Grand Total</span>
+                  <span className="text-success fs-5">
+                    ₹{(selectedOrder.total || 0).toLocaleString("en-IN")}
+                  </span>
+                </div>
+                <div className="aob-summary-row">
+                  <span>Payment Mode</span>
+                  <span className="fw-semibold">{selectedOrder.paymentMode || "COD"}</span>
+                </div>
+                <div className="aob-summary-row">
+                  <span>Order Date</span>
+                  <span>
+                    {selectedOrder.createdAt
+                      ? new Date(selectedOrder.createdAt).toLocaleDateString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "—"}
+                  </span>
+                </div>
               </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="aob-modal-footer">
+              <button
+                type="button"
+                className="btn btn-primary w-100 py-2 rounded-pill fw-semibold"
+                onClick={closeModal}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
@@ -508,3 +580,333 @@ export default function OrderHistory() {
     </>
   );
 }
+
+// ── Scoped Styles: Highly Responsive for Phone, Tablet & Laptop ─────────────
+
+const OH_STYLES = `
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap');
+
+.oh-page {
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #1e293b;
+}
+
+.oh-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #0284c7;
+}
+
+.oh-title {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+}
+
+.oh-page-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #e0f2fe;
+  color: #0284c7;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+/* ── Metric Cards ── */
+.oh-metric-card {
+  border-radius: 14px;
+  padding: 14px;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 104px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  transition: transform .12s ease;
+}
+@media (min-width: 768px) {
+  .oh-metric-card { padding: 18px; min-height: 118px; }
+}
+.oh-metric-card:hover { transform: translateY(-2px); }
+
+.oh-metric-total     { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.oh-metric-delivered { background: linear-gradient(135deg, #10b981, #047857); }
+.oh-metric-cancelled { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+.oh-metric-earnings  { background: linear-gradient(135deg, #f59e0b, #b45309); }
+
+.oh-metric-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.oh-metric-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  opacity: .9;
+}
+.oh-metric-icon { font-size: 18px; opacity: .85; }
+.oh-metric-value {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+@media (min-width: 768px) {
+  .oh-metric-value { font-size: 26px; }
+}
+.oh-metric-meta {
+  font-size: 10.5px;
+  opacity: .85;
+  margin-top: 4px;
+}
+
+/* ── Main Panel ── */
+.oh-panel {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+  overflow: hidden;
+}
+
+.oh-panel-header {
+  padding: 16px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+@media (max-width: 576px) {
+  .oh-panel-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.oh-filters-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+@media (max-width: 576px) {
+  .oh-filters-wrap {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+}
+
+.oh-filter-select {
+  width: auto;
+  min-width: 120px;
+  border-radius: 10px;
+}
+@media (max-width: 576px) {
+  .oh-filter-select { width: 100%; }
+}
+
+.oh-search-box {
+  min-width: 180px;
+}
+@media (max-width: 576px) {
+  .oh-search-box {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}
+
+/* ── Badges ── */
+.oh-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  letter-spacing: .02em;
+}
+.badge-status-ordered   { background: #e0f2fe; color: #0369a1; }
+.badge-status-packed    { background: #fef3c7; color: #92400e; }
+.badge-status-shipped   { background: #fef3c7; color: #b45309; }
+.badge-status-out       { background: #fed7aa; color: #c2410c; }
+.badge-status-delivered { background: #d1fae5; color: #047857; }
+.badge-status-cancelled { background: #fee2e2; color: #b91c1c; }
+
+.oh-pill-mode {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  background: #f1f5f9;
+  border-radius: 6px;
+  color: #475569;
+}
+
+/* ── Mobile Order Cards (< 768px) ── */
+.oh-mobile-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.oh-mobile-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  cursor: pointer;
+  transition: all .12s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.oh-mobile-card:hover, .oh-mobile-card:active {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+.oh-mobile-id {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+}
+.oh-mobile-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #f1f5f9;
+}
+
+/* ── Desktop Table (>= 768px) ── */
+.oh-table th {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: #64748b;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+.oh-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* ── Modal (Phone, Tablet, Laptop) ── */
+.aob-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  background: rgba(15, 23, 42, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  backdrop-filter: blur(4px);
+}
+.aob-modal {
+  background: #fff;
+  border-radius: 16px;
+  max-width: 580px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+  overflow: hidden;
+}
+@media (max-width: 576px) {
+  .aob-modal {
+    max-width: 100%;
+    max-height: 94vh;
+    border-radius: 14px;
+  }
+}
+.aob-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fff;
+  flex-shrink: 0;
+}
+.aob-modal-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.aob-modal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid #f1f5f9;
+  background: #f8fafc;
+  flex-shrink: 0;
+}
+.aob-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: none;
+  background: #f1f5f9;
+  color: #475569;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all .15s ease;
+}
+.aob-close-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+.oh-modal-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px;
+}
+.oh-card-header-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+.aob-detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13.5px;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+.aob-detail-row:last-child { margin-bottom: 0; }
+.aob-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13.5px;
+  color: #475569;
+  padding: 5px 0;
+}
+.aob-summary-row.total {
+  font-weight: 700;
+  font-size: 15px;
+  color: #0f172a;
+}
+`;

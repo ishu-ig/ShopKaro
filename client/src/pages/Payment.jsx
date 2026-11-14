@@ -115,135 +115,136 @@ const styles = `
 `;
 
 export default function Payment() {
-    const [checkout, setCheckout] = useState({});
-    const { Razorpay } = useRazorpay();
-    const navigate = useNavigate();
-    const { _id } = useParams();
-    const dispatch = useDispatch();
-    const CheckoutStateData = useSelector(state => state.CheckoutStateData);
+  const [checkout, setCheckout] = useState({});
+  const { Razorpay } = useRazorpay();
+  const navigate = useNavigate();
+  const { _id } = useParams();
+  const dispatch = useDispatch();
+  const CheckoutStateData = useSelector(state => state.CheckoutStateData);
 
-    // Sync checkout object from Redux state whenever the list or _id changes
-    useEffect(() => {
-        dispatch(getCheckout());
-    }, []);
+  // Sync checkout object from Redux state whenever the list or _id changes
+  useEffect(() => {
+    dispatch(getCheckout());
+  }, []);
 
-    useEffect(() => {
-        if (!CheckoutStateData.length) return;
-        const result = _id === "-1"
-            ? CheckoutStateData[0]
-            : CheckoutStateData.find(item => item._id === _id);
-        if (result) setCheckout(result);
-    }, [CheckoutStateData, _id]);
+  useEffect(() => {
+    if (!CheckoutStateData.length) return;
+    const result = _id === "-1"
+      ? CheckoutStateData[0]
+      : CheckoutStateData.find(item => item._id === _id);
+    if (result) setCheckout(result);
+  }, [CheckoutStateData, _id]);
 
-    const initPayment = (data) => {
-        const options = {
-            key: "rzp_test_hPWsSLPsp2DADQ",
-            amount: data.amount,
-            currency: "INR",
-            order_id: data._id,
-            prefill: {
-                name: checkout?.user?.name,
-                email: checkout?.user?.email,
-                contact: checkout?.user?.phone,
-            },
-            handler: async (response) => {
-                try {
-                    let res = await fetch(`${process.env.REACT_APP_BACKEND_SERVER}/api/checkout/verify`, {
-                        method: "post",
-                        headers: { "content-type": "application/json", "authorization": localStorage.getItem("token") },
-                        body: JSON.stringify({ razorpay_payment_id: response.razorpay_payment_id, checkid: checkout._id })
-                    });
-                    res = await res.json();
-                    if (res.result === "Done") { dispatch(getCheckout()); navigate("/confirmation"); }
-                } catch (err) { console.log(err); }
-            },
-            theme: { color: "#c9a84c" },
-        };
-        const rzp = new Razorpay(options);
-        rzp.open();
-    };
 
-    const handlePayment = async () => {
-        if (!checkout?.total) {
-            console.error("Payment Error: checkout total is missing", checkout);
-            return;
-        }
+  const initPayment = (data) => {
+    const options = {
+      key: "rzp_test_hPWsSLPsp2DADQ",
+      amount: data.amount,
+      currency: "INR",
+      order_id: data._id,
+      prefill: {
+        name: checkout?.user?.name,
+        email: checkout?.user?.email,
+        contact: checkout?.user?.phone,
+      },
+      handler: async (response) => {
         try {
-            let response = await fetch(`${process.env.REACT_APP_BACKEND_SERVER}/api/checkout/order`, {
-                method: "post",
-                headers: { "Content-Type": "application/json", authorization: localStorage.getItem("token") },
-                body: JSON.stringify({ amount: Math.round(checkout.total) })
-            });
-            response = await response.json();
-            if (!response.data) { console.error("Order creation failed", response); return; }
-            initPayment(response.data);
+          let res = await fetch(`${process.env.REACT_APP_BACKEND_SERVER}/api/checkout/verify`, {
+            method: "post",
+            headers: { "content-type": "application/json", "authorization": localStorage.getItem("token") },
+            body: JSON.stringify({ razorpay_payment_id: response.razorpay_payment_id, checkid: checkout._id })
+          });
+          res = await res.json();
+          if (res.result === "Done") { dispatch(getCheckout()); navigate("/confirmation"); }
         } catch (err) { console.log(err); }
+      },
+      theme: { color: "#c9a84c" },
     };
+    const rzp = new Razorpay(options);
+    rzp.open();
+  };
 
-    return (
-        <>
-            <style>{styles}</style>
-            <HeroSection title="Complete Payment" />
-            <div className="pay-root">
-                {checkout && (
-                    <div className="pay-card">
-                        <div className="pay-header">
-                            <div className="pay-icon">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
-                                    <rect x="2" y="5" width="20" height="14" rx="2"/>
-                                    <path d="M2 10h20"/>
-                                    <path d="M6 15h4"/>
-                                </svg>
-                            </div>
-                            <h1 className="pay-title">Secure <em>Payment</em></h1>
-                            <p className="pay-subtitle">Complete your order</p>
-                        </div>
+  const handlePayment = async () => {
+    if (!checkout?.total) {
+      console.error("Payment Error: checkout total is missing", checkout);
+      return;
+    }
+    try {
+      let response = await fetch(`${process.env.REACT_APP_BACKEND_SERVER}/api/checkout/order`, {
+        method: "post",
+        headers: { "Content-Type": "application/json", authorization: localStorage.getItem("token") },
+        body: JSON.stringify({ amount: Math.round(checkout.total) })
+      });
+      response = await response.json();
+      if (!response.data) { console.error("Order creation failed", response); return; }
+      initPayment(response.data);
+    } catch (err) { console.log(err); }
+  };
 
-                        <div className="pay-divider" />
-
-                        {checkout.user && (
-                            <div className="pay-summary">
-                                <div className="pay-summary-row">
-                                    <span className="pay-summary-label">Customer</span>
-                                    <span className="pay-summary-value">{checkout.user.name}</span>
-                                </div>
-                                <div className="pay-summary-row">
-                                    <span className="pay-summary-label">Email</span>
-                                    <span className="pay-summary-value">{checkout.user.email}</span>
-                                </div>
-                                <div className="pay-summary-row">
-                                    <span className="pay-summary-label">Phone</span>
-                                    <span className="pay-summary-value">{checkout.user.phone}</span>
-                                </div>
-                                <div className="pay-total-row">
-                                    <span className="pay-total-label">Total Amount</span>
-                                    <span className="pay-total-amount"><span>₹</span>{checkout.total?.toLocaleString()}</span>
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="pay-secure">
-                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4">
-                                <path d="M6 1L1.5 3v3c0 2.76 1.95 5.34 4.5 6 2.55-.66 4.5-3.24 4.5-6V3L6 1z"/>
-                            </svg>
-                            256-bit SSL encrypted • Powered by Razorpay
-                        </div>
-
-                        <button onClick={handlePayment} className="pay-btn" disabled={!checkout?.total}>
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4">
-                                <rect x="1" y="3.5" width="14" height="9" rx="1.5"/>
-                                <path d="M1 7h14"/>
-                            </svg>
-                            {checkout?.total ? `Pay ₹${checkout.total?.toLocaleString()} Now` : "Loading…"}
-                        </button>
-
-                        <p className="pay-note">
-                            By completing this payment you agree to our{' '}
-                            <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
-                        </p>
-                    </div>
-                )}
+  return (
+    <>
+      <style>{styles}</style>
+      <HeroSection title="Complete Payment" />
+      <div className="pay-root">
+        {checkout && (
+          <div className="pay-card">
+            <div className="pay-header">
+              <div className="pay-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
+                  <rect x="2" y="5" width="20" height="14" rx="2" />
+                  <path d="M2 10h20" />
+                  <path d="M6 15h4" />
+                </svg>
+              </div>
+              <h1 className="pay-title">Secure <em>Payment</em></h1>
+              <p className="pay-subtitle">Complete your order</p>
             </div>
-        </>
-    );
+
+            <div className="pay-divider" />
+
+            {checkout.user && (
+              <div className="pay-summary">
+                <div className="pay-summary-row">
+                  <span className="pay-summary-label">Customer</span>
+                  <span className="pay-summary-value">{checkout.user.name}</span>
+                </div>
+                <div className="pay-summary-row">
+                  <span className="pay-summary-label">Email</span>
+                  <span className="pay-summary-value">{checkout.user.email}</span>
+                </div>
+                <div className="pay-summary-row">
+                  <span className="pay-summary-label">Phone</span>
+                  <span className="pay-summary-value">{checkout.user.phone}</span>
+                </div>
+                <div className="pay-total-row">
+                  <span className="pay-total-label">Total Amount</span>
+                  <span className="pay-total-amount"><span>₹</span>{checkout.total?.toLocaleString()}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="pay-secure">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4">
+                <path d="M6 1L1.5 3v3c0 2.76 1.95 5.34 4.5 6 2.55-.66 4.5-3.24 4.5-6V3L6 1z" />
+              </svg>
+              256-bit SSL encrypted • Powered by Razorpay
+            </div>
+
+            <button onClick={handlePayment} className="pay-btn" disabled={!checkout?.total}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4">
+                <rect x="1" y="3.5" width="14" height="9" rx="1.5" />
+                <path d="M1 7h14" />
+              </svg>
+              {checkout?.total ? `Pay ₹${checkout.total?.toLocaleString()} Now` : "Loading…"}
+            </button>
+
+            <p className="pay-note">
+              By completing this payment you agree to our{' '}
+              <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+            </p>
+          </div>
+        )}
+      </div>
+    </>
+  );
 }

@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { getCheckout } from "../Redux/ActionCreators/CheckoutActionCreators";
-import { getReturn, createReturn } from "../Redux/ActionCreators/ReturnActionCreators";
+import { getReturn } from "../Redux/ActionCreators/ReturnActionCreators";
+
+const API = `${process.env.REACT_APP_BACKEND_SERVER}/api`;
 
 const STATUS_STEPS = [
   "Ordered",
@@ -34,13 +36,15 @@ function getOrderStepIndex(status) {
 const RETURN_BADGE = {
   pending: { bg: "rgba(201,168,76,0.14)", color: "#9a7b1f", label: "Return Requested" },
   approved: { bg: "rgba(59,130,246,0.12)", color: "#2563eb", label: "Return Approved" },
+  picked_up: { bg: "rgba(59,130,246,0.12)", color: "#2563eb", label: "Item Picked Up" },
+  received: { bg: "rgba(139,92,246,0.12)", color: "#7c3aed", label: "Received at Shop" },
   completed: { bg: "rgba(16,185,129,0.1)", color: "#059669", label: "Return Completed" },
   rejected: { bg: "rgba(244,63,94,0.1)", color: "#e11d48", label: "Return Rejected" },
   cancelled: { bg: "rgba(120,120,120,0.12)", color: "#666", label: "Return Cancelled" },
 };
 
 // Rejected / cancelled returns don't block a fresh request
-const BLOCKING_STATUSES = ["pending", "approved", "completed"];
+const BLOCKING_STATUSES = ["pending", "approved", "picked_up", "received", "completed"];
 
 const REASON_PRESETS = [
   "Product is damaged or defective",
@@ -52,6 +56,11 @@ const REASON_PRESETS = [
 ];
 
 const MIN_REASON_LENGTH = 10;
+
+// Image upload rules (must be accepted by your returnUploader on the server)
+const MAX_IMAGE_MB = 5;
+const MAX_IMAGE_BYTES = MAX_IMAGE_MB * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 function InfoRow({ label, value }) {
   return (
@@ -150,11 +159,16 @@ function Card({ icon, title, children, delay = ".1s" }) {
   );
 }
 
-/* ───────────────────────── Return reason modal ───────────────────────── */
-function ReturnModal({ item, onClose, onSubmit, submitting }) {
+/* ───────────────────────── Return reason modal (with image upload) ───────────────────────── */
+function ReturnModal({ item, onClose, onSubmit, submitting, serverError }) {
   const [preset, setPreset] = useState("");
   const [details, setDetails] = useState("");
   const [touched, setTouched] = useState(false);
+
+  const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState("");
+  const [fileError, setFileError] = useState("");
+  const fileInputRef = useRef(null);
 
   // Close on Esc
   useEffect(() => {
@@ -165,15 +179,51 @@ function ReturnModal({ item, onClose, onSubmit, submitting }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose, submitting]);
 
+  // Build / clean up the preview URL for the chosen image
+  useEffect(() => {
+    if (!file) {
+      setPreview("");
+      return undefined;
+    }
+    const url = URL.createObjectURL(file);
+    setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
   // Final reason sent to the backend: preset (if any) + free-text details
   const reason = [preset, details.trim()].filter(Boolean).join(" — ");
   const tooShort = reason.length < MIN_REASON_LENGTH;
   const showError = touched && tooShort;
 
+  function handleFile(e) {
+    const picked = e.target.files?.[0];
+    // allow re-picking the same file after removing it
+    e.target.value = "";
+    if (!picked) return;
+
+    if (!ALLOWED_IMAGE_TYPES.includes(picked.type)) {
+      setFile(null);
+      setFileError("Only JPG, PNG or WEBP images are allowed.");
+      return;
+    }
+    if (picked.size > MAX_IMAGE_BYTES) {
+      setFile(null);
+      setFileError(`Image is too large. Maximum size is ${MAX_IMAGE_MB} MB.`);
+      return;
+    }
+    setFileError("");
+    setFile(picked);
+  }
+
+  function removeFile() {
+    setFile(null);
+    setFileError("");
+  }
+
   function handleSubmit() {
     setTouched(true);
     if (tooShort || submitting) return;
-    onSubmit(reason);
+    onSubmit(reason, file);
   }
 
   const prodImg =
@@ -181,6 +231,15 @@ function ReturnModal({ item, onClose, onSubmit, submitting }) {
     item.product?.variants?.[0]?.pic?.[0] ||
     item.product?.pic?.[0] ||
     null;
+
+  const labelStyle = {
+    fontSize: "0.7rem",
+    fontWeight: 700,
+    letterSpacing: "0.1em",
+    textTransform: "uppercase",
+    color: "#7A6E65",
+    display: "block",
+  };
 
   return (
     <div
@@ -312,18 +371,7 @@ function ReturnModal({ item, onClose, onSubmit, submitting }) {
           </div>
 
           {/* Reason chips */}
-          <div
-            style={{
-              fontSize: "0.7rem",
-              fontWeight: 700,
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              color: "#7A6E65",
-              marginBottom: 8,
-            }}
-          >
-            Why are you returning this?
-          </div>
+          <div style={{ ...labelStyle, marginBottom: 8 }}>Why are you returning this?</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
             {REASON_PRESETS.map((p) => {
               const active = preset === p;
@@ -353,18 +401,7 @@ function ReturnModal({ item, onClose, onSubmit, submitting }) {
           </div>
 
           {/* Details */}
-          <label
-            htmlFor="return-details"
-            style={{
-              fontSize: "0.7rem",
-              fontWeight: 700,
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              color: "#7A6E65",
-              marginBottom: 6,
-              display: "block",
-            }}
-          >
+          <label htmlFor="return-details" style={{ ...labelStyle, marginBottom: 6 }}>
             Additional details
           </label>
           <textarea
@@ -403,6 +440,119 @@ function ReturnModal({ item, onClose, onSubmit, submitting }) {
             </span>
             <span>{details.length}/500</span>
           </div>
+
+          {/* Photo upload */}
+          <div style={{ ...labelStyle, marginTop: 18, marginBottom: 8 }}>
+            Photo of the item <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500 }}>(optional)</span>
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handleFile}
+            disabled={submitting}
+            style={{ display: "none" }}
+          />
+
+          {preview ? (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "10px 12px",
+                border: "1.5px solid rgba(201,168,76,0.28)",
+                borderRadius: 12,
+              }}
+            >
+              <img
+                src={preview}
+                alt="Selected return evidence"
+                style={{ width: 64, height: 64, borderRadius: 8, objectFit: "cover", flexShrink: 0 }}
+              />
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div
+                  style={{
+                    fontSize: "0.82rem",
+                    fontWeight: 600,
+                    color: "#1C1009",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {file.name}
+                </div>
+                <div style={{ fontSize: "0.72rem", color: "#7A6E65" }}>
+                  {(file.size / 1024 / 1024).toFixed(2)} MB
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={removeFile}
+                disabled={submitting}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  color: "#e11d48",
+                  fontWeight: 700,
+                  fontSize: "0.78rem",
+                  cursor: submitting ? "not-allowed" : "pointer",
+                }}
+              >
+                Remove
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={submitting}
+              style={{
+                width: "100%",
+                padding: "18px 12px",
+                borderRadius: 12,
+                border: "1.5px dashed rgba(201,168,76,0.5)",
+                background: "rgba(201,168,76,0.05)",
+                color: "#7A6E65",
+                fontSize: "0.82rem",
+                fontWeight: 600,
+                cursor: submitting ? "not-allowed" : "pointer",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <i className="fa fa-camera" style={{ color: "var(--sk-gold, #c9a84c)", fontSize: "1.1rem" }}></i>
+              Add a photo
+              <span style={{ fontSize: "0.7rem", fontWeight: 400, color: "#999" }}>
+                JPG, PNG or WEBP, up to {MAX_IMAGE_MB} MB
+              </span>
+            </button>
+          )}
+          {fileError && (
+            <div style={{ fontSize: "0.72rem", color: "#e11d48", marginTop: 6 }}>{fileError}</div>
+          )}
+
+          {/* Server error */}
+          {serverError && (
+            <div
+              role="alert"
+              style={{
+                marginTop: 16,
+                padding: "10px 14px",
+                borderRadius: 10,
+                background: "rgba(244,63,94,0.08)",
+                border: "1px solid rgba(244,63,94,0.2)",
+                color: "#e11d48",
+                fontSize: "0.8rem",
+              }}
+            >
+              {serverError}
+            </div>
+          )}
 
           {/* Actions */}
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 20 }}>
@@ -477,7 +627,10 @@ export default function OrderDetailPage() {
   // Return flow state
   const [returnItem, setReturnItem] = useState(null); // order line currently being returned
   const [returnSubmitting, setReturnSubmitting] = useState(false);
+  const [returnError, setReturnError] = useState("");
   const [toast, setToast] = useState("");
+
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
 
   useEffect(() => {
     dispatch(getCheckout());
@@ -490,23 +643,18 @@ export default function OrderDetailPage() {
     }
   }, [CheckoutStateData, _id]);
 
-  const [invoiceLoading, setInvoiceLoading] = React.useState(false);
-
   const generateInvoice = async () => {
     if (invoiceLoading) return;
     setInvoiceLoading(true);
     try {
-      const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_SERVER}/api/invoice/generate`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            authorization: localStorage.getItem("token"),
-          },
-          body: JSON.stringify({ orderId: _id }),
-        }
-      );
+      const response = await fetch(`${API}/invoice/generate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: localStorage.getItem("token"),
+        },
+        body: JSON.stringify({ orderId: _id }),
+      });
 
       const data = await response.json();
 
@@ -603,28 +751,63 @@ export default function OrderDetailPage() {
       : { state: "expired", days };
   }
 
-  function submitReturn(reason) {
-    if (!returnItem) return;
+  function openReturnModal(prod) {
+    setReturnError("");
+    setReturnItem(prod);
+  }
+
+  function closeReturnModal() {
+    setReturnError("");
+    setReturnItem(null);
+  }
+
+  function showToast(text) {
+    setToast(text);
+    setTimeout(() => setToast(""), 3500);
+  }
+
+  // Sends multipart/form-data. The "pics" field name must match
+  // returnUploader.single("pics") on the server. Do NOT set Content-Type
+  // yourself: the browser adds the multipart boundary.
+  async function submitReturn(reason, file) {
+    if (!returnItem || returnSubmitting) return;
     setReturnSubmitting(true);
+    setReturnError("");
 
-    dispatch(
-      createReturn({
-        product: returnItem.product?._id,
-        user: order.user?._id || localStorage.getItem("userid"),
-        order: order._id,
-        reason,
-      })
-    );
+    try {
+      const body = new FormData();
+      body.append("product", returnItem.product?._id);
+      body.append("user", order.user?._id || localStorage.getItem("userid") || "");
+      body.append("order", order._id);
+      body.append("reason", reason);
+      if (file) body.append("pics", file);
 
-    // Action creators here are fire-and-forget: close the modal, then refetch
-    // so ReturnStateData picks up the new request and the badge appears.
-    setTimeout(() => {
-      dispatch(getReturn());
+      const r = await fetch(`${API}/return`, {
+        method: "POST",
+        headers: { authorization: localStorage.getItem("token") },
+        body,
+      });
+      const res = await r.json();
+
+      if (res.result === "Done") {
+        dispatch(getReturn());
+        setReturnItem(null);
+        showToast("Return request submitted successfully");
+      } else {
+        const msg =
+          typeof res.reason === "string"
+            ? res.reason
+            : res.reason && typeof res.reason === "object"
+              ? Object.values(res.reason).join(" ")
+              : "Couldn't submit the return. Please try again.";
+        setReturnError(msg);
+      }
+    } catch (e) {
+      console.error("Return submit error:", e);
+      setReturnError("Could not connect to the server. Please try again.");
+    } finally {
       setReturnSubmitting(false);
-      setReturnItem(null);
-      setToast("Return request submitted successfully");
-      setTimeout(() => setToast(""), 3500);
-    }, 700);
+    }
   }
 
   return (
@@ -689,8 +872,7 @@ export default function OrderDetailPage() {
             }}
           >
             <i
-              className={`fa ${isDelivered ? "fa-check" : isCancelled ? "fa-times" : "fa-clock"
-                } me-2`}
+              className={`fa ${isDelivered ? "fa-check" : isCancelled ? "fa-times" : "fa-clock"} me-2`}
               style={{ fontSize: "0.72rem" }}
             ></i>
             {order.orderStatus}
@@ -781,13 +963,7 @@ export default function OrderDetailPage() {
                 >
                   {label}
                 </div>
-                <div
-                  style={{
-                    fontWeight: 600,
-                    fontSize: "0.88rem",
-                    color: "#1C1009",
-                  }}
-                >
+                <div style={{ fontWeight: 600, fontSize: "0.88rem", color: "#1C1009" }}>
                   {value}
                 </div>
               </div>
@@ -871,21 +1047,17 @@ export default function OrderDetailPage() {
                         justifyContent: "center",
                         color: done ? "white" : current ? "var(--sk-gold, #c9a84c)" : "#ccc",
                         fontSize: "0.8rem",
-                        boxShadow: current
-                          ? "0 0 0 4px rgba(200,64,10,0.12)"
-                          : "none",
+                        boxShadow: current ? "0 0 0 4px rgba(200,64,10,0.12)" : "none",
                         transition: "all 0.3s",
                       }}
                     >
-                      <i
-                        className={`fa ${done ? "fa-check" : STATUS_ICONS[step]}`}
-                      ></i>
+                      <i className={`fa ${done ? "fa-check" : STATUS_ICONS[step]}`}></i>
                     </div>
                     <span
                       style={{
                         fontSize: "0.68rem",
                         fontWeight: current || done ? 700 : 500,
-                        color: done ? "var(--sk-gold, #c9a84c)" : current ? "var(--sk-gold, #c9a84c)" : "#aaa",
+                        color: done || current ? "var(--sk-gold, #c9a84c)" : "#aaa",
                         marginTop: 8,
                         textAlign: "center",
                         lineHeight: 1.3,
@@ -952,7 +1124,6 @@ export default function OrderDetailPage() {
             { label: "Email", value: order.user?.email },
             { label: "Phone", value: order.user?.phone },
             { label: "Address", value: order.user?.defaultAddress?.address },
-            // { label: "Landmark", value: order.user?.defaultAddress?.landmark },
             { label: "City", value: order.user?.defaultAddress?.city },
             { label: "State", value: order.user?.defaultAddress?.state },
             { label: "Pincode", value: order.user?.defaultAddress?.pin },
@@ -962,127 +1133,119 @@ export default function OrderDetailPage() {
         </Card>
 
         {/* ── Delivery Boy ── */}
-        {order.deliveryBoy &&
-          (isOutForDelivery || isDelivered) && (
-            <Card icon="fa-motorcycle" title="Delivery Boy" delay=".35s">
+        {order.deliveryBoy && (isOutForDelivery || isDelivered) && (
+          <Card icon="fa-motorcycle" title="Delivery Boy" delay=".35s">
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 20,
+                flexWrap: "wrap",
+              }}
+            >
               <div
                 style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg,var(--sk-gold, #c9a84c),var(--sk-gold-bright, #e8c873))",
                   display: "flex",
                   alignItems: "center",
-                  gap: 20,
-                  flexWrap: "wrap",
+                  justifyContent: "center",
+                  color: "white",
+                  fontSize: 22,
+                  flexShrink: 0,
+                  boxShadow: "0 4px 14px rgba(201,168,76,0.28)",
                 }}
               >
+                <i className="fa fa-user"></i>
+              </div>
+
+              <div style={{ flex: 1, minWidth: 180 }}>
                 <div
                   style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: "50%",
-                    background: "linear-gradient(135deg,var(--sk-gold, #c9a84c),var(--sk-gold-bright, #e8c873))",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "white",
-                    fontSize: 22,
-                    flexShrink: 0,
-                    boxShadow: "0 4px 14px rgba(201,168,76,0.28)",
+                    fontFamily: "Playfair Display,serif",
+                    fontWeight: 800,
+                    fontSize: "1rem",
+                    color: "#1C1009",
+                    marginBottom: 6,
                   }}
                 >
-                  <i className="fa fa-user"></i>
+                  {order.deliveryBoy?.name || "Assigned"}
                 </div>
-
-                <div style={{ flex: 1, minWidth: 180 }}>
-                  <div
-                    style={{
-                      fontFamily: "Playfair Display,serif",
-                      fontWeight: 800,
-                      fontSize: "1rem",
-                      color: "#1C1009",
-                      marginBottom: 6,
-                    }}
-                  >
-                    {order.deliveryBoy?.name || "Assigned"}
-                  </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-                    {order.deliveryBoy?.phone && (
-                      <a
-                        href={`tel:${order.deliveryBoy.phone}`}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                          fontSize: "0.82rem",
-                          fontWeight: 600,
-                          color: "var(--sk-gold, #c9a84c)",
-                          textDecoration: "none",
-                        }}
-                      >
-                        <i className="fa fa-phone" style={{ fontSize: "0.72rem" }}></i>
-                        {order.deliveryBoy.phone}
-                      </a>
-                    )}
-                    {order.deliveryBoy?.vehicleNumber && (
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                          fontSize: "0.82rem",
-                          fontWeight: 600,
-                          color: "#7A6E65",
-                        }}
-                      >
-                        <i className="fa fa-id-card" style={{ fontSize: "0.72rem" }}></i>
-                        {order.deliveryBoy.vehicleNumber}
-                      </span>
-                    )}
-                    {order.deliveryBoy?.vehicleType && (
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                          fontSize: "0.82rem",
-                          fontWeight: 600,
-                          color: "#7A6E65",
-                        }}
-                      >
-                        <i className="fa fa-bicycle" style={{ fontSize: "0.72rem" }}></i>
-                        {order.deliveryBoy.vehicleType}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div style={{ flexShrink: 0 }}>
-                  <span
-                    style={{
-                      background:
-                        isDelivered
-                          ? "rgba(16,185,129,0.1)"
-                          : "rgba(201,168,76,0.1)",
-                      color:
-                        isDelivered ? "#059669" : "var(--sk-gold, #c9a84c)",
-                      borderRadius: 50,
-                      padding: "6px 16px",
-                      fontSize: "0.75rem",
-                      fontWeight: 700,
-                      letterSpacing: "0.05em",
-                    }}
-                  >
-                    <i
-                      className={`fa ${isDelivered
-                          ? "fa-check-circle"
-                          : "fa-shipping-fast"
-                        } me-2`}
-                      style={{ fontSize: "0.7rem" }}
-                    ></i>
-                    {isDelivered ? "Delivered" : "On the Way"}
-                  </span>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+                  {order.deliveryBoy?.phone && (
+                    <a
+                      href={`tel:${order.deliveryBoy.phone}`}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        fontSize: "0.82rem",
+                        fontWeight: 600,
+                        color: "var(--sk-gold, #c9a84c)",
+                        textDecoration: "none",
+                      }}
+                    >
+                      <i className="fa fa-phone" style={{ fontSize: "0.72rem" }}></i>
+                      {order.deliveryBoy.phone}
+                    </a>
+                  )}
+                  {order.deliveryBoy?.vehicleNumber && (
+                    <span
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        fontSize: "0.82rem",
+                        fontWeight: 600,
+                        color: "#7A6E65",
+                      }}
+                    >
+                      <i className="fa fa-id-card" style={{ fontSize: "0.72rem" }}></i>
+                      {order.deliveryBoy.vehicleNumber}
+                    </span>
+                  )}
+                  {order.deliveryBoy?.vehicleType && (
+                    <span
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        fontSize: "0.82rem",
+                        fontWeight: 600,
+                        color: "#7A6E65",
+                      }}
+                    >
+                      <i className="fa fa-bicycle" style={{ fontSize: "0.72rem" }}></i>
+                      {order.deliveryBoy.vehicleType}
+                    </span>
+                  )}
                 </div>
               </div>
-            </Card>
-          )}
+
+              <div style={{ flexShrink: 0 }}>
+                <span
+                  style={{
+                    background: isDelivered ? "rgba(16,185,129,0.1)" : "rgba(201,168,76,0.1)",
+                    color: isDelivered ? "#059669" : "var(--sk-gold, #c9a84c)",
+                    borderRadius: 50,
+                    padding: "6px 16px",
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  <i
+                    className={`fa ${isDelivered ? "fa-check-circle" : "fa-shipping-fast"} me-2`}
+                    style={{ fontSize: "0.7rem" }}
+                  ></i>
+                  {isDelivered ? "Delivered" : "On the Way"}
+                </span>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* ── Ordered Products ── */}
         <Card icon="fa-box-open" title="Ordered Products" delay=".4s">
@@ -1135,7 +1298,12 @@ export default function OrderDetailPage() {
                           }}
                         >
                           {(() => {
-                            const prodImg = prod.variant?.pic?.[0] || prod.product?.variants?.[0]?.pic?.[0] || prod.product?.pic?.[0] || prod.pic?.[0] || (typeof prod.pic === "string" ? prod.pic : null);
+                            const prodImg =
+                              prod.variant?.pic?.[0] ||
+                              prod.product?.variants?.[0]?.pic?.[0] ||
+                              prod.product?.pic?.[0] ||
+                              prod.pic?.[0] ||
+                              (typeof prod.pic === "string" ? prod.pic : null);
                             return (
                               <>
                                 {prodImg ? (
@@ -1231,13 +1399,7 @@ export default function OrderDetailPage() {
                             >
                               Price
                             </div>
-                            <div
-                              style={{
-                                fontWeight: 600,
-                                fontSize: "0.85rem",
-                                color: "#1C1009",
-                              }}
-                            >
+                            <div style={{ fontWeight: 600, fontSize: "0.85rem", color: "#1C1009" }}>
                               ₹{prod.variant?.finalPrice?.toLocaleString()}
                             </div>
                           </div>
@@ -1255,13 +1417,7 @@ export default function OrderDetailPage() {
                             >
                               Qty
                             </div>
-                            <div
-                              style={{
-                                fontWeight: 700,
-                                fontSize: "0.88rem",
-                                color: "#1C1009",
-                              }}
-                            >
+                            <div style={{ fontWeight: 700, fontSize: "0.88rem", color: "#1C1009" }}>
                               {prod.qty}
                             </div>
                           </div>
@@ -1306,9 +1462,10 @@ export default function OrderDetailPage() {
                           padding: "8px 16px 0",
                         }}
                       >
-                        {/* Existing return request status */}
+                        {/* Existing return request status (links to the refund status page) */}
                         {badge && (
-                          <span
+                          <Link
+                            to={`/refund/${existingReturn._id}`}
                             style={{
                               background: badge.bg,
                               color: badge.color,
@@ -1316,6 +1473,7 @@ export default function OrderDetailPage() {
                               padding: "4px 14px",
                               fontSize: "0.72rem",
                               fontWeight: 700,
+                              textDecoration: "none",
                             }}
                           >
                             <i className="fa fa-undo me-2" style={{ fontSize: "0.66rem" }}></i>
@@ -1325,7 +1483,7 @@ export default function OrderDetailPage() {
                                 day: "numeric",
                                 month: "short",
                               })}`}
-                          </span>
+                          </Link>
                         )}
 
                         {/* Return button / policy note */}
@@ -1337,7 +1495,7 @@ export default function OrderDetailPage() {
                             </span>
                             <button
                               type="button"
-                              onClick={() => setReturnItem(prod)}
+                              onClick={() => openReturnModal(prod)}
                               style={{
                                 padding: "6px 18px",
                                 borderRadius: 50,
@@ -1528,12 +1686,13 @@ export default function OrderDetailPage() {
         <ReturnModal
           item={returnItem}
           submitting={returnSubmitting}
-          onClose={() => setReturnItem(null)}
+          serverError={returnError}
+          onClose={closeReturnModal}
           onSubmit={submitReturn}
         />
       )}
 
-      {/* ── Success toast ── */}
+      {/* ── Success / error toast ── */}
       {toast && (
         <div
           role="status"

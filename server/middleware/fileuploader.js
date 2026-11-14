@@ -54,5 +54,6 @@ module.exports = {
     userUploader: createUploader("user"),
     bannerUploader: createUploader("banner"),
     shopUploader: createUploader("shop"),
-    deliveryBoyUploader: createUploader("deliveryBoy")
+    deliveryBoyUploader: createUploader("deliveryBoy"),
+    returnUploader: createUploader("returns")
 };

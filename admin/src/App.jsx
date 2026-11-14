@@ -88,6 +88,7 @@ import DeliveryConfirm from "./pages/deliveryBoyData/DeliveryConfirm";
 import DeliveryDashboard from "./pages/deliveryBoyData/DeliveryBoyDasboard";
 import AdminReturn from "./pages/returnProduct/AdminReturn";
 import AdminReturnShow from "./pages/returnProduct/AdminReturnShow";
+import ReturnOrder from "./pages/deliveryBoyData/ReturnOrder";
 
 // FIX: All public routes listed here must match route paths exactly
 const publicRoutes = ["/login", "/register", "/forgot-password"];
@@ -330,9 +331,11 @@ function Shell() {
             <Route path="/:role/setting" element={<AccountSetting />} />
 
             <Route path="/:role/:_id/orders" element={<AssignedOrder />} />
+            <Route path="/:role/:_id/return" element={<ReturnOrder />} />
             <Route path="/:role/:_id/history" element={<OrderHistory />} />
             <Route path="/deliveryBoy/:_id/order/:_orderId" element={<DeliveryConfirm />} />
             <Route path="/deliveryBoy/:_id/dashboard" element={<DeliveryDashboard />} />
+            <Route path="/deliveryBoy/:_id/return/:returnId" element={<ReturnOrder />} />
           </Routes>
 
           <Footer />

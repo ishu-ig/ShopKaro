@@ -11,10 +11,16 @@ const {
     getSingleRecord,
     updateRecord,
     refundRecord,
+    refundOrder,
+    verifyRefundOrder,
     deleteRecord
 } = require("../controllers/ReturnController");
 
-// Online refund through Razorpay (admin only)
+// Razorpay checkout modal payment flow for refund (Order creation + verification)
+ReturnProductRouter.post("/refund/order", verifyThree, refundOrder);
+ReturnProductRouter.post("/refund/verify", verifyThree, verifyRefundOrder);
+
+// Direct gateway refund (admin only)
 // MUST be registered BEFORE POST "" — otherwise POST /refund/:_id is swallowed by the generic create route
 ReturnProductRouter.post("/refund/:_id", verifyThree, refundRecord)
 

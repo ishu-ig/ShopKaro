@@ -265,7 +265,7 @@ export default function LoginPage() {
                 <label className="form-label" htmlFor="loginPassword">
                   Password
                 </label>
-                <Link className="small fw-semibold" to="/forgetPassword-1">
+                <Link className="small fw-semibold" to="/forgot-password">
                   Forgot?
                 </Link>
               </div>

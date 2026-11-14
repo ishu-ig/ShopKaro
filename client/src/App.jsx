@@ -28,6 +28,7 @@ import ForgetPasswordPage1 from './pages/ForgetPasswordPage1'
 import ForgetPasswordPage2 from './pages/ForgetPasswordPage2'
 import ForgetPasswordPage3 from './pages/ForgetPasswordPage3'
 import Payment from './pages/Payment'
+import Refund from './pages/Refund'
 import ChatPage from './pages/ChatPage'
 import FeatureDetail from './pages/FeatureDetailPage'
 import AddressPages from './pages/AddressPages'
@@ -73,6 +74,7 @@ export default function App() {
                 <Route path='/forgetPassword-3' element={<ForgetPasswordPage3 />}/>
 
                 <Route path='/payment/:_id' element={<Payment/>}/>
+                <Route path='/refund/:_id' element={<Refund/>}/>
 
                 <Route path='/support' element={<ChatPage />}/>
                 <Route path='/feature-detail' element={<FeatureDetail />}/>

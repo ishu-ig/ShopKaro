@@ -196,7 +196,11 @@ export default function AdminReturn() {
                                                 <td className="fw-semibold">{item.user?.name ?? "N/A"}</td>
                                                 <td>
                                                     <div className="fw-semibold">{item.product?.name ?? "N/A"}</div>
-                                                    {item.product?.brand && <div className="small text-muted">{item.product.brand}</div>}
+                                                    {item.product?.brand && (
+                                                        <div className="small text-muted">
+                                                            {typeof item.product.brand === "object" ? item.product.brand.name : item.product.brand}
+                                                        </div>
+                                                    )}
                                                 </td>
                                                 <td><span className="reason-cell" title={item.reason}>{item.reason}</span></td>
                                                 <td>

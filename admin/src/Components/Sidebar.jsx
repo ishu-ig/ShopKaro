@@ -122,6 +122,7 @@ export default function Sidebar({ onLinkClick }) {
         section: "Deliveries",
         items: [
           { to: `/deliveryBoy/${userId}/orders`, icon: "bi-bag-check", label: "Assigned Orders" },
+          { to: `/deliveryBoy/${userId}/return`, icon: "bi-bag-check", label: "Return Orders" },
           { to: `/deliveryBoy/${userId}/history`, icon: "bi-clock-history", label: "Order History" },
         ],
       },
