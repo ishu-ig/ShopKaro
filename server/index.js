@@ -11,7 +11,8 @@ const app = express()
 var whitelist = ['http://localhost:3000',
     'http://localhost:8000',
     'http://localhost:4000',
-    "https://shopkaro-mnqv.onrender.com",]
+    "https://shopkaro-mnqv.onrender.com",
+    "https://shop-karo-ashy.vercel.app"]
 var corsOptions = {
     origin: function (origin, callback) {
         // console.log("Origin",origin)
