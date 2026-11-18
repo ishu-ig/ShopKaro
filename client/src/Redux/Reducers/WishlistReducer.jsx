@@ -7,7 +7,7 @@ export default function WishlistReducer(state=[], action) {
             return newState
 
         case GET_WISHLIST_RED:
-            return action.payload
+            return Array.isArray(action.payload) ? action.payload : state;
 
         case UPDATE_WISHLIST_RED:
             return state

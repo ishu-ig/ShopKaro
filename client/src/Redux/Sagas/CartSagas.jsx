@@ -10,7 +10,7 @@ function* createSaga(action) {
 
 function* getSaga(action) {                             //worker saga or executer saga
     let response = yield getRecord("cart")
-    yield put({ type: GET_CART_RED, payload: response.data })
+    yield put({ type: GET_CART_RED, payload: response?.data || [] })
 }
 
 function* updateSaga(action) {                          //worker saga or executer saga

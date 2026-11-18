@@ -7,7 +7,7 @@ export default function NewsletterReducer(state=[], action) {
             return newState
 
         case GET_NEWSLETTER_RED:
-            return action.payload
+            return Array.isArray(action.payload) ? action.payload : state;
 
         case UPDATE_NEWSLETTER_RED:
             let index = state.findIndex(x => x._id === action.payload._id)

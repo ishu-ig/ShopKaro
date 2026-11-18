@@ -23,8 +23,12 @@ export default function Navbar() {
   }
 
   useEffect(() => {
-    dispatch(getCart());
-    dispatch(getWishlist());
+    const userId = localStorage.getItem("userid");
+    const token = localStorage.getItem("token");
+    if (userId && token && userId !== "null" && token !== "null") {
+      dispatch(getCart());
+      dispatch(getWishlist());
+    }
   }, [dispatch]);
 
   useEffect(() => {

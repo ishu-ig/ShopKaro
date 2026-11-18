@@ -7,7 +7,7 @@ export default function MaincategoryReducer(state=[], action) {
             return newState
 
         case GET_MAINCATEGORY_RED:
-            return action.payload
+            return Array.isArray(action.payload) ? action.payload : state;
 
         case UPDATE_MAINCATEGORY_RED:
             let index = state.findIndex(x => x._id === action.payload._id)

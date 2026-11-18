@@ -7,7 +7,7 @@ export default function ContactUsReducer(state=[], action) {
             return newState
 
         case GET_CONTACT_US_RED:
-            return action.payload
+            return Array.isArray(action.payload) ? action.payload : state;
 
         case UPDATE_CONTACT_US_RED:
             let index = state.findIndex(x => x._id === action.payload._id)

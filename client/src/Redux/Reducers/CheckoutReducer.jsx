@@ -7,7 +7,7 @@ export default function CheckoutReducer(state=[], action) {
             return newState
 
         case GET_CHECKOUT_RED:
-            return action.payload
+            return Array.isArray(action.payload) ? action.payload : state;
 
         case UPDATE_CHECKOUT_RED:
             if (!action.payload) return state;

@@ -8,20 +8,23 @@ require("./db_connect")
 const Router = require("./routes/index")
 const app = express()
 
-var whitelist = ['http://localhost:3000',
+const whitelist = [
+    'http://localhost:3000',
     'http://localhost:8000',
     'http://localhost:4000',
     "https://shopkaro-mnqv.onrender.com",
-    "https://shop-karo-ashy.vercel.app"]
-var corsOptions = {
+    "https://shopkaro-sflc.onrender.com",
+    "https://shop-karo-ashy.vercel.app"
+]
+const corsOptions = {
     origin: function (origin, callback) {
-        // console.log("Origin",origin)
-        if (whitelist.includes(origin) !== -1) {
+        if (!origin || whitelist.includes(origin) || origin.endsWith(".vercel.app")) {
             callback(null, true)
         } else {
-            callback(new Error('CORS Error, You Are not authenciated to access this api'))
+            callback(new Error('CORS Error, You Are not authenticated to access this api'))
         }
-    }
+    },
+    credentials: true
 }
 app.use(cors(corsOptions))
 

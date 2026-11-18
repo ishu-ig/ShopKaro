@@ -74,8 +74,12 @@ export default function ProductPage() {
   }, [ProductStateData, _id]);
 
   useEffect(() => {
-    dispatch(getCart());
-    dispatch(getWishlist());
+    const userId = localStorage.getItem("userid");
+    const token = localStorage.getItem("token");
+    if (userId && token && userId !== "null" && token !== "null") {
+      dispatch(getCart());
+      dispatch(getWishlist());
+    }
   }, [dispatch]);
 
   const colorOptions = [...new Set(data.variants.map((v) => v.color))];

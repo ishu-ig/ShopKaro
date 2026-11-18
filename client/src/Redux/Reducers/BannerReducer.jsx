@@ -7,7 +7,7 @@ export default function BannerReducer(state=[], action) {
             return newState
 
         case GET_BANNER_RED:
-            return action.payload
+            return Array.isArray(action.payload) ? action.payload : state;
 
         case UPDATE_BANNER_RED:
             let index = state.findIndex(x => x._id === action.payload._id)
